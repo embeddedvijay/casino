@@ -1,7 +1,7 @@
 import React from "react";
 import Aviator from "./games/aviator/Aviator.jsx";
 import DragonTiger from "./games/dragon-tiger/DragonTiger.jsx";
-import LuckyRace from "./games/car-roulet/LuckyRace.jsx";
+import LuckyRace from "./games/lucky-race/LuckyRace.jsx";
 
 function GameLobby() {
   return (

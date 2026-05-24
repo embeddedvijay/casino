@@ -13,8 +13,43 @@ CARS = [
 ]
 
 
+# Round table track sequence.
+# Isme repeated icons hain, jaise screenshot mein top track par car logos repeated hote hain.
+TRACK_SEQUENCE_KEYS = [
+    "PORSCHE",
+    "BMW",
+    "MAHINDRA",
+    "AUDI",
+    "TATA",
+    "LUCKY",
+    "BMW",
+    "MAHINDRA",
+    "AUDI",
+    "TATA",
+    "MERCEDES",
+    "FERRARI",
+    "PORSCHE",
+    "MERCEDES",
+    "BMW",
+    "MAHINDRA",
+    "AUDI",
+    "TATA",
+    "MERCEDES",
+    "FERRARI",
+    "PORSCHE",
+    "LUCKY",
+    "FERRARI",
+    "MERCEDES",
+]
+
+
 def get_cars():
     return CARS
+
+
+def get_track_sequence():
+    car_map = {car["key"]: car for car in CARS}
+    return [car_map[key] for key in TRACK_SEQUENCE_KEYS]
 
 
 def pick_winner():

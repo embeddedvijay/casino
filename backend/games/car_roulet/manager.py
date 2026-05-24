@@ -5,11 +5,10 @@ from typing import Dict, List
 
 from fastapi import WebSocket
 
-from .engine import calculate_payout, get_cars, pick_winner
+from .engine import calculate_payout, get_cars, get_track_sequence, pick_winner
 
 
 WAITING_SECONDS = 12
-SPINNING_SECONDS = 5
 RESULT_SECONDS = 5
 
 clients: List[WebSocket] = []
@@ -20,6 +19,7 @@ state = {
     "countdown": WAITING_SECONDS,
     "waiting_seconds": WAITING_SECONDS,
     "cars": get_cars(),
+    "track": get_track_sequence(),
     "winner": None,
     "track_index": 0,
     "history": [],
@@ -32,56 +32,14 @@ def make_round_id():
     return "LR-" + str(uuid.uuid4())[:8].upper()
 
 
-def random_user():
-    names = [
-        "player_OW2",
-        "Raj Banna Saa",
-        "Manish Halpati",
-        "player_9RgLK",
-        "player_EHvX1",
-        "Raj Deepakvala",
-    ]
-    return random.choice(names)
-
-
 def public_players():
     return [
-        {
-            "name": "Raj Banna Saa",
-            "balance": 42569,
-            "avatar": "🧔",
-            "tag": "WINNER",
-        },
-        {
-            "name": "player_OW2",
-            "balance": 10042,
-            "avatar": "👑",
-            "tag": "LUCKY",
-        },
-        {
-            "name": "Raj Deepakvala",
-            "balance": 6073,
-            "avatar": "👨",
-            "tag": "",
-        },
-        {
-            "name": "Manish Halpati",
-            "balance": 8087,
-            "avatar": "🧑",
-            "tag": "",
-        },
-        {
-            "name": "player_9RgLK",
-            "balance": 39319,
-            "avatar": "👨‍🦱",
-            "tag": "",
-        },
-        {
-            "name": "player_EHvX1",
-            "balance": 3710,
-            "avatar": "👩",
-            "tag": "",
-        },
+        {"name": "Raj Banna Saa", "balance": 42569, "avatar": "🧔", "tag": "WINNER"},
+        {"name": "player_OW2", "balance": 10042, "avatar": "👑", "tag": "LUCKY"},
+        {"name": "Raj Deepakvala", "balance": 6073, "avatar": "👨", "tag": ""},
+        {"name": "Manish Halpati", "balance": 8087, "avatar": "🧑", "tag": ""},
+        {"name": "player_9RgLK", "balance": 39319, "avatar": "👨‍🦱", "tag": ""},
+        {"name": "player_EHvX1", "balance": 3710, "avatar": "👩", "tag": ""},
     ]
 
 
@@ -92,7 +50,16 @@ def board_totals():
     for car in state["cars"]:
         totals[car["key"]] = {
             "my": 0.0,
-            "total": random.choice([14640, 20380, 42100, 41270, 54880, 45860, 50220, 65710]),
+            "total": random.choice([
+                14640,
+                20380,
+                42100,
+                41270,
+                54880,
+                45860,
+                50220,
+                65710,
+            ]),
         }
 
     for bet in bets_by_round.get(round_id, []):
@@ -112,6 +79,7 @@ def public_data():
         "countdown": state["countdown"],
         "waiting_seconds": state["waiting_seconds"],
         "cars": state["cars"],
+        "track": state["track"],
         "winner": state["winner"],
         "track_index": state["track_index"],
         "history": state["history"][-20:],
@@ -235,6 +203,16 @@ def settle_bets(winner):
             bet["payout"] = 0.0
 
 
+def find_stop_index_for_winner(winner_key: str):
+    track = state["track"]
+    matching_indexes = [
+        index for index, item in enumerate(track)
+        if item["key"] == winner_key
+    ]
+
+    return random.choice(matching_indexes)
+
+
 async def game_loop():
     while True:
         round_id = make_round_id()
@@ -258,7 +236,7 @@ async def game_loop():
             await asyncio.sleep(1)
 
         winner = pick_winner()
-        winner_index = [car["key"] for car in state["cars"]].index(winner["key"])
+        stop_index = find_stop_index_for_winner(winner["key"])
 
         state["phase"] = "spinning"
         state["countdown"] = 0
@@ -266,16 +244,24 @@ async def game_loop():
 
         await broadcast("spinning")
 
-        total_steps = 42 + winner_index
+        track_len = len(state["track"])
+        start_index = state["track_index"]
 
-        for step in range(total_steps):
-            state["track_index"] = step % len(state["cars"])
+        # Minimum 3 full rounds + stop index
+        total_steps = (track_len * 3) + stop_index
+
+        for step in range(total_steps + 1):
+            state["track_index"] = (start_index + step) % track_len
+
             await broadcast("spin_tick")
 
-            delay = 0.07 + min(step / total_steps, 1) * 0.08
+            # Start fast, end slow
+            progress = step / max(total_steps, 1)
+            delay = 0.045 + (progress ** 2) * 0.16
+
             await asyncio.sleep(delay)
 
-        state["track_index"] = winner_index
+        state["track_index"] = stop_index
         state["winner"] = winner
         state["phase"] = "result"
 
