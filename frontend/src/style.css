@@ -1079,7 +1079,8 @@ body {
 /* Flying par background rotate hoga */
 
 .canvas.flying-mode .rays {
-  animation: liveRaysRotate 7s linear infinite !important;
+  animation: liveRaysRotate 7s linear infinite,
+  raysColorCycle 4s linear infinite !important;
 }
 
 .canvas.flying-mode.mid-bg .rays {
@@ -1223,6 +1224,92 @@ body {
 }
 
 /* Flew away / crash ke baad animation stop */
+.canvas.crashed-mode .rays {
+  animation: none !important;
+}
+
+/* =========================================
+   ONLY BACKGROUND COLOR CHANGE
+   PATH LINE COLOR FIXED RED
+========================================= */
+
+/* Flying background auto color cycle */
+.canvas.flying-mode .rays {
+  animation:
+    liveRaysRotate 7s linear infinite,
+    backgroundColorCycle 8s linear infinite !important;
+}
+
+/* Background colors only */
+@keyframes backgroundColorCycle {
+  0% {
+    background:
+      repeating-conic-gradient(
+        from 245deg,
+        rgba(25, 200, 255, 0.18) 0deg,
+        rgba(25, 200, 255, 0.06) 9deg,
+        rgba(0, 0, 0, 0.22) 9deg,
+        rgba(0, 0, 0, 0.02) 20deg
+      );
+  }
+
+  35% {
+    background:
+      repeating-conic-gradient(
+        from 245deg,
+        rgba(156, 72, 255, 0.22) 0deg,
+        rgba(156, 72, 255, 0.08) 9deg,
+        rgba(0, 0, 0, 0.24) 9deg,
+        rgba(0, 0, 0, 0.02) 20deg
+      );
+  }
+
+  70% {
+    background:
+      repeating-conic-gradient(
+        from 245deg,
+        rgba(255, 0, 92, 0.22) 0deg,
+        rgba(255, 0, 92, 0.08) 9deg,
+        rgba(0, 0, 0, 0.26) 9deg,
+        rgba(0, 0, 0, 0.03) 20deg
+      );
+  }
+
+  100% {
+    background:
+      repeating-conic-gradient(
+        from 245deg,
+        rgba(25, 200, 255, 0.18) 0deg,
+        rgba(25, 200, 255, 0.06) 9deg,
+        rgba(0, 0, 0, 0.22) 9deg,
+        rgba(0, 0, 0, 0.02) 20deg
+      );
+  }
+}
+
+/* Path line always red, no color change */
+.flight-line,
+.canvas.low-bg .flight-line,
+.canvas.mid-bg .flight-line,
+.canvas.hot-bg .flight-line {
+  stroke: #ff004f !important;
+  filter: drop-shadow(0 0 9px rgba(255, 0, 79, 0.95)) !important;
+}
+
+/* Waiting stable background */
+.canvas.waiting-mode .rays {
+  animation: none !important;
+  background:
+    repeating-conic-gradient(
+      from 245deg,
+      rgba(255, 255, 255, 0.05) 0deg,
+      rgba(255, 255, 255, 0.05) 9deg,
+      rgba(0, 0, 0, 0) 9deg,
+      rgba(0, 0, 0, 0) 20deg
+    ) !important;
+}
+
+/* Crash par background stop */
 .canvas.crashed-mode .rays {
   animation: none !important;
 }
