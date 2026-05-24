@@ -1,6 +1,7 @@
 import React from "react";
 import Aviator from "./games/aviator/Aviator.jsx";
 import DragonTiger from "./games/dragon-tiger/DragonTiger.jsx";
+import LuckyRace from "./games/car-roulet/LuckyRace.jsx";
 
 function GameLobby() {
   return (
@@ -14,7 +15,6 @@ function GameLobby() {
       }}
     >
       <h1>Casino Games</h1>
-
       <p>Select game:</p>
 
       <div
@@ -22,7 +22,7 @@ function GameLobby() {
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
           gap: 16,
-          maxWidth: 700,
+          maxWidth: 900,
           marginTop: 20,
         }}
       >
@@ -58,6 +58,21 @@ function GameLobby() {
           </h2>
           <p style={{ color: "#aab5ba" }}>Card comparison game</p>
         </a>
+
+        <a
+          href="/lucky-race"
+          style={{
+            textDecoration: "none",
+            color: "white",
+            background: "#181a1b",
+            border: "1px solid #5b43ff",
+            borderRadius: 16,
+            padding: 20,
+          }}
+        >
+          <h2 style={{ margin: 0, color: "#ffe600" }}>Lucky Race</h2>
+          <p style={{ color: "#aab5ba" }}>Car roulette game</p>
+        </a>
       </div>
     </div>
   );
@@ -76,6 +91,10 @@ export default function App() {
 
   if (path === "/dragon-tiger") {
     return <DragonTiger />;
+  }
+
+  if (path === "/lucky-race") {
+    return <LuckyRace />;
   }
 
   return <GameLobby />;

@@ -1,0 +1,294 @@
+import asyncio
+import random
+import uuid
+from typing import Dict, List
+
+from fastapi import WebSocket
+
+from .engine import calculate_payout, get_cars, pick_winner
+
+
+WAITING_SECONDS = 12
+SPINNING_SECONDS = 5
+RESULT_SECONDS = 5
+
+clients: List[WebSocket] = []
+
+state = {
+    "phase": "waiting",  # betting / spinning / result
+    "round_id": "",
+    "countdown": WAITING_SECONDS,
+    "waiting_seconds": WAITING_SECONDS,
+    "cars": get_cars(),
+    "winner": None,
+    "track_index": 0,
+    "history": [],
+}
+
+bets_by_round: Dict[str, List[dict]] = {}
+
+
+def make_round_id():
+    return "LR-" + str(uuid.uuid4())[:8].upper()
+
+
+def random_user():
+    names = [
+        "player_OW2",
+        "Raj Banna Saa",
+        "Manish Halpati",
+        "player_9RgLK",
+        "player_EHvX1",
+        "Raj Deepakvala",
+    ]
+    return random.choice(names)
+
+
+def public_players():
+    return [
+        {
+            "name": "Raj Banna Saa",
+            "balance": 42569,
+            "avatar": "🧔",
+            "tag": "WINNER",
+        },
+        {
+            "name": "player_OW2",
+            "balance": 10042,
+            "avatar": "👑",
+            "tag": "LUCKY",
+        },
+        {
+            "name": "Raj Deepakvala",
+            "balance": 6073,
+            "avatar": "👨",
+            "tag": "",
+        },
+        {
+            "name": "Manish Halpati",
+            "balance": 8087,
+            "avatar": "🧑",
+            "tag": "",
+        },
+        {
+            "name": "player_9RgLK",
+            "balance": 39319,
+            "avatar": "👨‍🦱",
+            "tag": "",
+        },
+        {
+            "name": "player_EHvX1",
+            "balance": 3710,
+            "avatar": "👩",
+            "tag": "",
+        },
+    ]
+
+
+def board_totals():
+    round_id = state["round_id"]
+    totals = {}
+
+    for car in state["cars"]:
+        totals[car["key"]] = {
+            "my": 0.0,
+            "total": random.choice([14640, 20380, 42100, 41270, 54880, 45860, 50220, 65710]),
+        }
+
+    for bet in bets_by_round.get(round_id, []):
+        key = bet["bet_type"]
+        if key in totals:
+            totals[key]["my"] += float(bet["amount"])
+
+    return totals
+
+
+def public_data():
+    round_id = state["round_id"]
+
+    return {
+        "phase": state["phase"],
+        "round_id": state["round_id"],
+        "countdown": state["countdown"],
+        "waiting_seconds": state["waiting_seconds"],
+        "cars": state["cars"],
+        "winner": state["winner"],
+        "track_index": state["track_index"],
+        "history": state["history"][-20:],
+        "my_bets": bets_by_round.get(round_id, []),
+        "board_totals": board_totals(),
+        "players": public_players(),
+    }
+
+
+async def broadcast(msg_type="state"):
+    payload = {
+        "type": msg_type,
+        "data": public_data(),
+    }
+
+    dead = []
+
+    for ws in clients:
+        try:
+            await ws.send_json(payload)
+        except Exception:
+            dead.append(ws)
+
+    for ws in dead:
+        if ws in clients:
+            clients.remove(ws)
+
+
+async def connect(websocket: WebSocket):
+    await websocket.accept()
+    clients.append(websocket)
+
+    await websocket.send_json({
+        "type": "state",
+        "data": public_data(),
+    })
+
+
+def disconnect(websocket: WebSocket):
+    if websocket in clients:
+        clients.remove(websocket)
+
+
+async def place_bet(req):
+    if state["phase"] != "betting":
+        return {
+            "success": False,
+            "message": "Betting closed",
+        }
+
+    if req.amount <= 0:
+        return {
+            "success": False,
+            "message": "Invalid amount",
+        }
+
+    valid_keys = [car["key"] for car in state["cars"]]
+
+    if req.bet_type not in valid_keys:
+        return {
+            "success": False,
+            "message": "Invalid car option",
+        }
+
+    round_id = state["round_id"]
+    round_bets = bets_by_round.setdefault(round_id, [])
+
+    bet = {
+        "id": "lr-bet-" + str(uuid.uuid4()),
+        "user_id": req.user_id,
+        "round_id": round_id,
+        "bet_type": req.bet_type,
+        "amount": float(req.amount),
+        "status": "active",
+        "payout": 0.0,
+    }
+
+    round_bets.append(bet)
+
+    await broadcast("bet")
+
+    return {
+        "success": True,
+        "message": "Bet placed",
+    }
+
+
+async def clear_bets(req):
+    if state["phase"] != "betting":
+        return {
+            "success": False,
+            "message": "Cannot clear now",
+        }
+
+    round_id = state["round_id"]
+    old_bets = bets_by_round.get(round_id, [])
+
+    bets_by_round[round_id] = [
+        bet for bet in old_bets if bet["user_id"] != req.user_id
+    ]
+
+    await broadcast("clear")
+
+    return {
+        "success": True,
+        "message": "Bets cleared",
+    }
+
+
+def settle_bets(winner):
+    round_id = state["round_id"]
+
+    for bet in bets_by_round.get(round_id, []):
+        payout = calculate_payout(bet["bet_type"], bet["amount"], winner)
+
+        if payout > 0:
+            bet["status"] = "won"
+            bet["payout"] = payout
+        else:
+            bet["status"] = "lost"
+            bet["payout"] = 0.0
+
+
+async def game_loop():
+    while True:
+        round_id = make_round_id()
+
+        state["phase"] = "betting"
+        state["round_id"] = round_id
+        state["countdown"] = WAITING_SECONDS
+        state["waiting_seconds"] = WAITING_SECONDS
+        state["winner"] = None
+        state["track_index"] = 0
+
+        bets_by_round[round_id] = []
+
+        await broadcast("new_round")
+
+        for sec in range(WAITING_SECONDS, 0, -1):
+            state["phase"] = "betting"
+            state["countdown"] = sec
+
+            await broadcast("countdown")
+            await asyncio.sleep(1)
+
+        winner = pick_winner()
+        winner_index = [car["key"] for car in state["cars"]].index(winner["key"])
+
+        state["phase"] = "spinning"
+        state["countdown"] = 0
+        state["winner"] = None
+
+        await broadcast("spinning")
+
+        total_steps = 42 + winner_index
+
+        for step in range(total_steps):
+            state["track_index"] = step % len(state["cars"])
+            await broadcast("spin_tick")
+
+            delay = 0.07 + min(step / total_steps, 1) * 0.08
+            await asyncio.sleep(delay)
+
+        state["track_index"] = winner_index
+        state["winner"] = winner
+        state["phase"] = "result"
+
+        settle_bets(winner)
+
+        state["history"].append({
+            "round_id": round_id,
+            "winner": winner,
+        })
+
+        if len(state["history"]) > 50:
+            state["history"] = state["history"][-50:]
+
+        await broadcast("result")
+
+        await asyncio.sleep(RESULT_SECONDS)

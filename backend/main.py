@@ -11,6 +11,10 @@ from games.dragon_tiger.router import router as dragon_tiger_router
 from games.dragon_tiger.router import dragon_tiger_socket
 from games.dragon_tiger.manager import game_loop as dragon_tiger_game_loop
 
+from games.car_roulet.router import router as lucky_race_router
+from games.car_roulet.router import lucky_race_socket
+from games.car_roulet.manager import game_loop as lucky_race_game_loop
+
 
 app = FastAPI(title="Casino Multi Game Server")
 
@@ -40,12 +44,19 @@ def home():
                 "ws": "/ws/dragon-tiger",
                 "page": "/dragon-tiger",
             },
+            {
+                "name": "Lucky Race",
+                "api": "/api/games/lucky-race/state",
+                "ws": "/ws/lucky-race",
+                "page": "/lucky-race",
+            },
         ],
     }
 
 
 app.include_router(aviator_router)
 app.include_router(dragon_tiger_router)
+app.include_router(lucky_race_router)
 
 
 @app.websocket("/ws/aviator")
@@ -63,7 +74,13 @@ async def websocket_dragon_tiger(websocket: WebSocket):
     await dragon_tiger_socket(websocket)
 
 
+@app.websocket("/ws/lucky-race")
+async def websocket_lucky_race(websocket: WebSocket):
+    await lucky_race_socket(websocket)
+
+
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(aviator_game_loop())
     asyncio.create_task(dragon_tiger_game_loop())
+    asyncio.create_task(lucky_race_game_loop())
