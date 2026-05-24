@@ -1,0 +1,515 @@
+* {
+  box-sizing: border-box;
+}
+
+.dt-app {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(50, 28, 10, 0.8), transparent 35%),
+    linear-gradient(180deg, #151008, #080705);
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+.dt-top {
+  height: 54px;
+  background: linear-gradient(180deg, #23170b, #0f0b06);
+  border-bottom: 1px solid #7b531d;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+}
+
+.dt-back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #3b240d;
+  color: #ffd277;
+  text-decoration: none;
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.dt-title {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 5px #000;
+}
+
+.dt-title span {
+  color: #f23833;
+}
+
+.dt-title b {
+  color: #36a9ff;
+  margin-left: 8px;
+}
+
+.dt-wallet {
+  text-align: right;
+  font-size: 12px;
+  color: #d8b269;
+}
+
+.dt-wallet b {
+  display: block;
+  color: #31ff68;
+  font-size: 15px;
+}
+
+.dt-stats {
+  height: 55px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: #17110a;
+  border-bottom: 1px solid #4a2f12;
+}
+
+.dt-stats div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 14px;
+  border-right: 1px solid #33220e;
+}
+
+.dt-stats span {
+  color: #b79250;
+  font-size: 12px;
+}
+
+.dt-stats b {
+  color: #fff2c6;
+  font-size: 14px;
+  margin-top: 3px;
+}
+
+.dt-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 14px;
+  padding: 14px;
+}
+
+.dt-board {
+  min-height: calc(100vh - 140px);
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 194, 83, 0.13), transparent 30%),
+    linear-gradient(180deg, #21140b, #0c0906);
+  border: 1px solid #8d621f;
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.65);
+}
+
+.dt-timer {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.dt-timer-label {
+  color: #ffdf8b;
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.dt-progress {
+  width: 260px;
+  height: 8px;
+  background: #050403;
+  border-radius: 100px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.dt-progress div {
+  height: 100%;
+  background: linear-gradient(90deg, #ffca57, #ff352f);
+  border-radius: 100px;
+  transition: width 1s linear;
+}
+
+.dt-roadmap {
+  height: 110px;
+  background: #f9f6e9;
+  border-radius: 8px;
+  border: 4px solid #3a240c;
+  display: grid;
+  grid-template-columns: repeat(22, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 2px;
+  padding: 5px;
+  margin-bottom: 16px;
+}
+
+.dt-roadmap span {
+  border: 1px solid #d8ceb8;
+  background: #fffdf3;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.dt-roadmap .dragon {
+  border-color: #ff2e35;
+  color: #ff2e35;
+}
+
+.dt-roadmap .tiger {
+  border-color: #257cff;
+  color: #257cff;
+}
+
+.dt-roadmap .tie {
+  border-color: #10a841;
+  color: #10a841;
+}
+
+.dt-card-stage {
+  min-height: 250px;
+  display: grid;
+  grid-template-columns: 1fr 140px 130px 140px 1fr;
+  align-items: center;
+  gap: 18px;
+  margin: 10px 0 18px;
+}
+
+.dt-side-title {
+  font-size: 42px;
+  font-weight: 900;
+  text-align: center;
+  text-shadow: 0 3px 4px #000;
+}
+
+.dt-side-title.dragon {
+  color: #ff3338;
+}
+
+.dt-side-title.tiger {
+  color: #2e9aff;
+}
+
+.dt-card {
+  width: 130px;
+  height: 180px;
+  border-radius: 13px;
+  background: #fff;
+  color: #111;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.55);
+  position: relative;
+  display: grid;
+  place-items: center;
+  animation: cardPop 0.35s ease-out;
+}
+
+@keyframes cardPop {
+  from {
+    transform: rotateY(90deg) scale(0.85);
+    opacity: 0;
+  }
+
+  to {
+    transform: rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.dt-card.red {
+  color: #e11d2e;
+}
+
+.card-rank {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.card-rank.bottom {
+  left: auto;
+  top: auto;
+  right: 10px;
+  bottom: 8px;
+  transform: rotate(180deg);
+}
+
+.card-suit {
+  font-size: 72px;
+  font-weight: 900;
+}
+
+.card-back {
+  width: 100%;
+  height: 100%;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #6c0000,
+      #6c0000 8px,
+      #a00000 8px,
+      #a00000 16px
+    );
+  color: #ffd56b;
+  font-size: 44px;
+  border: 6px solid #f1d98b;
+}
+
+.dt-result-circle {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #31ff68, #0d6d29 70%);
+  border: 5px solid #fce28d;
+  box-shadow:
+    0 0 25px rgba(49, 255, 104, 0.55),
+    inset 0 0 20px rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 10px;
+}
+
+.dt-betting-grid {
+  display: grid;
+  grid-template-columns: 1fr 180px 1fr;
+  gap: 12px;
+}
+
+.dt-bet-main,
+.dt-tie-stack button {
+  border: 2px solid rgba(255, 220, 120, 0.7);
+  color: #fff;
+  border-radius: 14px;
+  min-height: 76px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.dt-bet-main span {
+  display: block;
+  font-size: 30px;
+}
+
+.dt-bet-main b,
+.dt-tie-stack b {
+  display: block;
+  color: #ffe7a4;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.dt-bet-main.dragon {
+  background: linear-gradient(180deg, #af161d, #5c080c);
+}
+
+.dt-bet-main.tiger {
+  background: linear-gradient(180deg, #145ec8, #08295a);
+}
+
+.dt-tie-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.dt-tie-stack button {
+  background: linear-gradient(180deg, #15823b, #073b1a);
+}
+
+.dt-side-bets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 12px;
+}
+
+.dt-side-bets div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.dt-side-bets button {
+  background: #27180b;
+  color: #ffdf8b;
+  border: 1px solid #8b6221;
+  border-radius: 10px;
+  min-height: 45px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.dt-side-bets span {
+  display: block;
+  color: #fff;
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+.dt-suits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.dt-suits div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.dt-suits button {
+  background: #fffdf3;
+  color: #111;
+  border: 0;
+  border-radius: 10px;
+  min-height: 42px;
+  font-size: 26px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.dt-suits button.red {
+  color: #e11d2e;
+}
+
+.dt-controls {
+  background: #161008;
+  border: 1px solid #7f561c;
+  border-radius: 18px;
+  padding: 14px;
+  min-height: calc(100vh - 140px);
+}
+
+.dt-chip-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.dt-chip-row button {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 4px solid #f5d886;
+  background:
+    radial-gradient(circle, #fff 0 25%, #f7c53d 26% 55%, #7d3d00 56%);
+  color: #111;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.dt-chip-row button.active {
+  transform: translateY(-5px);
+  box-shadow: 0 0 18px rgba(255, 215, 95, 0.9);
+}
+
+.dt-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.dt-action-row button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #8b5c1a, #3b2309);
+  color: #ffe4a3;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.dt-my-bets {
+  margin-top: 16px;
+}
+
+.dt-my-bets h3 {
+  margin: 0 0 8px;
+  color: #ffdf8b;
+}
+
+.dt-my-bets p {
+  color: #9e8b68;
+}
+
+.dt-my-bet {
+  display: grid;
+  grid-template-columns: 1.4fr 0.7fr 0.8fr 0.7fr;
+  gap: 6px;
+  padding: 8px;
+  background: #21160a;
+  border-bottom: 1px solid #3c2810;
+  font-size: 12px;
+}
+
+.dt-my-bet.won {
+  color: #31ff68;
+}
+
+.dt-my-bet.lost {
+  color: #ff5269;
+}
+
+.dt-toast {
+  position: fixed;
+  right: 16px;
+  bottom: 14px;
+  background: #17110a;
+  border: 1px solid #7f561c;
+  border-radius: 14px;
+  color: #ffe4a3;
+  padding: 9px 14px;
+  font-size: 13px;
+  box-shadow: 0 5px 20px #000;
+}
+
+@media (max-width: 1000px) {
+  .dt-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dt-card-stage {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .dt-side-title {
+    font-size: 28px;
+  }
+
+  .dt-betting-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dt-side-bets,
+  .dt-suits {
+    grid-template-columns: 1fr;
+  }
+
+  .dt-stats {
+    grid-template-columns: 1fr 1fr;
+    height: auto;
+  }
+
+  .dt-stats div {
+    min-height: 48px;
+  }
+}
