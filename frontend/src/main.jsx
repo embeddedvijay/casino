@@ -17,31 +17,186 @@ function historyClass(v) {
 
 function Plane({ phase, multiplier }) {
   const isBetting = phase === "betting";
+  const isFlying = phase === "flying";
   const crashed = phase === "crashed";
 
-  const left = isBetting ? 8 : Math.min(7 + multiplier * 9, 66);
-  const bottom = isBetting ? 8 : Math.min(8 + multiplier * 4, 58);
+  const safeMultiplier = Number(multiplier || 1);
+
+  let planeLeft = 8;
+  let planeBottom = 8;
+
+  if (isFlying) {
+    planeLeft = Math.min(8 + safeMultiplier * 9.5, 74);
+    planeBottom = Math.min(8 + safeMultiplier * 4.2, 60);
+  }
+
+  if (crashed) {
+    // Flew away / crash ke time plane box ke bahar chala jayega
+    planeLeft = 110;
+    planeBottom = 72;
+  }
+
+  const planeX = (planeLeft / 100) * 1000;
+  const planeY = 420 - (planeBottom / 100) * 420;
+
+  const lineStartX = 35;
+  const lineStartY = 360;
+
+  const lineEndX = Math.max(90, planeX + 35);
+  const lineEndY = Math.min(365, planeY + 45);
+
+  const controlOneX = lineStartX + (lineEndX - lineStartX) * 0.38;
+  const controlOneY = lineStartY;
+
+  const controlTwoX = lineStartX + (lineEndX - lineStartX) * 0.72;
+  const controlTwoY = lineEndY + 25;
 
   return (
-    <div
-      className={`plane-wrap ${isBetting ? "idle" : ""}`}
-      style={{ left: `${left}%`, bottom: `${bottom}%` }}
-    >
-      <svg className={crashed ? "plane crash" : "plane"} viewBox="0 0 260 95">
-        <path className="plane-body" d="M7 64h122l65-35c9-5 18-8 27-9l27-2 5 9-35 21-42 25H7z" />
-        <path className="wing wing-top" d="M125 64 96 24h27l48 30-18 10z" />
-        <path className="wing wing-left" d="M57 64 29 39h23l53 25z" />
-        <path className="wing wing-bottom" d="M190 73 155 93h-38l48-28z" />
-        <circle cx="216" cy="32" r="5" />
-      </svg>
-      <div className="trail" />
-    </div>
+    <>
+      {isFlying && (
+        <svg
+          className="flight-line-svg"
+          viewBox="0 0 1000 420"
+          preserveAspectRatio="none"
+        >
+          <path
+            className="flight-line"
+            d={`M ${lineStartX} ${lineStartY} C ${controlOneX} ${controlOneY}, ${controlTwoX} ${controlTwoY}, ${lineEndX} ${lineEndY}`}
+          />
+        </svg>
+      )}
+
+      <div
+        className={`plane-wrap ${isBetting ? "idle return-home" : ""} ${
+          isFlying ? "flying" : ""
+        } ${crashed ? "flew-away" : ""}`}
+        style={{
+          left: `${planeLeft}%`,
+          bottom: `${planeBottom}%`,
+        }}
+      >
+        <svg
+          className={`aviator-plane ${crashed ? "crash" : ""}`}
+          viewBox="0 0 520 210"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <linearGradient id="planeRedMain" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#ff004f" />
+              <stop offset="45%" stopColor="#f00048" />
+              <stop offset="100%" stopColor="#af002f" />
+            </linearGradient>
+
+            <filter id="planeGlowRed" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="3.5" result="blur" />
+              <feColorMatrix
+                in="blur"
+                type="matrix"
+                values="1 0 0 0 1
+                        0 0 0 0 0
+                        0 0 0 0 0.25
+                        0 0 0 0.9 0"
+                result="glow"
+              />
+              <feMerge>
+                <feMergeNode in="glow" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <g filter="url(#planeGlowRed)">
+            <path
+              className="flame flame-a"
+              d="M52 136 C18 134 6 126 0 118 C31 121 58 122 91 124 Z"
+            />
+            <path
+              className="flame flame-b"
+              d="M70 154 C30 156 9 148 0 139 C39 137 69 137 112 139 Z"
+            />
+
+            <path
+              className="plane-body"
+              d="M35 126
+                 C98 123 151 118 205 109
+                 L327 73
+                 C357 65 388 61 421 63
+                 L485 65
+                 C507 66 520 75 519 86
+                 C518 97 505 104 481 108
+                 L354 130
+                 C286 142 224 149 155 150
+                 L60 151
+                 C39 151 28 145 27 137
+                 C26 131 29 127 35 126 Z"
+            />
+
+            <path
+              className="plane-nose"
+              d="M421 63 L490 65 C510 67 520 75 519 86 C517 96 506 102 482 107 L431 116 C454 94 453 76 421 63 Z"
+            />
+
+            <path
+              className="wing-main wing-animate"
+              d="M214 113
+                 L151 35
+                 C146 29 149 23 157 24
+                 L214 30
+                 C224 31 230 36 236 44
+                 L308 101 Z"
+            />
+
+            <path
+              className="wing-dark wing-animate"
+              d="M215 114 L169 52 L216 59 L282 103 Z"
+            />
+
+            <path
+              className="tail-top tail-animate"
+              d="M94 124
+                 L45 62
+                 C40 55 43 50 52 51
+                 L89 54
+                 C98 55 104 60 109 67
+                 L164 119 Z"
+            />
+
+            <path
+              className="tail-bottom tail-animate"
+              d="M237 146
+                 L174 199
+                 C167 205 159 203 155 196
+                 L143 173
+                 L202 145 Z"
+            />
+
+            <path className="rear-fin" d="M72 147 L34 181 L99 150 Z" />
+
+            <path className="window-line" d="M278 87 C316 78 358 74 405 76" />
+            <circle className="window" cx="363" cy="82" r="8" />
+            <circle className="window" cx="396" cy="79" r="7" />
+
+            <path className="cut-line" d="M126 128 C198 125 265 111 333 87" />
+            <path className="bottom-line" d="M59 145 C142 147 249 141 355 125" />
+
+            <text className="plane-x" x="330" y="114" transform="rotate(-8 330 114)">
+              X
+            </text>
+          </g>
+        </svg>
+
+        <div className="plane-smoke smoke-one" />
+        <div className="plane-smoke smoke-two" />
+        <div className="plane-smoke smoke-three" />
+      </div>
+    </>
   );
 }
 
 function BetPanel({ seat, phase, multiplier, roundId, myBets, onNotice }) {
   const [amount, setAmount] = useState(50);
   const [auto, setAuto] = useState(false);
+
   const activeBet = myBets.find((b) => b.seat === seat && b.round_id === roundId);
   const canBet = phase === "betting" && !activeBet;
   const canCashout = phase === "flying" && activeBet?.status === "active";
@@ -51,8 +206,13 @@ function BetPanel({ seat, phase, multiplier, roundId, myBets, onNotice }) {
       const res = await fetch(`${API}/api/bet`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: "demo_user", seat, amount: Number(amount) }),
+        body: JSON.stringify({
+          user_id: "demo_user",
+          seat,
+          amount: Number(amount),
+        }),
       });
+
       const data = await res.json();
       onNotice(data.message || "Done");
     } catch {
@@ -65,8 +225,12 @@ function BetPanel({ seat, phase, multiplier, roundId, myBets, onNotice }) {
       const res = await fetch(`${API}/api/cashout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: "demo_user", seat }),
+        body: JSON.stringify({
+          user_id: "demo_user",
+          seat,
+        }),
       });
+
       const data = await res.json();
       onNotice(data.message || "Done");
     } catch {
@@ -76,74 +240,209 @@ function BetPanel({ seat, phase, multiplier, roundId, myBets, onNotice }) {
 
   return (
     <div className="bet-panel">
-      <div className="tab-switch"><button className={!auto ? "active" : ""} onClick={() => setAuto(false)}>Bet</button><button className={auto ? "active" : ""} onClick={() => setAuto(true)}>Auto</button></div>
+      <div className="tab-switch">
+        <button className={!auto ? "active" : ""} onClick={() => setAuto(false)}>
+          Bet
+        </button>
+        <button className={auto ? "active" : ""} onClick={() => setAuto(true)}>
+          Auto
+        </button>
+      </div>
+
       <div className="bet-body">
         <div className="amount-box">
-          <div className="amount-input"><button onClick={() => setAmount(Math.max(10, amount - 10))}>−</button><input value={amount} onChange={(e) => setAmount(e.target.value)} /><button onClick={() => setAmount(Number(amount || 0) + 10)}>+</button></div>
-          <div className="quick"><button onClick={() => setAmount(10)}>10</button><button onClick={() => setAmount(20)}>20</button><button onClick={() => setAmount(50)}>50</button><button onClick={() => setAmount(100)}>100</button></div>
+          <div className="amount-input">
+            <button onClick={() => setAmount(Math.max(10, Number(amount || 0) - 10))}>
+              −
+            </button>
+            <input value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <button onClick={() => setAmount(Number(amount || 0) + 10)}>+</button>
+          </div>
+
+          <div className="quick">
+            <button onClick={() => setAmount(10)}>10</button>
+            <button onClick={() => setAmount(20)}>20</button>
+            <button onClick={() => setAmount(50)}>50</button>
+            <button onClick={() => setAmount(100)}>100</button>
+          </div>
         </div>
+
         {canCashout ? (
-          <button className="bet-btn orange" onClick={cashout}>CASH OUT<br /><span>{formatMoney(Number(activeBet.amount) * multiplier)} INR</span></button>
+          <button className="bet-btn orange" onClick={cashout}>
+            CASH OUT
+            <br />
+            <span>{formatMoney(Number(activeBet.amount) * multiplier)} INR</span>
+          </button>
         ) : (
-          <button className="bet-btn" disabled={!canBet} onClick={placeBet}>BET<br /><span>{formatMoney(amount)} INR</span></button>
+          <button className="bet-btn" disabled={!canBet} onClick={placeBet}>
+            BET
+            <br />
+            <span>{formatMoney(amount)} INR</span>
+          </button>
         )}
       </div>
-      {activeBet && <div className={`bet-status ${activeBet.status}`}>{activeBet.status === "cashed_out" ? `Cashed out ${activeBet.cashout_multiplier}x = ${formatMoney(activeBet.cashout_amount)}` : activeBet.status === "lost" ? "Lost" : "Bet accepted"}</div>}
+
+      {activeBet && (
+        <div className={`bet-status ${activeBet.status}`}>
+          {activeBet.status === "cashed_out"
+            ? `Cashed out ${activeBet.cashout_multiplier}x = ${formatMoney(
+                activeBet.cashout_amount
+              )}`
+            : activeBet.status === "lost"
+            ? "Lost"
+            : "Bet accepted"}
+        </div>
+      )}
     </div>
   );
 }
 
 function App() {
   const [data, setData] = useState({
-  phase: "waiting",
-  multiplier: 1,
-  countdown: 0,
-  waiting_seconds: 30,
-  round_id: "",
-  history: [],
-  all_bets: [],
-  my_bets: [],
-});
+    phase: "waiting",
+    multiplier: 1,
+    countdown: 0,
+    waiting_seconds: 30,
+    round_id: "",
+    history: [],
+    all_bets: [],
+    my_bets: [],
+  });
+
   const [notice, setNotice] = useState("");
   const wsRef = useRef(null);
 
   useEffect(() => {
     let retry;
+
     function connect() {
       const ws = new WebSocket(WS);
-      ws.onopen = () => setNotice("Live connected");
+
+      ws.onopen = () => {
+        setNotice("Live connected");
+      };
+
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        if (msg.data) setData(msg.data);
+
+        if (msg.data) {
+          setData(msg.data);
+        }
       };
-      ws.onclose = () => { setNotice("Reconnecting..."); retry = setTimeout(connect, 1500); };
-      ws.onerror = () => setNotice("Socket error");
+
+      ws.onclose = () => {
+        setNotice("Reconnecting...");
+        retry = setTimeout(connect, 1500);
+      };
+
+      ws.onerror = () => {
+        setNotice("Socket error");
+      };
+
       wsRef.current = ws;
     }
+
     connect();
-    return () => { clearTimeout(retry); wsRef.current?.close(); };
+
+    return () => {
+      clearTimeout(retry);
+      wsRef.current?.close();
+    };
   }, []);
 
-  const totalBet = useMemo(() => data.all_bets.reduce((sum, b) => sum + Number(b.bet || 0), 0), [data.all_bets]);
-  const shownMultiplier = data.phase === "betting" ? "WAITING" : `${Number(data.multiplier || 1).toFixed(2)}x`;
+  const totalBet = useMemo(() => {
+    return data.all_bets.reduce((sum, b) => sum + Number(b.bet || 0), 0);
+  }, [data.all_bets]);
+
+  const shownMultiplier =
+    data.phase === "betting" ? "WAITING" : `${Number(data.multiplier || 1).toFixed(2)}x`;
 
   return (
     <div className="app">
-      <header className="top"><div className="brand"><span className="home">⌂</span><span>GOLD</span><b>365</b></div><div className="profile"><span>🌐</span><span className="balance">0.00</span><span>☰</span><span className="user">DEM123</span></div></header>
-      <div className="sub"><div className="aviator">AviatorX</div><button>How To Play ?</button><div className="spacer" /><span className="wifi">≋</span><span>C</span><span className="green">0.00</span><span>_</span></div>
+      <header className="top">
+        <div className="brand">
+          <span className="home">⌂</span>
+          <span>GOLD</span>
+          <b>365</b>
+        </div>
+
+        <div className="profile">
+          <span>🌐</span>
+          <span className="balance">0.00</span>
+          <span>☰</span>
+          <span className="user">DEM123</span>
+        </div>
+      </header>
+
+      <div className="sub">
+        <div className="aviator">AviatorX</div>
+        <button>How To Play ?</button>
+        <div className="spacer" />
+        <span className="wifi">≋</span>
+        <span>C</span>
+        <span className="green">0.00</span>
+        <span>_</span>
+      </div>
 
       <main className="layout">
         <aside className="sidebar">
-          <div className="tabs"><button className="active">All Bets</button><button>My Bet</button></div>
-          <h3>ALL BETS</h3><div className="count">{data.all_bets.length}</div>
-          <div className="table-head"><span>User</span><span>Bet(INR)</span><span>X</span><span>Cash out(INR)</span></div>
-          <div className="bet-list">{data.all_bets.map((b) => <div className="row" key={b.id}><span className="u"><i>{b.avatar}</i>{b.user}</span><span>{formatMoney(b.bet)}</span><span></span><b>{formatMoney(b.cashout)}</b></div>)}</div>
-          <div className="fair">This game is <u>Provably fair</u></div>
+          <div className="tabs">
+            <button className="active">All Bets</button>
+            <button>My Bet</button>
+          </div>
+
+          <h3>ALL BETS</h3>
+          <div className="count">{data.all_bets.length}</div>
+
+          <div className="table-head">
+            <span>User</span>
+            <span>Bet(INR)</span>
+            <span>X</span>
+            <span>Cash out(INR)</span>
+          </div>
+
+          <div className="bet-list">
+            {data.all_bets.map((b) => (
+              <div className="row" key={b.id}>
+                <span className="u">
+                  <i>{b.avatar}</i>
+                  {b.user}
+                </span>
+                <span>{formatMoney(b.bet)}</span>
+                <span></span>
+                <b>{formatMoney(b.cashout)}</b>
+              </div>
+            ))}
+          </div>
+
+          <div className="fair">
+            This game is <u>Provably fair</u>
+          </div>
         </aside>
 
         <section className="game-area">
-          <div className="history">{data.history.map((v, i) => <span key={i} className={historyClass(v)}>{Number(v).toFixed(2)}x</span>)}<span className="drop">⌄</span></div>
-          <div className={`canvas ${data.phase === "betting" ? "waiting-mode" : ""}`}>
+          <div className="history">
+            {data.history.map((v, i) => (
+              <span key={i} className={historyClass(v)}>
+                {Number(v).toFixed(2)}x
+              </span>
+            ))}
+            <span className="drop">⌄</span>
+          </div>
+
+            <div
+              className={`canvas ${
+                data.phase === "betting" ? "waiting-mode" : ""
+              } ${data.phase === "flying" ? "flying-mode" : ""} ${
+                data.phase === "crashed" ? "crashed-mode" : ""
+              } ${
+                Number(data.multiplier || 1) >= 10
+                  ? "hot-bg"
+                  : Number(data.multiplier || 1) >= 2
+                  ? "mid-bg"
+                  : "low-bg"
+              }`}
+            >
             <div className="rays" />
 
             <div className="axis y">
@@ -158,49 +457,77 @@ function App() {
               ))}
             </div>
 
-            {data.phase === "betting" ? (
-              <div className="waiting-box">
-                <div className="loader-plane">
-                  <svg viewBox="0 0 80 80">
-                    <path d="M40 4 53 37 76 44 54 52 41 76 31 51 5 43 30 36z" />
-                  </svg>
-                  <span className="loader-ring ring-1" />
-                  <span className="loader-ring ring-2" />
-                  <span className="loader-ring ring-3" />
+              {data.phase === "betting" ? (
+                <div className="waiting-box">
+                  <div className="loader-plane">
+                    <svg viewBox="0 0 80 80">
+                      <path d="M40 4 53 37 76 44 54 52 41 76 31 51 5 43 30 36z" />
+                    </svg>
+                    <span className="loader-ring ring-1" />
+                    <span className="loader-ring ring-2" />
+                    <span className="loader-ring ring-3" />
+                  </div>
+
+                  <div className="waiting-text">WAITING FOR NEXT ROUND</div>
+
+                  <div className="timer-bar">
+                    <div
+                      className="timer-fill"
+                      style={{
+                        width: `${Math.max(
+                          0,
+                          Math.min(
+                            100,
+                            (Number(data.countdown || 0) /
+                              Number(data.waiting_seconds || 30)) *
+                              100
+                          )
+                        )}%`,
+                      }}
+                    />
+                  </div>
                 </div>
-
-                <div className="waiting-text">WAITING FOR NEXT ROUND</div>
-
-                <div className="timer-bar">
-                  <div
-                    className="timer-fill"
-                    style={{
-                      width: `${Math.max(0,Math.min(100, (Number(data.countdown || 0) / Number(data.waiting_seconds || 30)) * 100 ))}%`,
-                    }}
-                  />
+              ): data.phase === "crashed" ? (
+              <div className="crash-center">
+                <div className="flew-text">FLEW AWAY!</div>
+                <div className="flew-multiplier">
+                  {Number(data.crashed_at || data.multiplier || 1).toFixed(2)}x
                 </div>
-
-                <div className="timer-number">{data.countdown}s</div>
               </div>
             ) : (
-              <div className={`multiplier ${data.phase === "crashed" ? "crashed" : ""}`}>
-                {shownMultiplier}
-              </div>
-            )}
-
-            {data.phase === "crashed" && (
-              <div className="countdown red">
-                Flew away at {Number(data.crashed_at).toFixed(2)}x
-              </div>
+              <div className="multiplier">{shownMultiplier}</div>
             )}
 
             <Plane phase={data.phase} multiplier={Number(data.multiplier || 1)} />
           </div>
+
           <div className="round">Round Id: {data.round_id}</div>
-          <div className="panels"><BetPanel seat={1} phase={data.phase} multiplier={Number(data.multiplier || 1)} roundId={data.round_id} myBets={data.my_bets || []} onNotice={setNotice}/><BetPanel seat={2} phase={data.phase} multiplier={Number(data.multiplier || 1)} roundId={data.round_id} myBets={data.my_bets || []} onNotice={setNotice}/></div>
+
+          <div className="panels">
+            <BetPanel
+              seat={1}
+              phase={data.phase}
+              multiplier={Number(data.multiplier || 1)}
+              roundId={data.round_id}
+              myBets={data.my_bets || []}
+              onNotice={setNotice}
+            />
+
+            <BetPanel
+              seat={2}
+              phase={data.phase}
+              multiplier={Number(data.multiplier || 1)}
+              roundId={data.round_id}
+              myBets={data.my_bets || []}
+              onNotice={setNotice}
+            />
+          </div>
         </section>
       </main>
-      <div className="toast">{notice} <span>Total bets: {formatMoney(totalBet)}</span></div>
+
+      <div className="toast">
+        {notice} <span>Total bets: {formatMoney(totalBet)}</span>
+      </div>
     </div>
   );
 }
