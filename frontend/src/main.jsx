@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./style.css";
 
-const API = "http://localhost:8000";
-const WS = "ws://localhost:8000/ws/game";
+const API = "http://localhost:8005";
+const WS = "ws://localhost:8005/ws/game";
 
 function formatMoney(n) {
   return Number(n || 0).toFixed(2);
@@ -16,16 +16,22 @@ function historyClass(v) {
 }
 
 function Plane({ phase, multiplier }) {
-  const left = Math.min(7 + multiplier * 9, 66);
-  const bottom = Math.min(8 + multiplier * 4, 58);
+  const isBetting = phase === "betting";
   const crashed = phase === "crashed";
+
+  const left = isBetting ? 8 : Math.min(7 + multiplier * 9, 66);
+  const bottom = isBetting ? 8 : Math.min(8 + multiplier * 4, 58);
+
   return (
-    <div className="plane-wrap" style={{ left: `${left}%`, bottom: `${bottom}%` }}>
+    <div
+      className={`plane-wrap ${isBetting ? "idle" : ""}`}
+      style={{ left: `${left}%`, bottom: `${bottom}%` }}
+    >
       <svg className={crashed ? "plane crash" : "plane"} viewBox="0 0 260 95">
-        <path d="M7 64h122l65-35c9-5 18-8 27-9l27-2 5 9-35 21-42 25H7z" />
-        <path d="M125 64 96 24h27l48 30-18 10z" />
-        <path d="M57 64 29 39h23l53 25z" />
-        <path d="M190 73 155 93h-38l48-28z" />
+        <path className="plane-body" d="M7 64h122l65-35c9-5 18-8 27-9l27-2 5 9-35 21-42 25H7z" />
+        <path className="wing wing-top" d="M125 64 96 24h27l48 30-18 10z" />
+        <path className="wing wing-left" d="M57 64 29 39h23l53 25z" />
+        <path className="wing wing-bottom" d="M190 73 155 93h-38l48-28z" />
         <circle cx="216" cy="32" r="5" />
       </svg>
       <div className="trail" />
@@ -88,7 +94,16 @@ function BetPanel({ seat, phase, multiplier, roundId, myBets, onNotice }) {
 }
 
 function App() {
-  const [data, setData] = useState({ phase: "waiting", multiplier: 1, countdown: 0, round_id: "", history: [], all_bets: [], my_bets: [] });
+  const [data, setData] = useState({
+  phase: "waiting",
+  multiplier: 1,
+  countdown: 0,
+  waiting_seconds: 30,
+  round_id: "",
+  history: [],
+  all_bets: [],
+  my_bets: [],
+});
   const [notice, setNotice] = useState("");
   const wsRef = useRef(null);
 
@@ -128,13 +143,57 @@ function App() {
 
         <section className="game-area">
           <div className="history">{data.history.map((v, i) => <span key={i} className={historyClass(v)}>{Number(v).toFixed(2)}x</span>)}<span className="drop">⌄</span></div>
-          <div className="canvas">
+          <div className={`canvas ${data.phase === "betting" ? "waiting-mode" : ""}`}>
             <div className="rays" />
-            <div className="axis y">{[1,2,3,4,5].map(i => <span key={i}>•</span>)}</div>
-            <div className="axis x">{[1,2,3,4,5,6,7,8,9,10].map(i => <span key={i}>•</span>)}</div>
-            <div className={`multiplier ${data.phase === "crashed" ? "crashed" : ""}`}>{shownMultiplier}</div>
-            {data.phase === "betting" && <div className="countdown">Next round in {data.countdown}s</div>}
-            {data.phase === "crashed" && <div className="countdown red">Flew away at {Number(data.crashed_at).toFixed(2)}x</div>}
+
+            <div className="axis y">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <span key={i}>•</span>
+              ))}
+            </div>
+
+            <div className="axis x">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+                <span key={i}>•</span>
+              ))}
+            </div>
+
+            {data.phase === "betting" ? (
+              <div className="waiting-box">
+                <div className="loader-plane">
+                  <svg viewBox="0 0 80 80">
+                    <path d="M40 4 53 37 76 44 54 52 41 76 31 51 5 43 30 36z" />
+                  </svg>
+                  <span className="loader-ring ring-1" />
+                  <span className="loader-ring ring-2" />
+                  <span className="loader-ring ring-3" />
+                </div>
+
+                <div className="waiting-text">WAITING FOR NEXT ROUND</div>
+
+                <div className="timer-bar">
+                  <div
+                    className="timer-fill"
+                    style={{
+                      width: `${Math.max(0,Math.min(100, (Number(data.countdown || 0) / Number(data.waiting_seconds || 30)) * 100 ))}%`,
+                    }}
+                  />
+                </div>
+
+                <div className="timer-number">{data.countdown}s</div>
+              </div>
+            ) : (
+              <div className={`multiplier ${data.phase === "crashed" ? "crashed" : ""}`}>
+                {shownMultiplier}
+              </div>
+            )}
+
+            {data.phase === "crashed" && (
+              <div className="countdown red">
+                Flew away at {Number(data.crashed_at).toFixed(2)}x
+              </div>
+            )}
+
             <Plane phase={data.phase} multiplier={Number(data.multiplier || 1)} />
           </div>
           <div className="round">Round Id: {data.round_id}</div>
