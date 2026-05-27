@@ -7,8 +7,8 @@ const fileName = (name) =>
   name === "land_rover" ? "land_rover.png" : `${name}.png`;
 
 const logos = [
-  ["bmw", 22, 8],
-  ["ferrari", 28, 8],
+  ["bmw", 22, 7],
+  ["ferrari", 28, 7],
   ["jaguar", 34, 7],
   ["lamborghini", 40, 7],
   ["land_rover", 46, 7],
@@ -17,8 +17,8 @@ const logos = [
   ["mercedes", 60, 7],
   ["porsche", 66, 7],
 
-  ["bmw", 72, 8],
-  ["ferrari", 78, 8],
+  ["bmw", 72, 7],
+  ["ferrari", 78, 7],
   ["jaguar", 84, 9],
   ["lamborghini", 90, 15],
   ["land_rover", 94, 27],
