@@ -117,3 +117,5 @@ casino/
             ├── Chips.jsx
             ├── HistoryBar.jsx
             └── Loader.jsx
+
+uvicorn main:app --reload --host 0.0.0.0 --port 8000

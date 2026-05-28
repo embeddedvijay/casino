@@ -51,6 +51,17 @@ const logos = [
   ["land_rover", 16, 9],
 ];
 
+const betCars = [
+  "bmw",
+  "ferrari",
+  "jaguar",
+  "lamborghini",
+  "land_rover",
+  "maserati",
+  "mercedes",
+  "porsche",
+];
+
 export default function LuckyRace() {
   return (
     <div className="cr-page">
@@ -65,6 +76,19 @@ export default function LuckyRace() {
               <img src={`${LOGO}${fileName(logo)}`} alt={logo} />
             </div>
           ))}
+
+          <div className="cr-betting-grid">
+            {betCars.map((car) => (
+              <button className="cr-bet-cell" key={car}>
+                <img
+                  className="cr-bet-logo"
+                  src={`${LOGO}${fileName(car)}`}
+                  alt={car}
+                />
+                <span className="cr-bet-amount">₹0</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
