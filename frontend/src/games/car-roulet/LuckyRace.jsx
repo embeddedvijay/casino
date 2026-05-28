@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./luckyRace.css";
 
 const LOGO = "/new-logos/";
@@ -63,6 +63,18 @@ const betCars = [
 ];
 
 export default function LuckyRace() {
+  const [bets, setBets] = useState(
+    Object.fromEntries(betCars.map((car) => [car, "0"]))
+  );
+
+  const handleBetChange = (car, value) => {
+    const onlyNumber = value.replace(/\D/g, "");
+    setBets((prev) => ({
+      ...prev,
+      [car]: onlyNumber || "0",
+    }));
+  };
+
   return (
     <div className="cr-page">
       <div className="cr-table">
@@ -79,14 +91,24 @@ export default function LuckyRace() {
 
           <div className="cr-betting-grid">
             {betCars.map((car) => (
-              <button className="cr-bet-cell" key={car}>
+              <div className="cr-bet-cell" key={car}>
                 <img
                   className="cr-bet-logo"
                   src={`${LOGO}${fileName(car)}`}
                   alt={car}
                 />
-                <span className="cr-bet-amount">₹0</span>
-              </button>
+
+                <div className="cr-bet-input-box">
+                  <span className="cr-rupee">₹</span>
+                  <input
+                    className="cr-bet-input"
+                    type="text"
+                    inputMode="numeric"
+                    value={bets[car]}
+                    onChange={(e) => handleBetChange(car, e.target.value)}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </div>

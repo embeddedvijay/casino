@@ -65,7 +65,7 @@ body,
 /* FINAL CENTER BETTING AREA */
 .cr-betting-grid {
   position: absolute;
-  left: 78px;
+  left: 68px;
   right: 78px;
   top: 90px;
   bottom: 58px;
@@ -130,12 +130,12 @@ body,
   }
 
   .cr-betting-grid {
-    left: 6.8vw;
-    right: 6.8vw;
-    top: 7.9vw;
-    bottom: 5.1vw;
-    border-width: 0.35vw;
-    border-radius: 3vw;
+    left: 8.8vw;
+    right: 8.8vw;
+    top: 6vw;
+    bottom: 6.1vw;
+    border-width: 0.15vw;
+    border-radius: 1vw;
   }
 
   .cr-bet-cell {
