@@ -62,7 +62,18 @@ const betCars = [
   "porsche",
 ];
 
+const coins = [10, 50, 100, 200, 500, 1000];
+
 export default function LuckyRace() {
+  const [selectedCoin, setSelectedCoin] = useState(10);
+  const [lastResults, setLastResults] = useState([
+    "bmw",
+    "ferrari",
+    "jaguar",
+    "land_rover",
+    "maserati",
+  ]);
+
   const [bets, setBets] = useState(
     Object.fromEntries(betCars.map((car) => [car, "0"]))
   );
@@ -75,8 +86,33 @@ export default function LuckyRace() {
     }));
   };
 
+  const placeCoinBet = (car) => {
+    setBets((prev) => ({
+      ...prev,
+      [car]: String(Number(prev[car] || 0) + selectedCoin),
+    }));
+  };
+
   return (
     <div className="cr-page">
+      <div className="cr-casino-bg">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+
+      <div className="cr-result-panel">
+        <span className="cr-result-title">LAST RESULT</span>
+
+        <div className="cr-result-logos">
+          {lastResults.map((car, index) => (
+            <div className="cr-result-logo" key={`${car}-${index}`}>
+              <img src={`${LOGO}${fileName(car)}`} alt={car} />
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="cr-table">
         <div className="cr-outer">
           {logos.map(([logo, x, y], i) => (
@@ -91,27 +127,44 @@ export default function LuckyRace() {
 
           <div className="cr-betting-grid">
             {betCars.map((car) => (
-              <div className="cr-bet-cell" key={car}>
+              <div
+                className="cr-bet-cell"
+                key={car}
+                onClick={() => placeCoinBet(car)}
+              >
+                <span className="cr-rupee">₹</span>
+
+                <div className="cr-input-strip">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={bets[car]}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => handleBetChange(car, e.target.value)}
+                  />
+                </div>
+
                 <img
                   className="cr-bet-logo"
                   src={`${LOGO}${fileName(car)}`}
                   alt={car}
                 />
-
-                <div className="cr-bet-input-box">
-                  <span className="cr-rupee">₹</span>
-                  <input
-                    className="cr-bet-input"
-                    type="text"
-                    inputMode="numeric"
-                    value={bets[car]}
-                    onChange={(e) => handleBetChange(car, e.target.value)}
-                  />
-                </div>
               </div>
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="cr-coin-panel">
+        {coins.map((coin) => (
+          <button
+            key={coin}
+            className={`cr-coin ${selectedCoin === coin ? "active" : ""}`}
+            onClick={() => setSelectedCoin(coin)}
+          >
+            ₹{coin}
+          </button>
+        ))}
       </div>
     </div>
   );
