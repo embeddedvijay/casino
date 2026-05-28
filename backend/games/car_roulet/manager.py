@@ -8,7 +8,7 @@ from fastapi import WebSocket
 from .engine import calculate_payout, get_cars, get_track_sequence, pick_winner
 
 
-WAITING_SECONDS = 12
+WAITING_SECONDS = 10
 RESULT_SECONDS = 5
 
 clients: List[WebSocket] = []
