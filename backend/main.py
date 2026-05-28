@@ -15,6 +15,9 @@ from games.car_roulet.router import router as lucky_race_router
 from games.car_roulet.router import lucky_race_socket
 from games.car_roulet.manager import game_loop as lucky_race_game_loop
 
+from games.matka.router import router as matka_router
+from games.matka.router import matka_socket
+from games.matka.manager import game_loop as matka_game_loop
 
 app = FastAPI(title="Casino Multi Game Server")
 
@@ -57,7 +60,7 @@ def home():
 app.include_router(aviator_router)
 app.include_router(dragon_tiger_router)
 app.include_router(lucky_race_router)
-
+app.include_router(matka_router)
 
 @app.websocket("/ws/aviator")
 async def websocket_aviator(websocket: WebSocket):
@@ -78,9 +81,13 @@ async def websocket_dragon_tiger(websocket: WebSocket):
 async def websocket_lucky_race(websocket: WebSocket):
     await lucky_race_socket(websocket)
 
+@app.websocket("/ws/matka")
+async def websocket_matka(websocket: WebSocket):
+    await matka_socket(websocket)
 
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(aviator_game_loop())
     asyncio.create_task(dragon_tiger_game_loop())
     asyncio.create_task(lucky_race_game_loop())
+    asyncio.create_task(matka_game_loop())

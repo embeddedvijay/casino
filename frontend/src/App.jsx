@@ -2,6 +2,7 @@ import React from "react";
 import Aviator from "./games/aviator/Aviator.jsx";
 import DragonTiger from "./games/dragon-tiger/DragonTiger.jsx";
 import LuckyRace from "./games/car-roulet/LuckyRace.jsx";
+import MatkaDashboard from "./games/matka/MatkaDashboard.jsx";
 
 function GameLobby() {
   return (
@@ -73,6 +74,21 @@ function GameLobby() {
           <h2 style={{ margin: 0, color: "#ffe600" }}>Lucky Race</h2>
           <p style={{ color: "#aab5ba" }}>Car roulette game</p>
         </a>
+
+        <a
+          href="/matka"
+          style={{
+            textDecoration: "none",
+            color: "white",
+            background: "#181a1b",
+            border: "1px solid #8b5cf6",
+            borderRadius: 16,
+            padding: 20,
+          }}
+        >
+          <h2 style={{ margin: 0, color: "#a855f7" }}>Matka</h2>
+          <p style={{ color: "#aab5ba" }}>Matka booking dashboard</p>
+        </a>
       </div>
     </div>
   );
@@ -95,6 +111,10 @@ export default function App() {
 
   if (path === "/lucky-race") {
     return <LuckyRace />;
+  }
+
+  if (path === "/matka") {
+    return <MatkaDashboard />;
   }
 
   return <GameLobby />;
