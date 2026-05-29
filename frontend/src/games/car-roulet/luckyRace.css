@@ -17,17 +17,11 @@ body,
   position: relative;
   font-family: Arial, sans-serif;
   color: #fff;
-  background:
-    radial-gradient(circle at 78% 32%, rgba(255, 0, 221, 0.2), transparent 30%),
-    radial-gradient(circle at 35% 82%, rgba(255, 238, 0, 0.11), transparent 26%),
-    repeating-linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.025) 0,
-      rgba(255, 255, 255, 0.025) 2px,
-      transparent 2px,
-      transparent 18px
-    ),
-    linear-gradient(135deg, #05070b, #101314 48%, #060606);
+  background-image: url("/assets/car-roulette-bg.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
 }
 
 .cr-page::before {
