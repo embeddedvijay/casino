@@ -138,6 +138,12 @@ export default function LuckyRace() {
     );
   }, [localBets]);
 
+  const totalWin = useMemo(() => {
+    return myBets.reduce((sum, bet) => sum + Number(bet.payout || 0), 0);
+  }, [myBets]);
+
+  const winnerName = winner?.name || winner?.key || "";
+
   const placeCoinBet = async (car) => {
     if (phase !== "betting") return;
 
@@ -342,6 +348,39 @@ export default function LuckyRace() {
           </button>
         </div>
       </main>
+
+      {phase === "result" && winner && (
+        <div className="cr-win-effect">
+          <div className="cr-win-backdrop" />
+          <div className="cr-firework cr-firework-one" />
+          <div className="cr-firework cr-firework-two" />
+          <div className="cr-firework cr-firework-three" />
+
+          <div className="cr-win-rays" />
+
+          <div className="cr-winner-mega-card">
+            <div className="cr-win-crown">♛</div>
+            <h1>WINNER</h1>
+
+            <div className="cr-win-logo-ring">
+              <img src={`${LOGO}${fileName(winner.key)}`} alt={winner.key} />
+            </div>
+
+            <h2>{winnerName}</h2>
+            <p>YOU WIN</p>
+
+            <strong>₹ {totalWin.toFixed(2)}</strong>
+          </div>
+
+          <div className="cr-collect-glow">COLLECT WINNINGS</div>
+
+          {Array.from({ length: 32 }).map((_, index) => (
+            <span key={index} className={`cr-falling-coin coin-${index}`}>
+              ₹
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="cr-live-box">
         <span>{connection}</span>
