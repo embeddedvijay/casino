@@ -4,14 +4,7 @@ import "./dragonTiger.css";
 const API = "http://localhost:8005";
 const WS = "ws://localhost:8005/ws/dragon-tiger";
 const USER_ID = "demo_user";
-
-const CHIP_VALUES = [1, 2, 5, 10, 50];
-
-const ROAD_VALUES = [
-  "D", "D", "D", "Tie", "Tie", "D", "T", "T", "D", "T", "T", "D", "D", "T", "T", "D", "Tie", "D", "T",
-  "T", "D", "T", "D", "D", "T", "D", "T", "T", "Tie", "D", "D", "D", "D", "D", "D", "Tie", "D", "D",
-  "T", "T", "D", "T", "T", "D", "D", "D", "D", "D", "T", "T", "D", "T", "D", "D", "D", "T", "D",
-];
+const CHIP_VALUES = [1, 5, 10, 50, 100];
 
 function formatMoney(n) {
   return Number(n || 0).toFixed(2);
@@ -29,22 +22,205 @@ function playChipSound() {
   audio.play().catch(() => {});
 }
 
-function Card({ card, side, hidden }) {
+function TopBar({ soundOn, setSoundOn }) {
+  return (
+    <header className="dt-topbar">
+      <a href="/aviator" className="dt-back">‹</a>
+      <div className="dt-logo">
+        <span>DRAGON</span>
+        <em>VS</em>
+        <b>TIGER</b>
+      </div>
+      <button className="dt-sound" onClick={() => setSoundOn(!soundOn)}>
+        {soundOn ? "🔊" : "🔇"}
+      </button>
+    </header>
+  );
+}
+
+function StatusPill({ phaseText, countdown, progress, roundId }) {
+  return (
+    <div className="dt-status-card">
+      <span>{phaseText}</span>
+      <strong>{String(countdown || 0).padStart(2, "0")}</strong>
+      <small>ROUND: {roundId || "-"}</small>
+      <div className="dt-progress"><i style={{ width: `${progress}%` }} /></div>
+    </div>
+  );
+}
+
+function PlayingCard({ card, side, hidden }) {
   if (!card || hidden) {
     return (
-      <div className={`dt-card ${side} back`}>
-        <div className="card-corner top">✦</div>
-        <span>{side === "dragon" ? "龍" : "虎"}</span>
-        <div className="card-corner bottom">✦</div>
+      <div className={`dt-playing-card ${side} back`}>
+        <i>{side === "dragon" ? "龍" : "虎"}</i>
       </div>
     );
   }
 
   return (
-    <div className={`dt-card ${side} ${card.color}`}>
-      <small>{card.rank}</small>
+    <div className={`dt-playing-card ${side} ${card.color}`}>
+      <span>{card.rank}</span>
       <b>{card.symbol}</b>
-      <small>{card.rank}</small>
+      <span>{card.rank}</span>
+    </div>
+  );
+}
+
+function HeroPanel({ data, winner, totalWin, progress, phaseText }) {
+  return (
+    <section className="dt-hero-panel">
+      <div className="dt-creature dt-dragon-img" />
+      <div className="dt-creature dt-tiger-img" />
+      <div className="dt-hero-vignette" />
+
+      <h1 className="dt-dragon-title">DRAGON</h1>
+      <h1 className="dt-tiger-title">TIGER</h1>
+
+      <div className="dt-card-stage">
+        <PlayingCard side="dragon" card={data.dragon_card} hidden={data.phase === "betting"} />
+        <div className="dt-vs-orb">VS</div>
+        <PlayingCard side="tiger" card={data.tiger_card} hidden={data.phase === "betting"} />
+      </div>
+
+      <StatusPill
+        phaseText={phaseText}
+        countdown={data.countdown}
+        progress={progress}
+        roundId={data.round_id}
+      />
+
+      {winner && (
+        <div className="dt-mini-winner">
+          <span>WINNER</span>
+          <b>{winner}</b>
+          <em>YOU WON ₹ {formatMoney(totalWin)}</em>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function BetBox({ type, title, amount, rate, onClick, small = false }) {
+  return (
+    <button className={`dt-bet-box ${type} ${small ? "small" : ""}`} onClick={onClick}>
+      <div className="dt-bet-shine" />
+      <div className="dt-bet-corner lt" />
+      <div className="dt-bet-corner rt" />
+      <div className="dt-bet-corner lb" />
+      <div className="dt-bet-corner rb" />
+      <span>{title}</span>
+      {rate && <small>{rate}</small>}
+      <b>₹ {formatMoney(amount)}</b>
+    </button>
+  );
+}
+
+function MainBets({ betMap, placeBet }) {
+  return (
+    <section className="dt-main-bets-new">
+      <BetBox type="dragon" title="DRAGON" amount={betMap.DRAGON} onClick={() => placeBet("DRAGON")} />
+
+      <div className="dt-tie-stack">
+        <BetBox type="tie" title="TIE" rate="8 : 1" amount={betMap.TIE} small onClick={() => placeBet("TIE")} />
+        <BetBox type="tie" title="SUITED TIE" rate="50 : 1" amount={betMap.SUITED_TIE} small onClick={() => placeBet("SUITED_TIE")} />
+      </div>
+
+      <BetBox type="tiger" title="TIGER" amount={betMap.TIGER} onClick={() => placeBet("TIGER")} />
+    </section>
+  );
+}
+
+function SideBets({ betMap, placeBet }) {
+  const opts = ["BIG", "SMALL", "ODD", "EVEN"];
+
+  return (
+    <section className="dt-side-bets-new">
+      {opts.map((x) => (
+        <BetBox
+          key={`D-${x}`}
+          type="sub-dragon"
+          title={x}
+          rate="1 : 1"
+          amount={betMap[`DRAGON_${x}`]}
+          small
+          onClick={() => placeBet(`DRAGON_${x}`)}
+        />
+      ))}
+
+      {opts.map((x) => (
+        <BetBox
+          key={`T-${x}`}
+          type="sub-tiger"
+          title={x}
+          rate="1 : 1"
+          amount={betMap[`TIGER_${x}`]}
+          small
+          onClick={() => placeBet(`TIGER_${x}`)}
+        />
+      ))}
+    </section>
+  );
+}
+
+function SuitBets({ placeBet }) {
+  const suits = ["♥", "♣", "♦", "♠", "♥", "♣", "♦", "♠"];
+
+  return (
+    <section className="dt-suit-bets-new">
+      {suits.map((s, i) => (
+        <button
+          key={i}
+          onClick={() =>
+            placeBet(
+              `${i < 4 ? "DRAGON" : "TIGER"}_${
+                s === "♥" ? "HEART" : s === "♣" ? "CLUB" : s === "♦" ? "DIAMOND" : "SPADE"
+              }`
+            )
+          }
+        >
+          {s}
+        </button>
+      ))}
+    </section>
+  );
+}
+
+function ChipPanel({ chip, setChip, clearBets }) {
+  return (
+    <footer className="dt-chip-panel-new">
+      <button className="dt-action-btn" onClick={clearBets}>CLEAR</button>
+      <div className="dt-chip-list">
+        {CHIP_VALUES.map((value) => (
+          <button
+            key={value}
+            className={chip === value ? "active" : ""}
+            onClick={() => setChip(value)}
+          >
+            {value}
+          </button>
+        ))}
+      </div>
+      <button className="dt-action-btn confirm">BET</button>
+    </footer>
+  );
+}
+
+function WinEffect({ winner, totalWin }) {
+  if (!winner) return null;
+
+  return (
+    <div className="dt-win-effect-new">
+      <div className="dt-win-burst" />
+      <div className="dt-win-card-new">
+        <div className="dt-crown">♛</div>
+        <h1>WINNER</h1>
+        <h2>{winner}</h2>
+        <p>YOU WON ₹ {formatMoney(totalWin)}</p>
+      </div>
+      {Array.from({ length: 28 }).map((_, i) => (
+        <span key={i} className={`dt-coin-fall coin-${i}`}>●</span>
+      ))}
     </div>
   );
 }
@@ -59,11 +235,10 @@ export default function DragonTiger() {
     tiger_card: null,
     result: null,
     my_bets: [],
-    history: [],
   });
 
   const [chip, setChip] = useState(1);
-  const [notice, setNotice] = useState("Connecting");
+  const [notice, setNotice] = useState("");
   const [soundOn, setSoundOn] = useState(true);
   const lastRoundRef = useRef("");
 
@@ -74,7 +249,7 @@ export default function DragonTiger() {
     function connect() {
       ws = new WebSocket(WS);
 
-      ws.onopen = () => setNotice("Live connected");
+      ws.onopen = () => setNotice("Live Connected");
 
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
@@ -96,7 +271,7 @@ export default function DragonTiger() {
         retry = setTimeout(connect, 1500);
       };
 
-      ws.onerror = () => setNotice("Socket error");
+      ws.onerror = () => setNotice("Socket Error");
     }
 
     connect();
@@ -115,11 +290,6 @@ export default function DragonTiger() {
     return map;
   }, [data.my_bets]);
 
-  const totalBet = useMemo(
-    () => (data.my_bets || []).reduce((s, b) => s + Number(b.amount || 0), 0),
-    [data.my_bets]
-  );
-
   const totalWin = useMemo(
     () => (data.my_bets || []).reduce((s, b) => s + Number(b.payout || 0), 0),
     [data.my_bets]
@@ -127,7 +297,7 @@ export default function DragonTiger() {
 
   async function placeBet(type) {
     if (data.phase !== "betting") {
-      setNotice("Betting closed");
+      setNotice("Betting Closed");
       return;
     }
 
@@ -137,17 +307,13 @@ export default function DragonTiger() {
       const res = await fetch(`${API}/api/games/dragon-tiger/bet`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: USER_ID,
-          bet_type: type,
-          amount: Number(chip),
-        }),
+        body: JSON.stringify({ user_id: USER_ID, bet_type: type, amount: Number(chip) }),
       });
 
       const json = await res.json();
-      setNotice(json.message || "Bet placed");
+      setNotice(json.message || "Bet Placed");
     } catch {
-      setNotice("Backend not connected");
+      setNotice("Backend Not Connected");
     }
   }
 
@@ -162,22 +328,19 @@ export default function DragonTiger() {
       const json = await res.json();
       setNotice(json.message || "Cleared");
     } catch {
-      setNotice("Backend not connected");
+      setNotice("Backend Not Connected");
     }
   }
 
   const winner = data.result?.suited_tie ? "SUITED TIE" : data.result?.winner || "";
   const progress = Math.max(
     0,
-    Math.min(
-      100,
-      (Number(data.countdown || 0) / Number(data.waiting_seconds || 15)) * 100
-    )
+    Math.min(100, (Number(data.countdown || 0) / Number(data.waiting_seconds || 15)) * 100)
   );
 
-  const phaseLabel =
+  const phaseText =
     data.phase === "betting"
-      ? "BETS ARE CLOSING"
+      ? "BETTING"
       : data.phase === "dealing"
       ? "DEALING"
       : data.phase === "result"
@@ -185,223 +348,31 @@ export default function DragonTiger() {
       : "WAITING";
 
   return (
-    <div className="dt-page">
-      <div className="dt-bg" />
+    <div className={`dt-page-new ${winner ? "result-on" : ""}`}>
+      <div className="dt-bg-new" />
 
-      <header className="dt-topbar">
-        <button className="dt-back" onClick={() => window.history.back()}>
-          ‹
-        </button>
+      <TopBar soundOn={soundOn} setSoundOn={setSoundOn} />
 
-        <div className="dt-logo">
-          <i>♕</i>
-          <span>DRAGON</span>
-          <b>TIGER</b>
-          <i>♕</i>
-        </div>
+      <main className="dt-shell-new">
+        <section className="dt-board-new">
+          <HeroPanel
+            data={data}
+            winner={winner}
+            totalWin={totalWin}
+            progress={progress}
+            phaseText={phaseText}
+          />
 
-        <div className="dt-credit">
-          <small>Credits</small>
-          <strong>0.00</strong>
-        </div>
-      </header>
-
-      <section className="dt-info-row">
-        <div>
-          <span>Total Bet</span>
-          <b>{formatMoney(totalBet)}</b>
-        </div>
-        <div>
-          <span>Last Win</span>
-          <b>{formatMoney(totalWin)}</b>
-        </div>
-        <div>
-          <span>Round</span>
-          <b>{data.round_id || "-"}</b>
-        </div>
-        <div>
-          <span>Status</span>
-          <b>{data.phase || "waiting"}</b>
-        </div>
-      </section>
-
-      <main className="dt-layout">
-        <section className="dt-table">
-          <div className="dt-status">
-            <b>{phaseLabel}</b>
-            <span>
-              <i style={{ width: `${progress}%` }} />
-            </span>
-          </div>
-
-          <div className="dt-roadmap">
-            {(data.history?.length ? data.history : ROAD_VALUES).slice(-57).map((item, index) => {
-              const value = typeof item === "string" ? item : item?.winner || item?.result || "D";
-              const label = value === "DRAGON" ? "D" : value === "TIGER" ? "T" : value;
-              const cls = label === "D" ? "dragon" : label === "T" ? "tiger" : "tie";
-
-              return (
-                <span className={cls} key={index}>
-                  {label}
-                </span>
-              );
-            })}
-          </div>
-
-          <section className="dt-battle-area">
-            <div className="dt-battle-overlay" />
-
-            <h2 className="dt-side-title dragon">DRAGON</h2>
-            <h2 className="dt-side-title tiger">TIGER</h2>
-
-            <div className="dt-card-zone">
-              <Card
-                side="dragon"
-                card={data.dragon_card}
-                hidden={data.phase === "betting"}
-              />
-
-              <button className="dt-tie-orb" onClick={() => placeBet("TIE")}>
-                TIE
-              </button>
-
-              <Card
-                side="tiger"
-                card={data.tiger_card}
-                hidden={data.phase === "betting"}
-              />
-            </div>
-          </section>
-
-          <section className="dt-main-bets">
-            <button className="dragon" onClick={() => placeBet("DRAGON")}>
-              <span>DRAGON</span>
-              <b>{formatMoney(betMap.DRAGON)}</b>
-            </button>
-
-            <div className="dt-tie-bets">
-              <button onClick={() => placeBet("TIE")}>
-                <span>TIE</span>
-                <b>{formatMoney(betMap.TIE)}</b>
-              </button>
-
-              <button onClick={() => placeBet("SUITED_TIE")}>
-                <span>SUITED TIE</span>
-                <b>{formatMoney(betMap.SUITED_TIE)}</b>
-              </button>
-            </div>
-
-            <button className="tiger" onClick={() => placeBet("TIGER")}>
-              <span>TIGER</span>
-              <b>{formatMoney(betMap.TIGER)}</b>
-            </button>
-          </section>
-
-          <section className="dt-sub-bets">
-            {["BIG", "SMALL", "ODD", "EVEN"].map((x) => (
-              <button key={`D-${x}`} onClick={() => placeBet(`DRAGON_${x}`)}>
-                <span>{x}</span>
-                <b>{formatMoney(betMap[`DRAGON_${x}`])}</b>
-              </button>
-            ))}
-
-            {["BIG", "SMALL", "ODD", "EVEN"].map((x) => (
-              <button key={`T-${x}`} onClick={() => placeBet(`TIGER_${x}`)}>
-                <span>{x}</span>
-                <b>{formatMoney(betMap[`TIGER_${x}`])}</b>
-              </button>
-            ))}
-          </section>
-
-          <section className="dt-suits">
-            {["♥", "♣", "♦", "♠", "♥", "♣", "♦", "♠"].map((s, i) => (
-              <button
-                key={i}
-                onClick={() =>
-                  placeBet(
-                    `${i < 4 ? "DRAGON" : "TIGER"}_${
-                      s === "♥"
-                        ? "HEART"
-                        : s === "♣"
-                        ? "CLUB"
-                        : s === "♦"
-                        ? "DIAMOND"
-                        : "SPADE"
-                    }`
-                  )
-                }
-              >
-                {s}
-              </button>
-            ))}
-          </section>
+          <MainBets betMap={betMap} placeBet={placeBet} />
+          <SideBets betMap={betMap} placeBet={placeBet} />
+          <SuitBets placeBet={placeBet} />
         </section>
-
-        <aside className="dt-control-panel">
-          <div className="dt-chip-row">
-            {CHIP_VALUES.map((value) => (
-              <button
-                key={value}
-                className={chip === value ? "active" : ""}
-                onClick={() => setChip(value)}
-              >
-                {value}
-              </button>
-            ))}
-          </div>
-
-          <div className="dt-action-grid">
-            <button>Deal</button>
-            <button>Repeat</button>
-            <button onClick={clearBets}>Clear</button>
-            <button>Autoplay</button>
-          </div>
-
-          <div className="dt-my-title">My Bets</div>
-
-          <div className="dt-my-bets">
-            {(data.my_bets || []).length === 0 ? (
-              <p>No bets yet</p>
-            ) : (
-              data.my_bets.map((bet, i) => (
-                <div key={bet.id || i}>
-                  <span>{bet.bet_type}</span>
-                  <b>₹ {formatMoney(bet.amount)}</b>
-                </div>
-              ))
-            )}
-          </div>
-
-          <button className="dt-sound" onClick={() => setSoundOn(!soundOn)}>
-            {soundOn ? "🔊 Sound On" : "🔇 Sound Off"}
-          </button>
-        </aside>
       </main>
 
-      {winner && (
-        <div className="dt-win-effect">
-          <div className="dt-fireworks" />
+      <ChipPanel chip={chip} setChip={setChip} clearBets={clearBets} />
+      <WinEffect winner={winner} totalWin={totalWin} />
 
-          <div className="dt-winner-card">
-            <div className="dt-crown">♛</div>
-            <h1>WINNER</h1>
-            <h2>{winner}</h2>
-            <p>YOU WIN</p>
-            <strong>₹ {formatMoney(totalWin)}</strong>
-          </div>
-
-          {Array.from({ length: 26 }).map((_, i) => (
-            <span key={i} className={`dt-coin-fall coin-${i}`}>
-              ●
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="dt-toast">
-        <span />
-        {notice}
-      </div>
+      <div className="dt-toast-new">{notice}</div>
     </div>
   );
 }

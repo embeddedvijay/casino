@@ -1,957 +1,410 @@
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; width: 100%; min-height: 100%; }
+body { background: #050205; font-family: Arial, Helvetica, sans-serif; }
 
-html,
-body,
-#root {
-  margin: 0;
-  width: 100%;
-  min-height: 100%;
-}
-
-body {
-  background: #020203;
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-.dt-page {
+.dt-page-new {
   position: relative;
   width: 100vw;
   min-height: 100vh;
   overflow: hidden;
-  color: #fff;
-  background: #030204;
+  color: white;
+  background: #050205;
 }
 
-.dt-bg {
+.dt-bg-new {
   position: fixed;
   inset: 0;
   z-index: 0;
   background:
-    linear-gradient(
-      90deg,
-      rgba(75, 5, 0, 0.32),
-      rgba(0, 0, 0, 0.35) 43%,
-      rgba(0, 8, 85, 0.32)
-    ),
-    url("/assets/dragon-tiger-bg.png") center center / cover no-repeat;
-  filter: contrast(1.12) saturate(1.18);
-  transform: scale(1.02);
-}
-
-.dt-page::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 50% 42%, transparent 0 38%, rgba(0, 0, 0, 0.35) 67%, rgba(0, 0, 0, 0.82) 100%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.54));
-}
-
-.dt-topbar,
-.dt-info-row,
-.dt-layout,
-.dt-toast,
-.dt-win-effect {
-  position: relative;
-  z-index: 5;
+    radial-gradient(circle at 50% 44%, rgba(0,0,0,.15), rgba(0,0,0,.82) 72%),
+    linear-gradient(90deg, rgba(110,0,0,.38), rgba(0,0,0,.25) 46%, rgba(0,24,120,.4)),
+    url("/assets/dragon-tiger-bg.png") center / cover no-repeat;
+  filter: saturate(1.18) contrast(1.08);
 }
 
 .dt-topbar {
-  height: 70px;
+  position: relative;
+  z-index: 5;
+  height: 64px;
   display: grid;
-  grid-template-columns: 86px 1fr 110px;
+  grid-template-columns: 74px 1fr 74px;
   align-items: center;
   padding: 8px 14px;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.78), rgba(20, 8, 0, 0.56), rgba(0, 0, 0, 0.78));
-  border-bottom: 1px solid rgba(238, 175, 28, 0.62);
-  box-shadow: 0 0 20px rgba(255, 170, 0, 0.16);
+  background: linear-gradient(90deg, rgba(0,0,0,.78), rgba(43,18,0,.58), rgba(0,0,0,.78));
+  border-bottom: 1px solid rgba(255,206,60,.62);
+  box-shadow: 0 0 24px rgba(255,170,0,.16);
 }
 
-.dt-back {
+.dt-back, .dt-sound {
   width: 48px;
-  height: 48px;
+  height: 46px;
+  display: grid;
+  place-items: center;
   border-radius: 12px;
-  border: 1px solid #d89b15;
-  background:
-    radial-gradient(circle at 50% 35%, rgba(255, 208, 69, 0.18), rgba(0, 0, 0, 0.75));
-  color: #ffd338;
-  font-size: 46px;
-  line-height: 1;
+  border: 1px solid #f2bd32;
+  color: #ffd75f;
+  background: rgba(0,0,0,.58);
+  text-decoration: none;
+  font-size: 36px;
   cursor: pointer;
-  box-shadow:
-    0 0 18px rgba(255, 190, 35, 0.32),
-    inset 0 0 14px rgba(255, 217, 80, 0.1);
 }
+
+.dt-sound { justify-self: end; font-size: 22px; }
 
 .dt-logo {
   text-align: center;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 36px;
+  font-family: Georgia, serif;
+  font-size: 34px;
   font-weight: 900;
-  letter-spacing: 7px;
-  text-shadow: 0 0 20px rgba(255, 180, 30, 0.48);
+  letter-spacing: 5px;
 }
 
-.dt-logo i {
-  margin: 0 22px;
-  color: #ffe92f;
-  font-style: normal;
-  text-shadow: 0 0 18px #ffe600, 0 0 32px #ffb300;
-}
+.dt-logo span { color: #ff3850; text-shadow: 0 0 16px #ff002a; }
+.dt-logo b { color: #92aaff; text-shadow: 0 0 16px #1d5dff; }
+.dt-logo em { margin: 0 18px; color: #ffe45d; font-style: normal; text-shadow: 0 0 15px #ffb300; }
 
-.dt-logo span {
-  color: #ff3450;
-  text-shadow: 0 0 11px #ff0033, 0 2px 0 #2b0000;
-}
-
-.dt-logo b {
-  margin-left: 16px;
-  color: #8fa8ff;
-  text-shadow: 0 0 11px #294fff, 0 2px 0 #00001b;
-}
-
-.dt-credit {
-  width: 92px;
-  height: 42px;
-  justify-self: end;
-  padding: 5px 8px;
-  text-align: right;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 210, 20, 0.7);
-  background: rgba(0, 0, 0, 0.52);
-  box-shadow: inset 0 0 18px rgba(255, 220, 0, 0.06);
-}
-
-.dt-credit small {
-  display: block;
-  color: #ffec5f;
-  font-size: 12px;
-}
-
-.dt-credit strong {
-  color: #60ff00;
-  font-size: 16px;
-}
-
-.dt-info-row {
-  height: 50px;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  background: rgba(0, 0, 0, 0.58);
-  border-bottom: 1px solid rgba(210, 149, 8, 0.62);
-}
-
-.dt-info-row div {
-  padding: 8px 14px;
-  border-right: 1px solid rgba(210, 149, 8, 0.38);
-}
-
-.dt-info-row span {
-  display: block;
-  color: #d7b746;
-  font-size: 12px;
-}
-
-.dt-info-row b {
-  color: #f6ff24;
-  font-size: 16px;
-}
-
-.dt-layout {
-  display: grid;
-  grid-template-columns: 1fr 326px;
-  gap: 12px;
-  padding: 10px 12px 14px;
-}
-
-.dt-table {
+.dt-shell-new {
   position: relative;
-  min-height: calc(100vh - 144px);
+  z-index: 3;
+  padding: 14px 18px 96px;
+}
+
+.dt-board-new {
+  max-width: 1180px;
+  margin: 0 auto;
   padding: 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(245, 190, 29, 0.9);
+  border-radius: 18px;
+  border: 2px solid rgba(255,205,49,.82);
   background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.56), rgba(10, 3, 0, 0.68)),
-    radial-gradient(circle at 23% 42%, rgba(255, 40, 0, 0.15), transparent 30%),
-    radial-gradient(circle at 76% 42%, rgba(0, 90, 255, 0.17), transparent 32%);
-  box-shadow:
-    0 0 30px rgba(255, 170, 0, 0.18),
-    inset 0 0 55px rgba(0, 0, 0, 0.86);
-  overflow: hidden;
+    linear-gradient(180deg, rgba(0,0,0,.52), rgba(0,0,0,.78)),
+    radial-gradient(circle at 24% 45%, rgba(255,40,0,.18), transparent 32%),
+    radial-gradient(circle at 76% 45%, rgba(0,92,255,.18), transparent 32%);
+  box-shadow: 0 0 32px rgba(255,165,0,.18), inset 0 0 70px rgba(0,0,0,.78);
 }
 
-.dt-table::before {
-  content: "";
+.dt-hero-panel {
+  position: relative;
+  height: 330px;
+  overflow: hidden;
+  border-radius: 14px;
+  background:
+    linear-gradient(90deg, rgba(120,0,0,.28), rgba(0,0,0,.62) 48%, rgba(0,30,145,.32)),
+    url("/assets/dragon-tiger-bg.png") center / cover no-repeat;
+  border: 1px solid rgba(255,206,50,.54);
+  box-shadow: inset 0 0 80px rgba(0,0,0,.9), 0 12px 30px rgba(0,0,0,.55);
+}
+
+.dt-hero-vignette {
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(255, 50, 0, 0.08), transparent 48%, rgba(0, 80, 255, 0.1)),
-    repeating-linear-gradient(
-      135deg,
-      rgba(255, 220, 120, 0.035) 0,
-      rgba(255, 220, 120, 0.035) 1px,
-      transparent 1px,
-      transparent 7px
-    );
-}
-
-.dt-status {
-  position: relative;
-  z-index: 3;
-  text-align: center;
-}
-
-.dt-status b {
-  display: block;
-  color: #ffe64d;
-  font-size: 22px;
-  letter-spacing: 1.5px;
-  text-shadow: 0 0 14px rgba(255, 166, 0, 0.82);
-}
-
-.dt-status span {
-  width: 245px;
-  height: 8px;
-  margin: 8px auto 10px;
-  display: block;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.75);
-}
-
-.dt-status i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #ffd737, #ff3a66);
-  box-shadow: 0 0 14px #ffce34;
-}
-
-.dt-roadmap {
-  position: relative;
-  z-index: 3;
-  display: grid;
-  grid-template-columns: repeat(19, 1fr);
-  gap: 6px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 231, 0.96);
-  box-shadow:
-    inset 0 0 12px rgba(0, 0, 0, 0.28),
-    0 4px 14px rgba(0, 0, 0, 0.45);
-}
-
-.dt-roadmap span {
-  height: 22px;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 900;
-  background: rgba(255, 255, 255, 0.88);
-}
-
-.dt-roadmap .dragon {
-  color: #ff1748;
-  border: 1.5px solid #ff1748;
-}
-
-.dt-roadmap .tiger {
-  color: #586bff;
-  border: 1.5px solid #7784ff;
-}
-
-.dt-roadmap .tie {
-  color: #0da70a;
-  border: 1.5px solid #20ba22;
-  background: #eaffdf;
-}
-
-.dt-battle-area {
-  position: relative;
+  background: radial-gradient(circle at 50% 45%, transparent 0 24%, rgba(0,0,0,.4) 72%);
   z-index: 2;
-  height: 310px;
-  margin-top: 14px;
-  overflow: hidden;
-  border-radius: 9px;
-  background:
-    linear-gradient(90deg, rgba(130, 0, 0, 0.22), rgba(0, 0, 0, 0.56) 48%, rgba(0, 17, 135, 0.22)),
-    url("/assets/dragon-tiger-bg.png") center center / cover no-repeat;
-  box-shadow:
-    inset 0 0 75px rgba(0, 0, 0, 0.9),
-    0 0 20px rgba(255, 180, 20, 0.15);
 }
 
-.dt-battle-overlay {
+.dt-creature {
   position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, rgba(255, 0, 0, 0.14), rgba(0, 0, 0, 0.55) 46%, rgba(0, 60, 255, 0.18)),
-    radial-gradient(circle at 50% 45%, rgba(255, 216, 65, 0.16), transparent 18%);
+  top: 10px;
+  width: 390px;
+  height: 300px;
+  z-index: 1;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   pointer-events: none;
+  animation: creatureFloat 2.8s ease-in-out infinite;
 }
 
-.dt-side-title {
+.dt-dragon-img { left: 22px; background-image: url("/assets/dragon.png"); filter: drop-shadow(0 0 28px #ff2a00); }
+.dt-tiger-img { right: 22px; background-image: url("/assets/tiger.png"); filter: drop-shadow(0 0 28px #126cff); animation-delay: .35s; }
+
+.dt-dragon-title, .dt-tiger-title {
   position: absolute;
+  bottom: 30px;
   z-index: 4;
-  bottom: 34px;
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: Georgia, serif;
   font-size: 42px;
-  letter-spacing: 4px;
+  letter-spacing: 3px;
   font-weight: 900;
 }
+.dt-dragon-title { left: 78px; color: #ff3453; text-shadow: 0 0 18px #ff0019; }
+.dt-tiger-title { right: 96px; color: #91aaff; text-shadow: 0 0 18px #105dff; }
 
-.dt-side-title.dragon {
-  left: 78px;
-  color: #ff3152;
-  text-shadow: 0 0 15px #ff0019, 0 0 30px rgba(255, 53, 0, 0.8);
-}
-
-.dt-side-title.tiger {
-  right: 78px;
-  color: #92aaff;
-  text-shadow: 0 0 15px #144cff, 0 0 30px rgba(0, 85, 255, 0.92);
-}
-
-.dt-card-zone {
+.dt-card-stage {
   position: absolute;
-  z-index: 5;
   left: 50%;
   top: 47%;
-  width: 420px;
+  z-index: 5;
   transform: translate(-50%, -50%);
   display: grid;
-  grid-template-columns: 110px 128px 110px;
-  align-items: center;
-  justify-content: center;
+  grid-template-columns: 105px 110px 105px;
   gap: 36px;
+  align-items: center;
 }
 
-.dt-card {
-  position: relative;
+.dt-playing-card {
   width: 96px;
   height: 138px;
   padding: 10px;
-  border-radius: 9px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  border-radius: 10px;
+  border: 3px solid #fff1a0;
   color: #111;
-  background: #fff;
-  border: 3px solid #fff4b4;
-  box-shadow:
-    0 0 18px rgba(255, 237, 105, 0.7),
-    0 16px 28px rgba(0, 0, 0, 0.75),
-    inset 0 0 16px rgba(255, 215, 80, 0.2);
-  animation: cardFlip 0.5s ease;
-}
-
-.dt-card small {
-  font-size: 24px;
+  background: white;
   font-weight: 900;
+  box-shadow: 0 0 22px rgba(255,230,90,.72), 0 16px 30px rgba(0,0,0,.75);
+  animation: cardFlip .45s ease;
 }
-
-.dt-card b {
-  text-align: center;
-  font-size: 52px;
-}
-
-.dt-card.red {
-  color: #c80017;
-}
-
-.dt-card.back {
+.dt-playing-card span { font-size: 25px; }
+.dt-playing-card b { text-align: center; font-size: 52px; }
+.dt-playing-card.red { color: #c90020; }
+.dt-playing-card.back {
   display: grid;
   place-items: center;
-  overflow: hidden;
-  color: #ffe35f;
-  background:
-    linear-gradient(45deg, transparent 44%, rgba(255, 255, 255, 0.06) 45%, rgba(255, 255, 255, 0.06) 55%, transparent 56%) 0 0 / 18px 18px,
-    linear-gradient(135deg, #a5001f, #350006);
-  border-color: #ffe96a;
+  color: #ffe967;
+  background: linear-gradient(135deg, #970018, #250004);
 }
+.dt-playing-card.tiger.back { background: linear-gradient(135deg, #234bff, #040735); }
+.dt-playing-card.back i { font-style: normal; font-size: 46px; font-family: Georgia, serif; text-shadow: 0 0 15px #ffb300; }
 
-.dt-card.tiger.back {
-  background:
-    linear-gradient(45deg, transparent 44%, rgba(255, 255, 255, 0.06) 45%, rgba(255, 255, 255, 0.06) 55%, transparent 56%) 0 0 / 18px 18px,
-    linear-gradient(135deg, #2b00b9, #070027);
-}
-
-.dt-card.back span {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 42px;
-  font-weight: 900;
-  text-shadow: 0 0 12px #ffae00;
-}
-
-.card-corner {
-  position: absolute;
-  color: #ffd947;
-  font-size: 15px;
-}
-
-.card-corner.top {
-  top: 7px;
-  left: 7px;
-}
-
-.card-corner.bottom {
-  right: 7px;
-  bottom: 7px;
-}
-
-.dt-tie-orb {
-  width: 116px;
-  height: 116px;
+.dt-vs-orb {
+  width: 110px;
+  height: 110px;
+  display: grid;
+  place-items: center;
   border-radius: 50%;
-  border: 5px solid #ffe95e;
+  border: 5px solid #ffe45d;
   color: #fff;
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 900;
-  cursor: pointer;
-  background: radial-gradient(circle, #21ef22 0%, #07920f 48%, #003900 100%);
-  text-shadow: 0 0 10px #fff;
-  box-shadow:
-    0 0 24px #43ff22,
-    0 0 50px rgba(34, 255, 24, 0.45),
-    inset 0 0 25px rgba(255, 255, 255, 0.26);
-  animation: tiePulse 1.6s ease-in-out infinite;
+  background: radial-gradient(circle, #2be62d, #076f12 58%, #002a05);
+  box-shadow: 0 0 25px #29ff24, inset 0 0 28px rgba(255,255,255,.28);
+  animation: pulseOrb 1.5s ease-in-out infinite;
 }
 
-.dt-main-bets {
-  position: relative;
-  z-index: 4;
+.dt-status-card {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 6;
+  width: 240px;
+  transform: translateX(-50%);
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,230,80,.7);
+  background: rgba(0,0,0,.72);
+  box-shadow: 0 0 18px rgba(255,200,0,.24);
+}
+.dt-status-card span { color: #ffe45d; font-size: 12px; font-weight: 900; }
+.dt-status-card strong { display: block; color: white; font-size: 32px; line-height: 1; }
+.dt-status-card small { color: #c9b680; font-size: 11px; }
+.dt-progress { height: 6px; margin-top: 6px; border-radius: 99px; background: #1d1d1d; overflow: hidden; }
+.dt-progress i { display: block; height: 100%; background: linear-gradient(90deg, #ffe45d, #ff3152); }
+
+.dt-mini-winner {
+  position: absolute;
+  left: 50%;
+  top: 16px;
+  z-index: 8;
+  transform: translateX(-50%);
+  min-width: 260px;
+  padding: 10px 18px;
+  text-align: center;
+  border-radius: 16px;
+  border: 2px solid #ffe45d;
+  background: rgba(0,0,0,.82);
+  box-shadow: 0 0 28px #ffd700;
+}
+.dt-mini-winner span { display: block; color: #ffe45d; font-weight: 900; }
+.dt-mini-winner b { display: block; font-size: 25px; }
+.dt-mini-winner em { color: #42ff42; font-style: normal; font-weight: 900; }
+
+.dt-main-bets-new {
   display: grid;
   grid-template-columns: 1fr 190px 1fr;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
-.dt-main-bets button,
-.dt-tie-bets button,
-.dt-sub-bets button {
+.dt-tie-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 8px; }
+
+.dt-bet-box {
+  position: relative;
+  min-height: 92px;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 2px solid #ffe45d;
+  color: white;
+  font-weight: 900;
   cursor: pointer;
-  font-family: Arial, Helvetica, sans-serif;
+  isolation: isolate;
+  box-shadow: 0 0 18px rgba(255,220,0,.3), inset 0 0 30px rgba(255,255,255,.08);
 }
+.dt-bet-box.small { min-height: 54px; border-radius: 10px; }
+.dt-bet-shine { position: absolute; inset: 0; z-index: -1; }
+.dt-bet-box span { display: block; font-size: 31px; letter-spacing: 1px; text-shadow: 0 2px 0 rgba(0,0,0,.65); }
+.dt-bet-box.small span { font-size: 16px; }
+.dt-bet-box small { display: block; margin-top: 2px; color: #fff480; font-size: 12px; }
+.dt-bet-box b { display: block; margin-top: 8px; color: #fff36a; font-size: 16px; }
+.dt-bet-box.small b { margin-top: 2px; font-size: 12px; }
 
-.dt-main-bets > button {
-  position: relative;
-  min-height: 86px;
-  overflow: hidden;
-  border-radius: 10px;
-  border: 2px solid #f7df22;
-  color: white;
-  font-weight: 900;
-  box-shadow:
-    0 0 16px rgba(255, 221, 22, 0.2),
-    inset 0 0 35px rgba(255, 255, 255, 0.08);
-}
+.dt-bet-corner { position: absolute; width: 14px; height: 14px; border-color: #fff27a; opacity: .8; }
+.dt-bet-corner.lt { left: 6px; top: 6px; border-left: 2px solid; border-top: 2px solid; }
+.dt-bet-corner.rt { right: 6px; top: 6px; border-right: 2px solid; border-top: 2px solid; }
+.dt-bet-corner.lb { left: 6px; bottom: 6px; border-left: 2px solid; border-bottom: 2px solid; }
+.dt-bet-corner.rb { right: 6px; bottom: 6px; border-right: 2px solid; border-bottom: 2px solid; }
 
-.dt-main-bets > button::before,
-.dt-tie-bets button::before,
-.dt-sub-bets button::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.35;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.12), transparent 18%),
-    linear-gradient(135deg, transparent 46%, rgba(255, 255, 255, 0.045) 47%, rgba(255, 255, 255, 0.045) 53%, transparent 54%);
-}
+.dt-bet-box.dragon { background: linear-gradient(180deg, #b70026, #350007); }
+.dt-bet-box.dragon .dt-bet-shine { background: radial-gradient(circle at 82% 45%, rgba(255,95,0,.45), transparent 42%); }
+.dt-bet-box.tiger { background: linear-gradient(180deg, #3158ff, #080942); }
+.dt-bet-box.tiger .dt-bet-shine { background: radial-gradient(circle at 18% 45%, rgba(0,170,255,.5), transparent 42%); }
+.dt-bet-box.tie { background: linear-gradient(180deg, #0b8f17, #003908); }
+.dt-bet-box.tie .dt-bet-shine { background: radial-gradient(circle at 50% 40%, rgba(113,255,67,.45), transparent 48%); }
+.dt-bet-box.sub-dragon { background: linear-gradient(180deg, #5b1800, #170700); }
+.dt-bet-box.sub-tiger { background: linear-gradient(180deg, #101d66, #050824); }
 
-.dt-main-bets > button span {
-  position: relative;
-  z-index: 2;
-  display: block;
-  font-size: 31px;
-  letter-spacing: 1px;
-}
-
-.dt-main-bets > button b {
-  position: relative;
-  z-index: 2;
-  display: block;
-  margin-top: 10px;
-  color: #ffef5d;
-  font-size: 14px;
-}
-
-.dt-main-bets .dragon {
-  background:
-    linear-gradient(180deg, rgba(155, 0, 34, 0.96), rgba(62, 0, 9, 0.98)),
-    radial-gradient(circle at 88% 50%, rgba(255, 50, 0, 0.25), transparent 30%);
-}
-
-.dt-main-bets .tiger {
-  background:
-    linear-gradient(180deg, rgba(36, 68, 205, 0.98), rgba(3, 15, 69, 0.98)),
-    radial-gradient(circle at 14% 50%, rgba(0, 145, 255, 0.26), transparent 30%);
-}
-
-.dt-tie-bets {
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 8px;
-}
-
-.dt-tie-bets button {
-  position: relative;
-  overflow: hidden;
-  border-radius: 8px;
-  border: 2px solid #f7df22;
-  color: white;
-  font-weight: 900;
-  background: linear-gradient(180deg, #087b12, #003c08);
-  box-shadow: inset 0 0 22px rgba(255, 255, 255, 0.12);
-}
-
-.dt-tie-bets span,
-.dt-tie-bets b {
-  position: relative;
-  z-index: 2;
-  display: block;
-}
-
-.dt-tie-bets span {
-  font-size: 14px;
-}
-
-.dt-tie-bets b {
-  margin-top: 4px;
-  color: #ffef5d;
-  font-size: 13px;
-}
-
-.dt-sub-bets {
-  position: relative;
-  z-index: 4;
+.dt-side-bets-new {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 8px;
   margin-top: 10px;
 }
 
-.dt-sub-bets button {
-  position: relative;
-  overflow: hidden;
-  height: 50px;
-  border-radius: 8px;
-  border: 1.5px solid rgba(255, 194, 20, 0.72);
-  color: #f6ff00;
-  font-weight: 900;
-  background: linear-gradient(180deg, rgba(34, 12, 0, 0.92), rgba(5, 3, 0, 0.95));
-  box-shadow: inset 0 0 16px rgba(255, 186, 0, 0.08);
-}
-
-.dt-sub-bets span,
-.dt-sub-bets b {
-  position: relative;
-  z-index: 2;
-  display: block;
-}
-
-.dt-sub-bets span {
-  font-size: 15px;
-}
-
-.dt-sub-bets b {
-  margin-top: 4px;
-  color: white;
-  font-size: 11px;
-}
-
-.dt-suits {
-  position: relative;
-  z-index: 4;
+.dt-suit-bets-new {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 8px;
   margin-top: 8px;
 }
-
-.dt-suits button {
+.dt-suit-bets-new button {
   height: 48px;
   border: 0;
-  border-radius: 8px;
-  color: #120800;
-  font-size: 27px;
+  border-radius: 10px;
+  color: #1d1000;
+  font-size: 28px;
   font-weight: 900;
   cursor: pointer;
-  background:
-    radial-gradient(circle at 50% 25%, #fffdf2, #fff8bd 60%, #eadf9e);
-  box-shadow:
-    inset 0 0 13px rgba(0, 0, 0, 0.16),
-    0 5px 12px rgba(0, 0, 0, 0.45);
+  background: radial-gradient(circle at 50% 26%, #fffef1, #fff1a8 58%, #d4b45a);
+  box-shadow: inset 0 0 12px rgba(0,0,0,.18), 0 5px 12px rgba(0,0,0,.45);
 }
+.dt-suit-bets-new button:nth-child(1), .dt-suit-bets-new button:nth-child(3), .dt-suit-bets-new button:nth-child(5), .dt-suit-bets-new button:nth-child(7) { color: #c40021; }
 
-.dt-suits button:nth-child(1),
-.dt-suits button:nth-child(3),
-.dt-suits button:nth-child(5),
-.dt-suits button:nth-child(7) {
-  color: #c50023;
-}
-
-.dt-control-panel {
-  position: relative;
-  min-height: calc(100vh - 144px);
-  padding: 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(245, 190, 29, 0.9);
-  background:
-    linear-gradient(180deg, rgba(2, 0, 7, 0.82), rgba(0, 0, 0, 0.92)),
-    radial-gradient(circle at 50% 16%, rgba(255, 230, 0, 0.11), transparent 22%),
-    radial-gradient(circle at 50% 60%, rgba(0, 67, 255, 0.12), transparent 45%);
-  box-shadow:
-    inset 0 0 45px rgba(0, 0, 0, 0.85),
-    0 0 28px rgba(255, 170, 0, 0.14);
-}
-
-.dt-chip-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-}
-
-.dt-chip-row button {
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  color: #111;
-  font-weight: 900;
-  cursor: pointer;
-  background:
-    radial-gradient(circle, #fff76b 0 28%, #f0cd00 29% 54%, #9c7100 55% 100%);
-  border: 5px solid #f7ec59;
-  box-shadow:
-    0 0 18px #fff200,
-    inset 0 0 12px rgba(255, 255, 255, 0.8);
-}
-
-.dt-chip-row button.active {
-  transform: translateY(-5px) scale(1.08);
-  box-shadow:
-    0 0 28px #fff200,
-    0 0 46px rgba(255, 242, 0, 0.45);
-}
-
-.dt-action-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 22px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 184, 0, 0.25);
-}
-
-.dt-action-grid button {
-  height: 48px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 184, 0, 0.8);
-  color: #ffe52b;
-  font-weight: 900;
-  cursor: pointer;
-  background: linear-gradient(180deg, rgba(67, 36, 0, 0.92), rgba(10, 6, 0, 0.95));
-  box-shadow: inset 0 0 14px rgba(255, 186, 0, 0.08);
-}
-
-.dt-my-title {
-  margin-top: 18px;
-  color: #f6ff00;
-  font-size: 25px;
-  font-weight: 900;
-}
-
-.dt-my-bets {
-  margin-top: 14px;
-  color: #bdad79;
-  font-size: 15px;
-}
-
-.dt-my-bets div {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.dt-my-bets b {
-  color: #fff15a;
-}
-
-.dt-sound {
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 22px;
-  height: 48px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 184, 0, 0.8);
-  color: #ffe52b;
-  font-weight: 900;
-  cursor: pointer;
-  background: linear-gradient(180deg, rgba(67, 36, 0, 0.86), rgba(10, 6, 0, 0.95));
-}
-
-.dt-toast {
+.dt-chip-panel-new {
   position: fixed;
-  right: 18px;
-  bottom: 16px;
-  z-index: 20;
-  height: 34px;
-  padding: 0 16px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  min-height: 80px;
   display: flex;
-  gap: 9px;
+  justify-content: center;
   align-items: center;
-  border-radius: 999px;
-  color: white;
-  font-size: 12px;
-  background: rgba(0, 0, 0, 0.72);
-  border: 1px solid rgba(255, 210, 0, 0.45);
+  gap: 16px;
+  padding: 10px 18px;
+  background: linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.88));
 }
-
-.dt-toast span {
-  width: 11px;
-  height: 11px;
+.dt-chip-list { display: flex; gap: 12px; }
+.dt-chip-list button {
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
-  background: #00ff23;
-  box-shadow: 0 0 12px #00ff23;
+  border: 5px dashed rgba(255,255,255,.82);
+  color: #1d1000;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  background: radial-gradient(circle, #fff36d, #e2ad00 58%, #7a4300);
+  box-shadow: 0 0 15px rgba(255,230,0,.55), inset 0 0 10px rgba(255,255,255,.7);
+}
+.dt-chip-list button.active { transform: translateY(-7px) scale(1.08); box-shadow: 0 0 26px #fff200; }
+.dt-action-btn {
+  min-width: 110px;
+  height: 48px;
+  border-radius: 12px;
+  border: 2px solid #ffe45d;
+  color: #ffe45d;
+  font-weight: 900;
+  cursor: pointer;
+  background: linear-gradient(180deg, #3a1800, #090300);
+}
+.dt-action-btn.confirm { color: #001700; background: linear-gradient(180deg, #7aff43, #169b17); border-color: #c7ff72; }
+
+.dt-toast-new {
+  position: fixed;
+  right: 14px;
+  bottom: 90px;
+  z-index: 20;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.75);
+  border: 1px solid rgba(255,220,80,.45);
+  color: white;
+  font-size: 13px;
 }
 
-.dt-win-effect {
+.dt-win-effect-new {
   position: fixed;
   inset: 0;
   z-index: 100;
   display: grid;
   place-items: center;
   pointer-events: none;
-  background:
-    radial-gradient(circle, rgba(255, 190, 0, 0.24), rgba(0, 0, 0, 0.38) 52%, rgba(0, 0, 0, 0.76));
-  animation: winFade 0.3s ease;
+  background: radial-gradient(circle, rgba(255,185,0,.25), rgba(0,0,0,.42) 52%, rgba(0,0,0,.78));
 }
-
-.dt-winner-card {
+.dt-win-burst {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 22% 25%, rgba(255,0,40,.9), transparent 8%),
+    radial-gradient(circle at 78% 25%, rgba(0,93,255,.9), transparent 8%),
+    radial-gradient(circle at 50% 57%, rgba(255,220,0,.8), transparent 11%);
+  filter: blur(2px);
+  animation: fireworks 1s ease-in-out infinite alternate;
+}
+.dt-win-card-new {
   width: 420px;
   padding: 24px;
   text-align: center;
   border-radius: 26px;
-  border: 3px solid #ffe34d;
-  background: linear-gradient(180deg, rgba(54, 24, 0, 0.95), rgba(0, 0, 0, 0.95));
-  box-shadow:
-    0 0 38px #ffd700,
-    0 0 90px rgba(255, 100, 0, 0.78),
-    inset 0 0 30px rgba(255, 255, 255, 0.12);
-  animation: winnerPop 0.7s ease infinite alternate;
+  border: 3px solid #ffe45d;
+  background: linear-gradient(180deg, rgba(57,24,0,.96), rgba(0,0,0,.96));
+  box-shadow: 0 0 38px #ffd700, 0 0 90px rgba(255,100,0,.72);
+  animation: winnerPop .7s ease infinite alternate;
 }
+.dt-crown { color: #ffe600; font-size: 58px; text-shadow: 0 0 22px #ff9d00; }
+.dt-win-card-new h1 { margin: 0; color: #ffd86b; font-size: 60px; letter-spacing: 4px; }
+.dt-win-card-new h2 { margin: 8px 0; font-size: 36px; }
+.dt-win-card-new p { margin: 0; color: #fff068; font-size: 25px; font-weight: 900; }
+.dt-coin-fall { position: fixed; top: -40px; color: #ffd700; font-size: 25px; text-shadow: 0 0 12px #ff9900; animation: coinFall 2.2s linear infinite; }
+.coin-0 { left: 5%; animation-delay: 0s; } .coin-1 { left: 9%; animation-delay: .2s; } .coin-2 { left: 14%; animation-delay: .5s; } .coin-3 { left: 20%; animation-delay: .1s; } .coin-4 { left: 25%; animation-delay: .7s; } .coin-5 { left: 30%; animation-delay: .3s; } .coin-6 { left: 36%; animation-delay: .9s; } .coin-7 { left: 42%; animation-delay: .4s; } .coin-8 { left: 48%; animation-delay: .8s; } .coin-9 { left: 54%; animation-delay: .15s; } .coin-10 { left: 60%; animation-delay: .6s; } .coin-11 { left: 66%; animation-delay: .25s; } .coin-12 { left: 72%; animation-delay: .75s; } .coin-13 { left: 78%; animation-delay: .35s; } .coin-14 { left: 84%; animation-delay: .95s; } .coin-15 { left: 90%; animation-delay: .45s; } .coin-16 { left: 95%; animation-delay: .65s; }
 
-.dt-crown {
-  color: #ffe600;
-  font-size: 58px;
-  text-shadow: 0 0 22px #ff9d00;
-}
+@keyframes creatureFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-12px) scale(1.035); } }
+@keyframes cardFlip { from { transform: rotateY(90deg) scale(.8); opacity: 0; } to { transform: rotateY(0) scale(1); opacity: 1; } }
+@keyframes pulseOrb { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@keyframes fireworks { from { opacity: .35; transform: scale(.95); } to { opacity: .85; transform: scale(1.08); } }
+@keyframes winnerPop { from { transform: scale(1); } to { transform: scale(1.06); } }
+@keyframes coinFall { 0% { transform: translateY(-40px) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
 
-.dt-winner-card h1 {
-  margin: 0;
-  color: #ffd86b;
-  font-size: 62px;
-  letter-spacing: 4px;
-  text-shadow: 0 0 18px #ff9100;
-}
-
-.dt-winner-card h2 {
-  margin: 8px 0;
-  color: white;
-  font-size: 36px;
-}
-
-.dt-winner-card p {
-  margin: 0;
-  color: #fff068;
-  font-size: 28px;
-  font-weight: 900;
-}
-
-.dt-winner-card strong {
-  display: block;
-  margin-top: 12px;
-  color: #ffffff;
-  font-size: 38px;
-  text-shadow: 0 0 20px #ffd700;
-}
-
-.dt-fireworks {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 23% 28%, rgba(0, 123, 255, 0.9), transparent 7%),
-    radial-gradient(circle at 76% 24%, rgba(255, 0, 170, 0.85), transparent 7%),
-    radial-gradient(circle at 50% 56%, rgba(255, 202, 0, 0.75), transparent 10%);
-  filter: blur(2px);
-  animation: fireworks 1.1s ease-in-out infinite alternate;
-}
-
-.dt-coin-fall {
-  position: fixed;
-  top: -40px;
-  color: #ffd700;
-  font-size: 25px;
-  text-shadow: 0 0 12px #ff9900;
-  animation: coinFall 2.2s linear infinite;
-}
-
-.coin-0 { left: 5%; animation-delay: 0s; }
-.coin-1 { left: 9%; animation-delay: .2s; }
-.coin-2 { left: 14%; animation-delay: .5s; }
-.coin-3 { left: 20%; animation-delay: .1s; }
-.coin-4 { left: 25%; animation-delay: .7s; }
-.coin-5 { left: 30%; animation-delay: .3s; }
-.coin-6 { left: 36%; animation-delay: .9s; }
-.coin-7 { left: 42%; animation-delay: .4s; }
-.coin-8 { left: 48%; animation-delay: .8s; }
-.coin-9 { left: 54%; animation-delay: .15s; }
-.coin-10 { left: 60%; animation-delay: .6s; }
-.coin-11 { left: 66%; animation-delay: .25s; }
-.coin-12 { left: 72%; animation-delay: .75s; }
-.coin-13 { left: 78%; animation-delay: .35s; }
-.coin-14 { left: 84%; animation-delay: .95s; }
-.coin-15 { left: 90%; animation-delay: .45s; }
-.coin-16 { left: 95%; animation-delay: .65s; }
-
-@keyframes cardFlip {
-  from {
-    transform: rotateY(90deg) scale(0.8);
-    opacity: 0;
-  }
-  to {
-    transform: rotateY(0) scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes tiePulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.06);
-  }
-}
-
-@keyframes winFade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes winnerPop {
-  from {
-    transform: scale(1);
-  }
-  to {
-    transform: scale(1.06);
-  }
-}
-
-@keyframes fireworks {
-  from {
-    opacity: .35;
-    transform: scale(.95);
-  }
-  to {
-    opacity: .85;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes coinFall {
-  0% {
-    transform: translateY(-40px) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(110vh) rotate(720deg);
-    opacity: 0;
-  }
-}
-
-@media (max-width: 1200px) {
-  .dt-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .dt-control-panel {
-    display: none;
-  }
-
-  .dt-table {
-    min-height: calc(100vh - 144px);
-  }
-}
-
-@media (max-width: 800px) {
-  .dt-topbar {
-    grid-template-columns: 60px 1fr 80px;
-  }
-
-  .dt-logo {
-    font-size: 22px;
-    letter-spacing: 2px;
-  }
-
-  .dt-logo i {
-    margin: 0 6px;
-  }
-
-  .dt-info-row {
-    grid-template-columns: repeat(2, 1fr);
-    height: auto;
-  }
-
-  .dt-roadmap {
-    grid-template-columns: repeat(8, 1fr);
-  }
-
-  .dt-battle-area {
-    height: 260px;
-  }
-
-  .dt-card-zone {
-    width: 300px;
-    grid-template-columns: 80px 90px 80px;
-    gap: 20px;
-  }
-
-  .dt-card {
-    width: 72px;
-    height: 104px;
-  }
-
-  .dt-tie-orb {
-    width: 82px;
-    height: 82px;
-    font-size: 18px;
-  }
-
-  .dt-side-title {
-    font-size: 26px;
-  }
-
-  .dt-main-bets {
-    grid-template-columns: 1fr;
-  }
-
-  .dt-sub-bets,
-  .dt-suits {
-    grid-template-columns: repeat(4, 1fr);
-  }
+@media (max-width: 900px) {
+  .dt-logo { font-size: 22px; letter-spacing: 2px; }
+  .dt-shell-new { padding: 10px 8px 96px; }
+  .dt-board-new { padding: 8px; }
+  .dt-hero-panel { height: 280px; }
+  .dt-creature { width: 210px; height: 180px; top: 32px; }
+  .dt-dragon-img { left: -20px; }
+  .dt-tiger-img { right: -20px; }
+  .dt-dragon-title, .dt-tiger-title { font-size: 24px; bottom: 26px; }
+  .dt-dragon-title { left: 26px; }
+  .dt-tiger-title { right: 34px; }
+  .dt-card-stage { grid-template-columns: 72px 78px 72px; gap: 18px; }
+  .dt-playing-card { width: 70px; height: 102px; }
+  .dt-vs-orb { width: 76px; height: 76px; font-size: 20px; }
+  .dt-status-card { width: 190px; }
+  .dt-main-bets-new { grid-template-columns: 1fr; }
+  .dt-side-bets-new, .dt-suit-bets-new { grid-template-columns: repeat(4, 1fr); }
+  .dt-chip-list button { width: 48px; height: 48px; font-size: 14px; }
+  .dt-action-btn { min-width: 78px; }
 }
