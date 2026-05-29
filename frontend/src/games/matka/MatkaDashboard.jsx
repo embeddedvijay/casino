@@ -6,23 +6,47 @@ const API = "http://localhost:8005";
 const games = [
   { key: "SRIDEVI_DAY", name: "SRIDEVI DAY", type: "day" },
   { key: "SRIDEVI_NIGHT", name: "SRIDEVI NIGHT", type: "night" },
+
   { key: "TIME_BAZAR_DAY", name: "TIME BAZAR", type: "day" },
   { key: "MAIN_BAZAR_NIGHT", name: "MAIN BAZAR", type: "night" },
+
   { key: "MADHUR_DAY", name: "MADHUR DAY", type: "day" },
   { key: "MADHUR_NIGHT", name: "MADHUR NIGHT", type: "night" },
+
   { key: "MILAN_DAY", name: "MILAN DAY", type: "day" },
   { key: "MILAN_NIGHT", name: "MILAN NIGHT", type: "night" },
+
   { key: "RAJDHANI_DAY", name: "RAJDHANI DAY", type: "day" },
   { key: "RAJDHANI_NIGHT", name: "RAJDHANI NIGHT", type: "night" },
+  
   { key: "SUPREME_DAY", name: "SUPREME DAY", type: "day" },
   { key: "SUPREME_NIGHT", name: "SUPREME NIGHT", type: "night" },
+
   { key: "KALYAN_DAY", name: "KALYAN DAY", type: "day" },
   { key: "KALYAN_NIGHT", name: "KALYAN NIGHT", type: "night" },
 ];
 
+const possibleKeys = (key) => {
+  const base = key.replace("_OP", "").replace("_CL", "");
+
+  return [
+    key,
+    `${base}_OP`,
+    `${base}_CL`,
+    base,
+    base.replace("_DAY", ""),
+    base.replace("_NIGHT", ""),
+  ];
+};
+
 const getMarket = (results, key) => {
   if (!results) return null;
-  return results[key] || results[key.replace("_NIGHT", "")] || results[key.replace("_DAY", "")] || null;
+
+  for (const k of possibleKeys(key)) {
+    if (results[k]) return results[k];
+  }
+
+  return null;
 };
 
 const safe = (value, fallback = "*") => {
@@ -34,14 +58,45 @@ const splitPana = (value) => {
   return safe(value, "***").padEnd(3, "*").slice(0, 3).split("");
 };
 
-function ResultCard({ game, market }) {
-  const open = safe(market?.OPEN);
-  const close = safe(market?.CLOSE);
-  const opana = safe(market?.OPANAL || market?.OPANA, "***");
-  const cpana = safe(market?.CPANAL || market?.CPANA, "***");
+const getValue = (market, keys, fallback = "*") => {
+  if (!market) return fallback;
 
-  const openTime = safe(market?.OTIME, "--:--:--");
-  const closeTime = safe(market?.CTIME, "--:--:--");
+  for (const key of keys) {
+    if (market[key] !== undefined && market[key] !== null && market[key] !== "") {
+      return String(market[key]);
+    }
+  }
+
+  return fallback;
+};
+
+function ResultCard({ game, market }) {
+  const open = getValue(market, ["OPEN", "open"], "*");
+  const close = getValue(market, ["CLOSE", "close"], "*");
+
+  const opana = getValue(
+    market,
+    ["OPANAL", "OPANA", "OPENPANA", "openPana", "open_pana"],
+    "***"
+  );
+
+  const cpana = getValue(
+    market,
+    ["CPANAL", "CPANA", "CLOSEPANA", "closePana", "close_pana"],
+    "***"
+  );
+
+  const openTime = getValue(
+    market,
+    ["OTIME", "openTime", "open_time"],
+    "--:--:--"
+  );
+
+  const closeTime = getValue(
+    market,
+    ["CTIME", "closeTime", "close_time"],
+    "--:--:--"
+  );
 
   const result = `${open}${close}`;
 
@@ -81,13 +136,22 @@ function ResultCard({ game, market }) {
 
 export default function MatkaDashboard() {
   const [resultDoc, setResultDoc] = useState(null);
+  const [status, setStatus] = useState("Loading");
 
   useEffect(() => {
     const loadResults = () => {
       fetch(`${API}/api/games/matka/results/latest`)
         .then((res) => res.json())
-        .then((data) => setResultDoc(data))
-        .catch(() => setResultDoc(null));
+        .then((data) => {
+          console.log("MATKA RESULT API:", data);
+          setResultDoc(data);
+          setStatus("Live Result");
+        })
+        .catch((err) => {
+          console.error("MATKA API ERROR:", err);
+          setResultDoc(null);
+          setStatus("API Error");
+        });
     };
 
     loadResults();
@@ -97,22 +161,25 @@ export default function MatkaDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const results = resultDoc?.Result || {};
-  const mainBazar = results?.MAIN_BAZAR_NIGHT || results?.MAIN_BAZAR || null;
+  const results =
+  resultDoc?.Result && typeof resultDoc.Result === "object"
+    ? resultDoc.Result
+    : resultDoc || {};
+  const mainBazar = getMarket(results, "MAIN_BAZAR_NIGHT");
 
   const mainText = mainBazar
-    ? `${safe(mainBazar.OPANAL || mainBazar.OPANA, "***")} - ${safe(mainBazar.OPEN)}${safe(mainBazar.CLOSE)} - ***`
-    : "559 - 9 - ***";
+    ? `${getValue(mainBazar, ["OPANAL", "OPANA"], "***")} - ${getValue(mainBazar, ["OPEN"], "*")}${getValue(mainBazar, ["CLOSE"], "*")} - ${getValue(mainBazar, ["CPANAL", "CPANA"], "***")}`
+    : "*** - ** - ***";
 
   return (
     <div className="mk-page">
       <header className="mk-top">
-        <div className="mk-menu"> </div>
+        <div className="mk-menu">☰</div>
 
         <div className="mk-logo">
           <span>♛</span>
           <b>MatkaBooking</b>
-          <em>VIP</em>
+          <em>{status}</em>
         </div>
 
         <div className="mk-main-bazar">

@@ -1,3 +1,5 @@
+import datetime
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pymongo import MongoClient
 from bson import ObjectId
@@ -15,8 +17,19 @@ router = APIRouter(
 MONGO_URL = "mongodb://localhost:27017"
 mongo_client = MongoClient(MONGO_URL)
 
-market_db = mongo_client["local"]
-market_collection = market_db["Market"]
+market_db = mongo_client["Market"]
+
+
+def get_result_collection():
+    current_date_time = datetime.datetime.now()
+
+    if current_date_time.time() < datetime.time(1, 50, 0):
+        date = current_date_time - datetime.timedelta(days=1)
+    else:
+        date = current_date_time
+
+    collection_name = date.strftime("%y-%m-%d")
+    return market_db[collection_name]
 
 
 def mongo_to_json(data):
@@ -39,7 +52,9 @@ def get_state():
 
 @router.get("/results/latest")
 def get_latest_matka_result():
-    doc = market_collection.find_one(sort=[("_id", -1)])
+    collection = get_result_collection()
+
+    doc = collection.find_one({"Result": True})
 
     if not doc:
         return {
@@ -53,10 +68,9 @@ def get_latest_matka_result():
 
 @router.get("/results/by-date/{date_key}")
 def get_matka_result_by_date(date_key: str):
-    doc = market_collection.find_one({"Date": date_key})
+    collection = market_db[date_key]
 
-    if not doc:
-        doc = market_collection.find_one({"_id": date_key})
+    doc = collection.find_one({"Result": True})
 
     if not doc:
         return {
