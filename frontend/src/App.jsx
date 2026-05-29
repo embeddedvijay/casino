@@ -5,22 +5,61 @@ import LuckyRace from "./games/car-roulet/LuckyRace.jsx";
 import MatkaDashboard from "./games/matka/MatkaDashboard.jsx";
 
 const lobbyGames = [
-  { path: "/aviator", tag: "HOT", title: "Aviator", theme: "#ff0b58", image: "/casino-assets/aviator.png" },
-  { path: "/dragon-tiger", tag: "POPULAR", title: "Dragon Tiger", theme: "#ffc400", image: "/casino-assets/dragon-tiger.png" },
-  { path: "/lucky-race", tag: "NEW", title: "Lucky Race", theme: "#a855ff", image: "/casino-assets/lucky-race.png" },
-  { path: "/matka", tag: "CLASSIC", title: "Matka", theme: "#b000ff", image: "/casino-assets/matka.png" },
+  { path: "/aviator", tag: "HOT", theme: "#ff0b58", image: "/casino-assets/aviator.png" },
+  { path: "/dragon-tiger", tag: "POPULAR", theme: "#ffc400", image: "/casino-assets/dragon-tiger.png" },
+  { path: "/lucky-race", tag: "NEW", theme: "#a855ff", image: "/casino-assets/lucky-race.png" },
+  { path: "/matka", tag: "CLASSIC", theme: "#b000ff", image: "/casino-assets/matka.png" },
 ];
 
 function GameLobby() {
   return (
     <div style={styles.page}>
+      <style>
+        {`
+          @keyframes bgZoom {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+            100% { transform: scale(1); }
+          }
+
+          @keyframes lightMove {
+            0% { transform: translateX(-130%); opacity: 0; }
+            35% { opacity: .45; }
+            100% { transform: translateX(130%); opacity: 0; }
+          }
+
+          @keyframes floatGlow {
+            0%, 100% { transform: translateY(0); opacity: .45; }
+            50% { transform: translateY(-18px); opacity: .85; }
+          }
+
+          .casino-bg-anim {
+            animation: bgZoom 18s ease-in-out infinite;
+          }
+
+          .casino-light-sweep {
+            animation: lightMove 7s linear infinite;
+          }
+
+          .casino-float-glow {
+            animation: floatGlow 4s ease-in-out infinite;
+          }
+        `}
+      </style>
+
+      <div style={styles.animatedBg} className="casino-bg-anim" />
       <div style={styles.overlay} />
+      <div style={styles.lightSweep} className="casino-light-sweep" />
+      <div style={styles.floatGlowOne} className="casino-float-glow" />
+      <div style={styles.floatGlowTwo} className="casino-float-glow" />
 
       <header style={styles.header}>
         <div style={styles.logoBox}>
           <div style={styles.brand}>
             <span style={styles.crown}>♛</span>
-            <strong>GOLD<span>365</span></strong>
+            <strong>
+              GOLD<span>365</span>
+            </strong>
           </div>
           <p style={styles.brandSub}>PLAY · WIN · REPEAT</p>
         </div>
@@ -48,8 +87,6 @@ function GameLobby() {
               }}
             />
 
-            <h2 style={{ color: game.theme }}>{game.title}</h2>
-
             <button
               style={{
                 ...styles.playBtn,
@@ -64,10 +101,22 @@ function GameLobby() {
       </section>
 
       <footer style={styles.footer}>
-        <div style={styles.footerItem}><span>🛡️</span><strong>100% SECURE</strong><small>Safe & Trusted</small></div>
-        <div style={styles.footerItem}><span>🎧</span><strong>24/7 SUPPORT</strong><small>We are here</small></div>
-        <div style={styles.footerItem}><span>🏆</span><strong>FAIR PLAY</strong><small>Play Fair, Win Big</small></div>
-        <div style={styles.footerItem}><span>🎁</span><strong>DAILY BONUS</strong><small>Win More Every Day</small></div>
+        <div style={styles.footerItem}>
+          <span>🛡️</span>
+          <strong>100% SECURE</strong>
+        </div>
+        <div style={styles.footerItem}>
+          <span>🎧</span>
+          <strong>24/7 SUPPORT</strong>
+        </div>
+        <div style={styles.footerItem}>
+          <span>🏆</span>
+          <strong>FAIR PLAY</strong>
+        </div>
+        <div style={styles.footerItem}>
+          <span>🎁</span>
+          <strong>DAILY BONUS</strong>
+        </div>
       </footer>
     </div>
   );
@@ -92,24 +141,67 @@ const styles = {
     color: "#fff",
     fontFamily: "Arial, sans-serif",
     padding: "26px 48px 34px",
-    backgroundImage:
-      "linear-gradient(rgba(0,0,0,.08), rgba(0,0,0,.48)), url('/casino-assets/casino-bg.png')",
+    background: "#050505",
+  },
+
+  animatedBg: {
+    position: "absolute",
+    inset: "-35px",
+    backgroundImage: "url('/casino-assets/casino-bg.png')",
     backgroundSize: "cover",
     backgroundPosition: "center top",
     backgroundRepeat: "no-repeat",
+    zIndex: 0,
   },
 
   overlay: {
     position: "absolute",
     inset: 0,
     pointerEvents: "none",
+    zIndex: 1,
     background:
-      "linear-gradient(180deg, rgba(0,0,0,.02) 0%, rgba(0,0,0,.18) 45%, rgba(0,0,0,.74) 100%)",
+      "linear-gradient(180deg, rgba(0,0,0,.02) 0%, rgba(0,0,0,.16) 45%, rgba(0,0,0,.74) 100%)",
+  },
+
+  lightSweep: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: "45%",
+    background:
+      "linear-gradient(90deg, transparent, rgba(255,214,92,.18), transparent)",
+    zIndex: 2,
+    pointerEvents: "none",
+  },
+
+  floatGlowOne: {
+    position: "absolute",
+    left: "8%",
+    top: "20%",
+    width: 180,
+    height: 180,
+    borderRadius: "50%",
+    background: "rgba(255,196,0,.18)",
+    filter: "blur(55px)",
+    zIndex: 1,
+  },
+
+  floatGlowTwo: {
+    position: "absolute",
+    right: "8%",
+    top: "26%",
+    width: 210,
+    height: 210,
+    borderRadius: "50%",
+    background: "rgba(176,0,255,.18)",
+    filter: "blur(60px)",
+    zIndex: 1,
   },
 
   header: {
     position: "relative",
-    zIndex: 2,
+    zIndex: 5,
     display: "flex",
     justifyContent: "flex-end",
     alignItems: "center",
@@ -150,7 +242,7 @@ const styles = {
 
   cards: {
     position: "relative",
-    zIndex: 2,
+    zIndex: 5,
     display: "grid",
     gridTemplateColumns: "repeat(4, 1fr)",
     gap: 28,
@@ -166,7 +258,8 @@ const styles = {
     padding: 18,
     textDecoration: "none",
     color: "#fff",
-    background: "linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.48))",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.48))",
     backdropFilter: "blur(4px)",
   },
 
@@ -211,7 +304,7 @@ const styles = {
 
   footer: {
     position: "relative",
-    zIndex: 2,
+    zIndex: 5,
     maxWidth: 1400,
     margin: "34px auto 0",
     minHeight: 88,
