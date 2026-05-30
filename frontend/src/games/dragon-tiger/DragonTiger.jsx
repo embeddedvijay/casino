@@ -67,6 +67,38 @@ function PlayingCard({ card, side, hidden }) {
   );
 }
 
+
+function ResultHistory({ history }) {
+  const fallback = ["D", "D", "T", "Tie", "T", "D", "T", "T", "D", "Tie", "D", "T", "D", "T", "D", "D", "T", "Tie", "D", "T", "T", "D", "D", "T", "Tie", "D", "T", "D", "T", "D", "Tie", "T", "D", "D", "T", "D", "Tie", "D", "T", "D", "T", "T", "D", "D", "T", "D", "D", "T", "Tie", "D", "T", "D", "T", "D", "D", "T", "D", "T", "D", "Tie"];
+  const list = (history && history.length ? history : fallback).slice(-60);
+
+  return (
+    <section className="dt-history-panel">
+      <div className="dt-history-title">BETS ARE CLOSING</div>
+      <div className="dt-history-loader"><i /></div>
+      <div className="dt-history-grid">
+        {list.map((item, index) => {
+          const value = item === "SUITED TIE" ? "Tie" : item;
+          const cls = value === "D" || value === "DRAGON" ? "dragon" : value === "T" || value === "TIGER" ? "tiger" : "tie";
+          const label = value === "DRAGON" ? "D" : value === "TIGER" ? "T" : value;
+          return <span key={`${label}-${index}`} className={cls}>{label}</span>;
+        })}
+      </div>
+    </section>
+  );
+}
+
+function RoundInfoBar({ data, totalBet, totalWin, phaseText }) {
+  return (
+    <section className="dt-info-row">
+      <div><span>Total Bet</span><b>{formatMoney(totalBet)}</b></div>
+      <div><span>Last Win</span><b>{formatMoney(totalWin)}</b></div>
+      <div><span>Round</span><b>{data.round_id || "-"}</b></div>
+      <div><span>Status</span><b>{phaseText}</b></div>
+    </section>
+  );
+}
+
 function HeroPanel({ data, winner, totalWin, progress, phaseText }) {
   return (
     <section className="dt-hero-panel">
@@ -101,10 +133,11 @@ function HeroPanel({ data, winner, totalWin, progress, phaseText }) {
   );
 }
 
-function BetBox({ type, title, amount, rate, onClick, small = false }) {
+function BetBox({ type, title, amount, rate, onClick, small = false, badge }) {
   return (
     <button className={`dt-bet-box ${type} ${small ? "small" : ""}`} onClick={onClick}>
       <div className="dt-bet-shine" />
+      {badge && <em className="dt-bet-badge">{badge}</em>}
       <div className="dt-bet-corner lt" />
       <div className="dt-bet-corner rt" />
       <div className="dt-bet-corner lb" />
@@ -119,14 +152,14 @@ function BetBox({ type, title, amount, rate, onClick, small = false }) {
 function MainBets({ betMap, placeBet }) {
   return (
     <section className="dt-main-bets-new">
-      <BetBox type="dragon" title="DRAGON" amount={betMap.DRAGON} onClick={() => placeBet("DRAGON")} />
+      <BetBox type="dragon" title="DRAGON" badge="DRAGON" amount={betMap.DRAGON} onClick={() => placeBet("DRAGON")} />
 
       <div className="dt-tie-stack">
         <BetBox type="tie" title="TIE" rate="8 : 1" amount={betMap.TIE} small onClick={() => placeBet("TIE")} />
         <BetBox type="tie" title="SUITED TIE" rate="50 : 1" amount={betMap.SUITED_TIE} small onClick={() => placeBet("SUITED_TIE")} />
       </div>
 
-      <BetBox type="tiger" title="TIGER" amount={betMap.TIGER} onClick={() => placeBet("TIGER")} />
+      <BetBox type="tiger" title="TIGER" badge="TIGER" amount={betMap.TIGER} onClick={() => placeBet("TIGER")} />
     </section>
   );
 }
@@ -240,6 +273,7 @@ export default function DragonTiger() {
   const [chip, setChip] = useState(1);
   const [notice, setNotice] = useState("");
   const [soundOn, setSoundOn] = useState(true);
+  const [resultHistory, setResultHistory] = useState([]);
   const lastRoundRef = useRef("");
 
   useEffect(() => {
@@ -262,6 +296,8 @@ export default function DragonTiger() {
 
         if (msg.data.phase === "result" && winner && lastRoundRef.current !== round) {
           lastRoundRef.current = round;
+          const resultText = msg.data?.result?.suited_tie ? "SUITED TIE" : winner;
+          setResultHistory((old) => [...old, resultText].slice(-60));
           if (soundOn) playWinSound();
         }
       };
@@ -292,6 +328,11 @@ export default function DragonTiger() {
 
   const totalWin = useMemo(
     () => (data.my_bets || []).reduce((s, b) => s + Number(b.payout || 0), 0),
+    [data.my_bets]
+  );
+
+  const totalBet = useMemo(
+    () => (data.my_bets || []).reduce((s, b) => s + Number(b.amount || 0), 0),
     [data.my_bets]
   );
 
@@ -355,6 +396,8 @@ export default function DragonTiger() {
 
       <main className="dt-shell-new">
         <section className="dt-board-new">
+          <RoundInfoBar data={data} totalBet={totalBet} totalWin={totalWin} phaseText={phaseText} />
+          <ResultHistory history={resultHistory} />
           <HeroPanel
             data={data}
             winner={winner}
