@@ -13,7 +13,7 @@ body{background:#f3dfc1;font-family:Arial,sans-serif}
 .mk-play-now{position:absolute;width:92px;height:62px;border:0;border-radius:14px;background:linear-gradient(180deg,#ff2aa0,#8c22ff);color:#fff;cursor:pointer;z-index:30;font-size:18px;font-weight:1000;line-height:1;box-shadow:0 0 15px rgba(150,0,255,.45),inset 0 0 10px rgba(255,255,255,.3)}
 .mk-play-now:hover{filter:brightness(1.12);transform:scale(1.03)}
 
-.card-0{left:220px;top:270px}.card-0 .mk-open-time{left:0;top:56px}.card-0 .mk-result-main{left:90px;top:50px}.card-0 .mk-close-time{left:178px;top:56px}.card-0 .mk-play-now{left:305px;top:32px}
+.card-0{left:225px;top:270px}.card-0 .mk-open-time{left:0;top:56px}.card-0 .mk-result-main{left:90px;top:50px}.card-0 .mk-close-time{left:180px;top:56px}.card-0 .mk-play-now{left:305px;top:32px}
 .card-2{left:220px;top:420px}.card-2 .mk-open-time{left:0;top:56px}.card-2 .mk-result-main{left:90px;top:50px}.card-2 .mk-close-time{left:178px;top:56px}.card-2 .mk-play-now{left:305px;top:38px}
 .card-4{left:220px;top:570px}.card-4 .mk-open-time{left:0;top:56px}.card-4 .mk-result-main{left:90px;top:50px}.card-4 .mk-close-time{left:178px;top:56px}.card-4 .mk-play-now{left:305px;top:34px}
 .card-6{left:220px;top:710px}.card-6 .mk-open-time{left:0;top:56px}.card-6 .mk-result-main{left:90px;top:50px}.card-6 .mk-close-time{left:178px;top:56px}.card-6 .mk-play-now{left:305px;top:36px}
