@@ -77,10 +77,9 @@ const results=resultDoc?.Result&&typeof resultDoc.Result==="object"?resultDoc.Re
 
 return(
 <div className="mk-page">
-<div className="mk-board">
-<div className="mk-status">{status}</div>
-{games.map((game,index)=><ResultOverlay key={game.key} game={game} index={index} market={getMarket(results,game.key)}/>)}
-</div>
+  <div className="mk-board">
+    {games.map((game,index)=><ResultOverlay key={game.key} game={game} index={index} market={getMarket(results,game.key)}/>)}
+  </div>
 </div>
 );
 }
