@@ -68,6 +68,237 @@ const betCars = [
 
 const coins = [10, 50, 100, 200, 500, 1000];
 
+function money(value) {
+  return Number(value || 0).toFixed(2);
+}
+
+function prettyName(name = "") {
+  return String(name).replace("_", " ").toUpperCase();
+}
+
+function CarLogo({ name, className = "" }) {
+  if (!name) return null;
+
+  return (
+    <img
+      className={className}
+      src={`${LOGO}${fileName(name)}`}
+      alt={name}
+      draggable="false"
+    />
+  );
+}
+
+function TopBar({ totalBet, totalWin, roundId, phase, countdown }) {
+  return (
+    <header className="cr-topbar">
+      <div className="cr-brand">
+        <span className="cr-brand-badge">♛</span>
+        <strong>GOLD365</strong>
+      </div>
+
+      <section className="cr-top-stats">
+        <div className="cr-stat-card">
+          <span>💰 Total Bet</span>
+          <b>₹ {money(totalBet)}</b>
+        </div>
+        <div className="cr-stat-card">
+          <span>🏆 Last Win</span>
+          <b>₹ {money(totalWin)}</b>
+        </div>
+        <div className="cr-stat-card">
+          <span>▣ Round ID</span>
+          <b>{roundId || "-"}</b>
+        </div>
+        <div className="cr-stat-card">
+          <span>● Status</span>
+          <b>{phase}</b>
+        </div>
+        <div className="cr-stat-card countdown">
+          <span>⏱ Countdown</span>
+          <b>{String(countdown || 0).padStart(2, "0")}</b>
+        </div>
+      </section>
+
+      <div className="cr-account">
+        <div className="cr-wallet">💼 ₹ 0.00</div>
+        <button className="cr-plus">+</button>
+        <b>DEMO123</b>
+        <span className="cr-user-dot">●</span>
+      </div>
+    </header>
+  );
+}
+
+function Sidebar({ activeTab, setActiveTab, players, myBets }) {
+  const topPlayer = players[0];
+
+  return (
+    <aside className="cr-sidebar">
+      <div className="cr-tabs">
+        <button
+          className={activeTab === "all" ? "active" : ""}
+          onClick={() => setActiveTab("all")}
+        >
+          All Bets
+        </button>
+        <button
+          className={activeTab === "my" ? "active" : ""}
+          onClick={() => setActiveTab("my")}
+        >
+          My Bet
+        </button>
+      </div>
+
+      <div className="cr-side-title-row">
+        <h3>{activeTab === "all" ? "ALL BETS" : "MY BETS"}</h3>
+        <span>{activeTab === "all" ? players.length : myBets.length}</span>
+      </div>
+
+      <div className="cr-bet-head">
+        <span>User</span>
+        <span>Bet(INR)</span>
+        <span>Cash out</span>
+      </div>
+
+      <div className="cr-user-list">
+        {activeTab === "all"
+          ? players.map((user, index) => (
+              <div className="cr-user-row" key={index}>
+                <span className="cr-user">
+                  <i>{user.avatar || "👤"}</i>
+                  {user.name}
+                </span>
+                <strong>₹ {money(user.balance)}</strong>
+                <strong className={user.tag === "WINNER" ? "winner" : ""}>
+                  {user.tag || "0.00"}
+                </strong>
+              </div>
+            ))
+          : myBets.map((bet) => (
+              <div className="cr-user-row" key={bet.id}>
+                <span className="cr-user">
+                  <i>🚗</i>
+                  {prettyName(bet.bet_type)}
+                </span>
+                <strong>₹ {money(bet.amount)}</strong>
+                <strong>₹ {money(bet.payout)}</strong>
+              </div>
+            ))}
+      </div>
+
+      <div className="cr-jackpot-card">
+        <span>JACKPOT</span>
+        <b>₹ 1,25,000</b>
+      </div>
+
+      <div className="cr-top-winner">
+        <i>👑</i>
+        <div>
+          <span>TOP WINNER</span>
+          <b>{topPlayer?.name || "Raj Banna Saa"}</b>
+          <strong>₹ {money(topPlayer?.balance || 95680)}</strong>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function ResultStrip({ history }) {
+  return (
+    <section className="cr-result-panel">
+      <span className="cr-result-title">LAST RESULT</span>
+
+      <div className="cr-result-logos">
+        {history.length === 0 && <span className="cr-empty">No Result</span>}
+
+        {history
+          .slice(-8)
+          .reverse()
+          .map((item) => (
+            <div className="cr-result-logo" key={item.round_id}>
+              <CarLogo name={item.winner?.key} />
+            </div>
+          ))}
+      </div>
+    </section>
+  );
+}
+
+function RaceBoard({ logos, trackIndex, activeLogo, betCars, localBets, placeCoinBet, phase, winner }) {
+  return (
+    <div className="cr-table">
+      <div className="cr-outer">
+        <div className="cr-track-glow" />
+
+        {logos.map(([logo, x, y], i) => (
+          <div
+            key={`${logo}-${i}`}
+            className={`cr-logo ${trackIndex === i ? "cr-logo-active" : ""}`}
+            style={{ left: `${x}%`, top: `${y}%` }}
+          >
+            <CarLogo name={logo} />
+          </div>
+        ))}
+
+        <div
+          className="cr-moving-marker"
+          style={{
+            left: `${activeLogo[1]}%`,
+            top: `${activeLogo[2]}%`,
+          }}
+        >
+          <CarLogo name={activeLogo[0]} />
+        </div>
+
+        <div className="cr-betting-grid">
+          {betCars.map((car) => (
+            <button
+              className="cr-bet-cell"
+              key={car}
+              onClick={() => placeCoinBet(car)}
+            >
+              <span className="cr-rupee">₹ {localBets[car] || "0"}</span>
+              <CarLogo name={car} className="cr-bet-logo" />
+            </button>
+          ))}
+        </div>
+
+        {phase === "result" && winner && (
+          <div className="cr-winner-popup">
+            <span>WINNER</span>
+            <CarLogo name={winner.key} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CoinPanel({ coins, selectedCoin, setSelectedCoin, clearBets }) {
+  return (
+    <div className="cr-coin-panel">
+      {coins.map((coin) => (
+        <button
+          key={coin}
+          className={`cr-coin ${selectedCoin === coin ? "active" : ""}`}
+          onClick={() => setSelectedCoin(coin)}
+        >
+          ₹{coin}
+        </button>
+      ))}
+
+      <button className="cr-clear-btn" onClick={clearBets}>
+        ↻<span>CLEAR</span>
+      </button>
+
+      <button className="cr-bet-submit">
+        BET <span>➤</span>
+      </button>
+    </div>
+  );
+}
+
 export default function LuckyRace() {
   const [gameState, setGameState] = useState(null);
   const [selectedCoin, setSelectedCoin] = useState(10);
@@ -168,185 +399,48 @@ export default function LuckyRace() {
 
   return (
     <div className="cr-page">
-      <header className="cr-topbar">
-        <div className="cr-brand">
-          <span>⌂</span>
-          <strong>GOLD365</strong>
-        </div>
+      <TopBar
+        totalBet={totalBet}
+        totalWin={totalWin}
+        roundId={gameState?.round_id}
+        phase={phase}
+        countdown={countdown}
+      />
 
-        <div className="cr-account">
-          <span>🌐</span>
-          <strong>₹ 0.00</strong>
-          <span>☰</span>
-          <b>DEMO123</b>
-        </div>
-      </header>
-
-      <aside className="cr-sidebar">
-        <div className="cr-tabs">
-          <button
-            className={activeTab === "all" ? "active" : ""}
-            onClick={() => setActiveTab("all")}
-          >
-            All Bets
-          </button>
-
-          <button
-            className={activeTab === "my" ? "active" : ""}
-            onClick={() => setActiveTab("my")}
-          >
-            My Bet
-          </button>
-        </div>
-
-        <h3>{activeTab === "all" ? "ALL BETS" : "MY BETS"}</h3>
-
-        <p className="cr-count">
-          {activeTab === "all" ? players.length : myBets.length}
-        </p>
-
-        <div className="cr-bet-head">
-          <span>User</span>
-          <span>Bet(INR)</span>
-          <span>Cash out</span>
-        </div>
-
-        <div className="cr-user-list">
-          {activeTab === "all"
-            ? players.map((user, index) => (
-                <div className="cr-user-row" key={index}>
-                  <span className="cr-user">
-                    <i>{user.avatar || "👤"}</i>
-                    {user.name}
-                  </span>
-
-                  <strong>{Number(user.balance || 0).toFixed(2)}</strong>
-                  <strong>{user.tag || "0.00"}</strong>
-                </div>
-              ))
-            : myBets.map((bet) => (
-                <div className="cr-user-row" key={bet.id}>
-                  <span className="cr-user">
-                    <i>🚗</i>
-                    {bet.bet_type}
-                  </span>
-
-                  <strong>{Number(bet.amount || 0).toFixed(2)}</strong>
-                  <strong>{Number(bet.payout || 0).toFixed(2)}</strong>
-                </div>
-              ))}
-        </div>
-      </aside>
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        players={players}
+        myBets={myBets}
+      />
 
       <main className="cr-main">
         <div className="cr-round-row">
-          <div className="cr-result-panel">
-            <span className="cr-result-title">LAST RESULT</span>
-
-            <div className="cr-result-logos">
-              {history.length === 0 && (
-                <span className="cr-empty">No Result</span>
-              )}
-
-              {history
-                .slice(-8)
-                .reverse()
-                .map((item) => (
-                  <div className="cr-result-logo" key={item.round_id}>
-                    <img
-                      src={`${LOGO}${fileName(item.winner?.key)}`}
-                      alt={item.winner?.key}
-                    />
-                  </div>
-                ))}
-            </div>
-          </div>
+          <ResultStrip history={history} />
 
           <div className={`cr-round-info ${phase}`}>
-            <span>{phase.toUpperCase()}</span>
-            <strong>{countdown}s</strong>
+            <span>BETTING TIME</span>
+            <strong>{String(countdown || 0).padStart(2, "0")}s</strong>
           </div>
         </div>
 
-        <div className="cr-table">
-          <div className="cr-outer">
-            {logos.map(([logo, x, y], i) => (
-              <div
-                key={`${logo}-${i}`}
-                className={`cr-logo ${
-                  trackIndex === i ? "cr-logo-active" : ""
-                }`}
-                style={{ left: `${x}%`, top: `${y}%` }}
-              >
-                <img src={`${LOGO}${fileName(logo)}`} alt={logo} />
-              </div>
-            ))}
+        <RaceBoard
+          logos={logos}
+          trackIndex={trackIndex}
+          activeLogo={activeLogo}
+          betCars={betCars}
+          localBets={localBets}
+          placeCoinBet={placeCoinBet}
+          phase={phase}
+          winner={winner}
+        />
 
-            <div
-              className="cr-moving-marker"
-              style={{
-                left: `${activeLogo[1]}%`,
-                top: `${activeLogo[2]}%`,
-              }}
-            >
-              <img src={`${LOGO}${fileName(activeLogo[0])}`} alt="" />
-            </div>
-
-            <div className="cr-betting-grid">
-              {betCars.map((car) => (
-                <div
-                  className="cr-bet-cell"
-                  key={car}
-                  onClick={() => placeCoinBet(car)}
-                >
-                  <span className="cr-rupee">₹</span>
-
-                  <div className="cr-input-strip">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={localBets[car] || "0"}
-                      readOnly
-                    />
-                  </div>
-
-                  <img
-                    className="cr-bet-logo"
-                    src={`${LOGO}${fileName(car)}`}
-                    alt={car}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {phase === "result" && winner && (
-              <div className="cr-winner-popup">
-                <span>WINNER</span>
-
-                <img
-                  src={`${LOGO}${fileName(winner.key)}`}
-                  alt={winner.key}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="cr-coin-panel">
-          {coins.map((coin) => (
-            <button
-              key={coin}
-              className={`cr-coin ${selectedCoin === coin ? "active" : ""}`}
-              onClick={() => setSelectedCoin(coin)}
-            >
-              ₹{coin}
-            </button>
-          ))}
-
-          <button className="cr-clear-btn" onClick={clearBets}>
-            CLEAR
-          </button>
-        </div>
+        <CoinPanel
+          coins={coins}
+          selectedCoin={selectedCoin}
+          setSelectedCoin={setSelectedCoin}
+          clearBets={clearBets}
+        />
       </main>
 
       {phase === "result" && winner && (
@@ -363,12 +457,11 @@ export default function LuckyRace() {
             <h1>WINNER</h1>
 
             <div className="cr-win-logo-ring">
-              <img src={`${LOGO}${fileName(winner.key)}`} alt={winner.key} />
+              <CarLogo name={winner.key} />
             </div>
 
             <h2>{winnerName}</h2>
             <p>YOU WIN</p>
-
             <strong>₹ {totalWin.toFixed(2)}</strong>
           </div>
 
@@ -383,8 +476,8 @@ export default function LuckyRace() {
       )}
 
       <div className="cr-live-box">
-        <span>{connection}</span>
-        <strong>Total bets: {totalBet.toFixed(2)}</strong>
+        <span><i /> {connection}</span>
+        <strong>Total bets: ₹ {totalBet.toFixed(2)}</strong>
       </div>
     </div>
   );
