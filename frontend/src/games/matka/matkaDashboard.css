@@ -14,7 +14,7 @@ body{background:#f3dfc1;font-family:Arial,sans-serif}
 .mk-play-now.blink-play{animation:playBlink 2.2s ease-in-out infinite}
 .mk-play-now.result-done{background:linear-gradient(180deg,#ff2727,#9b0000);animation:none;box-shadow:0 0 14px rgba(255,0,0,.5),inset 0 0 10px rgba(255,255,255,.25)}
 .mk-play-now:hover{filter:brightness(1.12);transform:scale(1.03)}
-.money-side{position:fixed;top:0px;width:250px;height:870px;border-radius:0px;background-position:center;background-size:100% 100%;background-repeat:no-repeat;z-index:1;overflow:hidden;filter:drop-shadow(0 0 24px rgba(184,120,0,.45));animation:sideGlow 2.4s ease-in-out infinite alternate}
+.money-side{position:fixed;top:0px;width:250px;height:870px;border-radius:30px;background-position:center;background-size:100% 100%;background-repeat:no-repeat;z-index:1;overflow:hidden;filter:drop-shadow(0 0 24px rgba(184,120,0,.45));animation:sideGlow 2.4s ease-in-out infinite alternate}
 .money-side.left{left:50px;background-image:url("/assets/left-matk-animation.webp")}
 .money-side.right{right:50px;background-image:url("/assets/right-matk-animation.webp")}
 .money-side .money-matka,.money-side .money-coin,.money-side .money-pile{display:none!important}
