@@ -266,12 +266,23 @@ async def game_loop():
 
             if progress > 0.91:
                 extra_slow_progress = (progress - 0.91) / 0.09
-                delay = 0.40 + extra_slow_progress * 0.45
+                delay = 0.40 + extra_slow_progress * 0.30
+
+            if progress > 0.95:
+                delay = 0.85
+            
+            if progress > 0.98:
+                delay = 0.95
 
             await asyncio.sleep(delay)
 
         state["track_index"] = stop_index
         state["winner"] = winner
+        state["phase"] = "stopping"
+
+        await broadcast("stop_effect")
+        await asyncio.sleep(1.2)
+
         state["phase"] = "result"
 
         settle_bets(winner)

@@ -1009,3 +1009,5 @@ body {
   .cr-coin { width: 62px; height: 62px; font-size: 15px; }
   .cr-bet-submit { min-width: 180px; }
 }
+.cr-moving-marker.stop-effect{animation:stopBounce 1.2s ease-out both}
+@keyframes stopBounce{0%{transform:translate(-50%,-50%) scale(1)}25%{transform:translate(-50%,-50%) scale(1.35)}45%{transform:translate(-50%,-50%) scale(.9)}65%{transform:translate(-50%,-50%) scale(1.18)}100%{transform:translate(-50%,-50%) scale(1.08);box-shadow:0 0 35px #fff000,0 0 75px #00ff51}}

@@ -242,7 +242,7 @@ function RaceBoard({ logos, trackIndex, activeLogo, betCars, localBets, placeCoi
         ))}
 
         <div
-          className="cr-moving-marker"
+          className={`cr-moving-marker ${phase==="stopping"?"stop-effect":""}`}
           style={{
             left: `${activeLogo[1]}%`,
             top: `${activeLogo[2]}%`,
