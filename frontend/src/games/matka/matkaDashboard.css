@@ -62,68 +62,68 @@ body{background:#f3dfc1;font-family:Arial,sans-serif}
 .mk-overlay-card .mk-play-now{left:305px;top:45px}
 
 /* individual open-time */
-.card-0 .mk-open-time{left:-10px;top:56px}
-.card-1 .mk-open-time{left:-10;top:56px}
-.card-2 .mk-open-time{left:-10px;top:56px}
-.card-3 .mk-open-time{left:0px;top:56px}
-.card-4 .mk-open-time{left:0px;top:56px}
-.card-5 .mk-open-time{left:0px;top:56px}
-.card-6 .mk-open-time{left:0px;top:56px}
-.card-7 .mk-open-time{left:0px;top:56px}
-.card-8 .mk-open-time{left:0px;top:56px}
-.card-9 .mk-open-time{left:0px;top:56px}
-.card-10 .mk-open-time{left:0px;top:56px}
-.card-11 .mk-open-time{left:0px;top:56px}
-.card-12 .mk-open-time{left:0px;top:56px}
-.card-13 .mk-open-time{left:0px;top:56px}
+.card-0 .mk-open-time{left:-15px;top:55px}
+.card-1 .mk-open-time{left:0px;top:55px}
+.card-2 .mk-open-time{left:-15px;top:60px}
+.card-3 .mk-open-time{left:0px;top:60px}
+.card-4 .mk-open-time{left:-15px;top:65px}
+.card-5 .mk-open-time{left:0px;top:65px}
+.card-6 .mk-open-time{left:-15px;top:70px}
+.card-7 .mk-open-time{left:0px;top:70px}
+.card-8 .mk-open-time{left:-15px;top:75px}
+.card-9 .mk-open-time{left:0px;top:75px}
+.card-10 .mk-open-time{left:-15px;top:85px}
+.card-11 .mk-open-time{left:0px;top:75px}
+.card-12 .mk-open-time{left:-15px;top:90px}
+.card-13 .mk-open-time{left:0px;top:85px}
 
 /* individual result */
 .card-0 .mk-result-main{left:90px;top:50px}
-.card-1 .mk-result-main{left:90px;top:50px}
-.card-2 .mk-result-main{left:90px;top:50px}
-.card-3 .mk-result-main{left:90px;top:50px}
-.card-4 .mk-result-main{left:90px;top:50px}
-.card-5 .mk-result-main{left:90px;top:50px}
-.card-6 .mk-result-main{left:90px;top:50px}
-.card-7 .mk-result-main{left:90px;top:50px}
-.card-8 .mk-result-main{left:90px;top:50px}
-.card-9 .mk-result-main{left:90px;top:50px}
-.card-10 .mk-result-main{left:90px;top:50px}
-.card-11 .mk-result-main{left:90px;top:50px}
-.card-12 .mk-result-main{left:90px;top:50px}
-.card-13 .mk-result-main{left:90px;top:50px}
+.card-1 .mk-result-main{left:100px;top:50px}
+.card-2 .mk-result-main{left:90px;top:55px}
+.card-3 .mk-result-main{left:100px;top:55px}
+.card-4 .mk-result-main{left:90px;top:60px}
+.card-5 .mk-result-main{left:100px;top:60px}
+.card-6 .mk-result-main{left:90px;top:65px}
+.card-7 .mk-result-main{left:100px;top:65px}
+.card-8 .mk-result-main{left:90px;top:70px}
+.card-9 .mk-result-main{left:100px;top:70px}
+.card-10 .mk-result-main{left:90px;top:80px}
+.card-11 .mk-result-main{left:100px;top:75px}
+.card-12 .mk-result-main{left:90px;top:80px}
+.card-13 .mk-result-main{left:100px;top:80px}
 
 /* individual close-time */
-.card-0 .mk-close-time{left:180px;top:56px}
-.card-1 .mk-close-time{left:178px;top:56px}
-.card-2 .mk-close-time{left:178px;top:56px}
-.card-3 .mk-close-time{left:178px;top:56px}
-.card-4 .mk-close-time{left:178px;top:56px}
-.card-5 .mk-close-time{left:178px;top:56px}
-.card-6 .mk-close-time{left:178px;top:56px}
-.card-7 .mk-close-time{left:178px;top:56px}
-.card-8 .mk-close-time{left:178px;top:56px}
-.card-9 .mk-close-time{left:178px;top:56px}
-.card-10 .mk-close-time{left:178px;top:56px}
+.card-0 .mk-close-time{left:190px;top:56px}
+.card-0 .mk-close-time{left:300px;top:56px}
+.card-0 .mk-close-time{left:190px;top:56px}
+.card-0 .mk-close-time{left:190px;top:56px}
+.card-0 .mk-close-time{left:190px;top:56px}
+.card-0 .mk-close-time{left:190px;top:56px}
+.card-0 .mk-close-time{left:190px;top:56px}
+.card-0 .mk-close-time{left:190px;top:56px}
+.card-0 .mk-close-time{left:190px;top:56px}
+.card-0 .mk-close-time{left:190px;top:56px}
+.card-0 .mk-close-time{left:190px;top:56px}
 .card-11 .mk-close-time{left:178px;top:56px}
 .card-12 .mk-close-time{left:178px;top:56px}
 .card-13 .mk-close-time{left:178px;top:56px}
 
 /* individual play button */
-.card-0 .mk-play-now{left:305px;top:35px}
-.card-1 .mk-play-now{left:299px;top:35px}
-.card-2 .mk-play-now{left:305px;top:38px}
-.card-3 .mk-play-now{left:299px;top:38px}
-.card-4 .mk-play-now{left:305px;top:34px}
-.card-5 .mk-play-now{left:299px;top:35px}
-.card-6 .mk-play-now{left:305px;top:36px}
-.card-7 .mk-play-now{left:299px;top:38px}
-.card-8 .mk-play-now{left:305px;top:35px}
-.card-9 .mk-play-now{left:299px;top:36px}
-.card-10 .mk-play-now{left:305px;top:45px}
-.card-11 .mk-play-now{left:299px;top:35px}
-.card-12 .mk-play-now{left:305px;top:41px}
-.card-13 .mk-play-now{left:299px;top:41px}
+.card-0 .mk-play-now{left:302px;top:38px}
+.card-1 .mk-play-now{left:305px;top:41px}
+.card-2 .mk-play-now{left:308px;top:47px}
+.card-3 .mk-play-now{left:305px;top:48px}
+.card-4 .mk-play-now{left:307px;top:50px}
+.card-5 .mk-play-now{left:305px;top:50px}
+.card-6 .mk-play-now{left:307px;top:58px}
+.card-7 .mk-play-now{left:305px;top:59px}
+.card-8 .mk-play-now{left:306px;top:61px}
+.card-9 .mk-play-now{left:303px;top:61px}
+.card-10 .mk-play-now{left:307px;top:70px}
+.card-11 .mk-play-now{left:305px;top:61px}
+.card-12 .mk-play-now{left:307px;top:67px}
+.card-13 .mk-play-now{left:305px;top:66px}
 
 @media(max-width:1300px){
   .mk-page:before,.mk-page:after{display:none}
