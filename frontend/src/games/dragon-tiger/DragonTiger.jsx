@@ -63,7 +63,8 @@ function InfoBar({ data, totalBet, totalWin, phaseText, progress }) {
 
 function ResultHistory({ history }) {
   const fallback = ["T", "D", "D", "T", "T", "D", "T", "D", "T", "D", "Tie", "D", "T", "D", "T", "Tie", "D", "T"];
-  const list = (history && history.length ? [...history].reverse() : fallback).slice(0,18);
+  const rawList = history && history.length ? [...history].reverse() : fallback;
+  const list = [...rawList, ...fallback].slice(0,18);
   return (
     <section className="dt-history-panel">
       <div className="dt-history-title"><span />WIN / RESULT HISTORY<span /></div>

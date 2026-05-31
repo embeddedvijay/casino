@@ -392,9 +392,6 @@ function App() {
             <button>My Bet</button>
           </div>
 
-          <h3>ALL BETS</h3>
-          <div className="count">{data.all_bets.length}</div>
-
           <div className="table-head">
             <span>User</span>
             <span>Bet(INR)</span>
@@ -424,7 +421,7 @@ function App() {
         <section className="game-area">
           <div className="history-wrap">
             <div className="history">
-              {[...(data.history||[])].reverse().slice(0,8).map((v,i)=>(
+              {[...(data.history||[])].reverse().slice(0,100).map((v,i)=>(
                 <span key={i} className={historyClass(v)}>{Number(v).toFixed(2)}x</span>
               ))}
               <button className={`drop ${showHistory?"open":""}`} onClick={()=>setShowHistory(!showHistory)}>⌄</button>

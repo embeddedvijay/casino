@@ -308,3 +308,5 @@ button { font-family: inherit; }
   .dt-chip-list button { width: 45px; height: 45px; font-size: 13px; }
   .dt-action-btn { height: 45px; font-size: 13px; }
 }
+.dt-history-list{width:100%;display:grid;grid-template-columns:repeat(18,1fr);gap:8px}
+.dt-history-list span{width:100%;height:50px;justify-self:stretch;display:flex;align-items:center;justify-content:center}
