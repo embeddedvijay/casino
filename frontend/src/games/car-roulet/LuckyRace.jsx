@@ -258,8 +258,8 @@ function RaceBoard({ logos, trackIndex, activeLogo, betCars, localBets, placeCoi
               key={car}
               onClick={() => placeCoinBet(car)}
             >
-              <span className="cr-rupee">₹ {localBets[car] || "0"}</span>
               <CarLogo name={car} className="cr-bet-logo" />
+              <span className="cr-rupee">₹ {localBets[car] || "0"}</span>
             </button>
           ))}
         </div>
