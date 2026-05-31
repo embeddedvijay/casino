@@ -95,19 +95,19 @@ body{background:#f3dfc1;font-family:Arial,sans-serif}
 
 /* individual close-time */
 .card-0 .mk-close-time{left:190px;top:56px}
-.card-0 .mk-close-time{left:300px;top:56px}
-.card-0 .mk-close-time{left:190px;top:56px}
-.card-0 .mk-close-time{left:190px;top:56px}
-.card-0 .mk-close-time{left:190px;top:56px}
-.card-0 .mk-close-time{left:190px;top:56px}
-.card-0 .mk-close-time{left:190px;top:56px}
-.card-0 .mk-close-time{left:190px;top:56px}
-.card-0 .mk-close-time{left:190px;top:56px}
-.card-0 .mk-close-time{left:190px;top:56px}
-.card-0 .mk-close-time{left:190px;top:56px}
-.card-11 .mk-close-time{left:178px;top:56px}
-.card-12 .mk-close-time{left:178px;top:56px}
-.card-13 .mk-close-time{left:178px;top:56px}
+.card-1 .mk-close-time{left:200px;top:56px}
+.card-2 .mk-close-time{left:190px;top:61px}
+.card-3 .mk-close-time{left:200px;top:61px}
+.card-4 .mk-close-time{left:190px;top:66px}
+.card-5 .mk-close-time{left:200px;top:66px}
+.card-6 .mk-close-time{left:190px;top:71px}
+.card-7 .mk-close-time{left:200px;top:71px}
+.card-8 .mk-close-time{left:190px;top:76px}
+.card-9 .mk-close-time{left:200px;top:76px}
+.card-10 .mk-close-time{left:190px;top:86px}
+.card-11 .mk-close-time{left:200px;top:81px}
+.card-12 .mk-close-time{left:190px;top:86px}
+.card-13 .mk-close-time{left:200px;top:86px}
 
 /* individual play button */
 .card-0 .mk-play-now{left:302px;top:38px}
