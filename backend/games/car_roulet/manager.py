@@ -222,7 +222,7 @@ async def game_loop():
         state["countdown"] = WAITING_SECONDS
         state["waiting_seconds"] = WAITING_SECONDS
         state["winner"] = None
-        state["track_index"] = next((i for i,x in enumerate(state["track"]) if x["key"]=="star"),0)
+        state["track_index"] = 0
 
         bets_by_round[round_id] = []
 
