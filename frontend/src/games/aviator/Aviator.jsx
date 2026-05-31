@@ -310,6 +310,7 @@ function App() {
   });
 
   const [notice, setNotice] = useState("");
+  const [showHistory,setShowHistory]=useState(false);
   const wsRef = useRef(null);
 
   useEffect(() => {
@@ -421,13 +422,20 @@ function App() {
         </aside>
 
         <section className="game-area">
-          <div className="history">
-            {data.history.map((v, i) => (
-              <span key={i} className={historyClass(v)}>
-                {Number(v).toFixed(2)}x
-              </span>
-            ))}
-            <span className="drop">⌄</span>
+          <div className="history-wrap">
+            <div className="history">
+              {[...(data.history||[])].reverse().slice(0,8).map((v,i)=>(
+                <span key={i} className={historyClass(v)}>{Number(v).toFixed(2)}x</span>
+              ))}
+              <button className={`drop ${showHistory?"open":""}`} onClick={()=>setShowHistory(!showHistory)}>⌄</button>
+            </div>
+            {showHistory&&(
+              <div className="history-dropdown">
+                {[...(data.history||[])].reverse().map((v,i)=>(
+                  <span key={i} className={historyClass(v)}>{Number(v).toFixed(2)}x</span>
+                ))}
+              </div>
+            )}
           </div>
 
             <div
