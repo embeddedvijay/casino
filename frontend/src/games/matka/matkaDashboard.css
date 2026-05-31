@@ -2,8 +2,15 @@
 html,body,#root{margin:0;width:100%;min-height:100%;overflow-x:hidden;overflow-y:auto}
 body{background:#f3dfc1;font-family:Arial,sans-serif}
 :root{--board-w:1280px;--board-h:1430px;--open-w:82px;--open-h:46px;--open-size:13px;--close-w:82px;--close-h:46px;--close-size:13px;--result-w:78px;--result-h:62px;--result-size:28px;--panal-size:12px;--play-w:92px;--play-h:62px;--play-size:18px}
-.mk-page{width:100%;min-height:100vh;display:flex;justify-content:center;background:#f3dfc1;overflow-y:auto;position:relative}
-.mk-board{position:relative;width:var(--board-w);height:var(--board-h);min-width:var(--board-w);background:url("/assets/matka-bg.webp") top center/100% 100% no-repeat;z-index:2}
+.mk-page{width:100%;min-height:100vh;background:#f3dfc1;overflow-y:auto;position:relative;padding-top:70px}
+.mk-top{position:fixed;top:0;left:0;right:0;height:70px;z-index:99999;display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:#111;color:#fff}
+.mk-brand{display:flex;align-items:center;gap:7px;font-size:28px;font-weight:900;color:#fff}
+.mk-brand b{color:#ffd24a}
+.mk-home{font-size:26px}
+.mk-profile{display:flex;align-items:center;gap:14px;font-size:18px;font-weight:800;color:#fff}
+.mk-balance{color:#7CFF4B}
+.mk-user{background:#222;border:1px solid #444;border-radius:8px;padding:7px 10px}
+.mk-board{position:relative;width:var(--board-w);height:var(--board-h);min-width:var(--board-w);background:url("/assets/matka-bg.webp") top center/100% 100% no-repeat;z-index:2;margin:0 auto}
 .mk-overlay-card{position:absolute;z-index:15}
 .mk-open-time,.mk-close-time{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;color:#05051a;font-weight:900;line-height:1.05}
 .mk-open-time{width:var(--open-w);height:var(--open-h);font-size:var(--open-size)}
@@ -16,7 +23,7 @@ body{background:#f3dfc1;font-family:Arial,sans-serif}
 .mk-play-now.blink-play{animation:playBlink 2.2s ease-in-out infinite}
 .mk-play-now.result-done{background:linear-gradient(180deg,#ff2727,#9b0000);animation:none;box-shadow:0 0 14px rgba(255,0,0,.5),inset 0 0 10px rgba(255,255,255,.25)}
 .mk-play-now:hover{filter:brightness(1.12);transform:scale(1.03)}
-.money-side{position:fixed;top:0px;width:250px;height:870px;border-radius:30px;background-position:center;background-size:100% 100%;background-repeat:no-repeat;z-index:1;overflow:hidden;filter:drop-shadow(0 0 24px rgba(184,120,0,.45));animation:sideGlow 2.4s ease-in-out infinite alternate}
+.money-side{position:fixed;top:70px;width:250px;height:800px;border-radius:30px;background-position:center;background-size:100% 100%;background-repeat:no-repeat;z-index:1;overflow:hidden;filter:drop-shadow(0 0 24px rgba(184,120,0,.45));animation:sideGlow 2.4s ease-in-out infinite alternate}
 .money-side.left{left:50px;background-image:url("/assets/left-matk-animation.webp")}
 .money-side.right{right:50px;background-image:url("/assets/right-matk-animation.webp")}
 .money-side .money-matka,.money-side .money-coin,.money-side .money-pile{display:none!important}

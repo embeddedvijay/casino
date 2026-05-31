@@ -1,6 +1,13 @@
-.mk-input-page{min-height:100vh;background:url("/casino-assets/market-input-bg.png") center top/cover no-repeat;color:#fff;font-family:Arial,sans-serif;padding:34px 0 70px;position:relative;overflow-x:hidden}
+.mk-input-page{min-height:100vh;background:url("/casino-assets/market-input-bg.png") center top/cover no-repeat;color:#fff;font-family:Arial,sans-serif;padding:105px 0 70px;position:relative;overflow-x:hidden}
 .mk-input-page:before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.15);pointer-events:none}
 .mk-input-page>*{position:relative;z-index:2}
+.mk-top{position:fixed;top:0;left:0;right:0;height:70px;z-index:99999;display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:#111;color:#fff}
+.mk-brand{display:flex;align-items:center;gap:7px;font-size:28px;font-weight:900;color:#fff}
+.mk-brand b{color:#ffd24a}
+.mk-home{font-size:26px}
+.mk-profile{display:flex;align-items:center;gap:14px;font-size:18px;font-weight:800;color:#fff}
+.mk-balance{color:#7CFF4B}
+.mk-user{background:#222;border:1px solid #444;border-radius:8px;padding:7px 10px}
 .mk-input-back{position:absolute;top:42px;left:42px;width:70px;height:70px;border:2px solid #ffe600;border-radius:14px;background:rgba(0,0,0,.45);color:#ffe600;font-size:62px;line-height:45px;font-weight:900;cursor:pointer;box-shadow:0 0 18px #ffcc00}
 .mk-input-header{text-align:center;margin:0 auto 20px}
 .mk-input-header h1{margin:28px 0 12px;font-size:104px;line-height:.85;color:#ffd24a;font-family:Georgia,serif;font-weight:1000;letter-spacing:8px;text-shadow:0 5px 0 #4b1600,0 0 24px #ff9d00}
@@ -20,4 +27,4 @@
 .mk-server-response{height:280px;border:1.8px solid #d8c100;border-radius:10px;background:rgba(25,0,3,.82);color:#fff;font-size:22px;line-height:1.45;padding:18px;white-space:pre-wrap;overflow:auto;box-sizing:border-box}
 .mk-input-confirm{display:block;margin:46px auto 0;width:580px;height:90px;border:4px solid #ffe600;border-radius:18px;background:linear-gradient(180deg,#167900,#075000);color:#eaffea;font-size:40px;font-weight:1000;letter-spacing:2px;cursor:pointer;text-shadow:0 2px 5px #000;box-shadow:0 0 18px #ffe600,inset 0 0 18px rgba(255,255,255,.22)}
 .mk-input-confirm:before{content:"✓";display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;margin-right:22px;border:2px solid #dfff64;border-radius:50%;font-size:42px}
-@media(max-width:900px){.mk-input-page{padding-top:24px}.mk-input-back{top:22px;left:18px;width:54px;height:54px;font-size:48px}.mk-input-header h1{font-size:64px}.mk-input-header h2{font-size:30px;padding:14px 34px}.mk-input-header p{font-size:18px;padding:0 16px}.mk-input-card{width:88vw;padding:22px}.mk-input-send,.mk-input-confirm{width:86vw}.mk-input-confirm{font-size:30px}}
+@media(max-width:900px){.mk-input-page{padding-top:95px}.mk-input-back{top:22px;left:18px;width:54px;height:54px;font-size:48px}.mk-input-header h1{font-size:64px}.mk-input-header h2{font-size:30px;padding:14px 34px}.mk-input-header p{font-size:18px;padding:0 16px}.mk-input-card{width:88vw;padding:22px}.mk-input-send,.mk-input-confirm{width:86vw}.mk-input-confirm{font-size:30px}}
