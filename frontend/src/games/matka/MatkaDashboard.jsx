@@ -42,6 +42,15 @@ const v=value===undefined||value===null||value===""?"***":String(value);
 return v.padEnd(3,"*").slice(0,3).split("");
 };
 
+const isRealResult=(value)=>{
+const v=value===undefined||value===null?"":String(value).trim();
+return v!==""&&v!=="*"&&v!=="**"&&v!=="-"&&v!=="--"&&v!==":--";
+};
+
+function MoneyRain({side}){
+return <div className={`money-side ${side}`}><div className="money-matka">🏺</div>{[...Array(22)].map((_,i)=><span key={i} className="money-coin" style={{"--i":i}}>₹</span>)}<div className="money-pile">●●●</div></div>;
+}
+
 function ResultOverlay({game,market,index}){
 const open=getValue(market,["OPEN","open"],"*");
 const close=getValue(market,["CLOSE","close"],"*");
@@ -49,13 +58,14 @@ const opana=getValue(market,["OPANAL","OPANA","OPENPANA","openPana","open_pana"]
 const cpana=getValue(market,["CPANAL","CPANA","CLOSEPANA","closePana","close_pana"],"***");
 const openTime=getValue(market,["OTIME","openTime","open_time"],"--:--");
 const closeTime=getValue(market,["CTIME","closeTime","close_time"],"--:--");
-const result=open==="*"&&close==="*"?"--":`${open}${close}`;
+const fullResult=isRealResult(open)&&isRealResult(close);
+const result=!isRealResult(open)&&!isRealResult(close)?"--":`${isRealResult(open)?open:"*"}${isRealResult(close)?close:"*"}`;
 return(
 <div className={`mk-overlay-card card-${index}`}>
 <div className="mk-open-time">{openTime}</div>
 <div className="mk-result-main">{result}<small>{splitPana(opana).join("")} - {splitPana(cpana).join("")}</small></div>
 <div className="mk-close-time">{closeTime}</div>
-<button className="mk-play-now" onClick={()=>window.location.href=`/matka/play/${game.key}`}>PLAY NOW</button>
+<button className={`mk-play-now ${fullResult?"result-done":"blink-play"}`} onClick={()=>window.location.href=`/matka/play/${game.key}`}>PLAY NOW</button>
 </div>
 );
 }
@@ -77,6 +87,8 @@ const results=resultDoc?.Result&&typeof resultDoc.Result==="object"?resultDoc.Re
 
 return(
 <div className="mk-page">
+  <MoneyRain side="left"/>
+  <MoneyRain side="right"/>
   <div className="mk-board">
     {games.map((game,index)=><ResultOverlay key={game.key} game={game} index={index} market={getMarket(results,game.key)}/>)}
   </div>
