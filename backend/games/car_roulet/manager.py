@@ -222,7 +222,7 @@ async def game_loop():
         state["countdown"] = WAITING_SECONDS
         state["waiting_seconds"] = WAITING_SECONDS
         state["winner"] = None
-        state["track_index"] = 0
+        state["track_index"] = next((i for i,x in enumerate(state["track"]) if x["key"]=="star"),0)
 
         bets_by_round[round_id] = []
 
@@ -255,9 +255,18 @@ async def game_loop():
 
             await broadcast("spin_tick")
 
-            # Start fast, end slow
+
+            # Start fast, end me last 3 sec real slow
             progress = step / max(total_steps, 1)
             delay = 0.045 + (progress ** 2) * 0.16
+
+            if progress > 0.82:
+                slow_progress = (progress - 0.82) / 0.18
+                delay = 0.22 + slow_progress * 0.18
+
+            if progress > 0.91:
+                extra_slow_progress = (progress - 0.91) / 0.09
+                delay = 0.40 + extra_slow_progress * 0.45
 
             await asyncio.sleep(delay)
 
