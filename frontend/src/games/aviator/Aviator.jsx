@@ -203,7 +203,7 @@ function BetPanel({ seat, phase, multiplier, roundId, myBets, onNotice }) {
 
   async function placeBet() {
     try {
-      const res = await fetch(`${API}/api/bet`, {
+      const res = await fetch(`${API}/api/games/aviator/bet`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -222,7 +222,7 @@ function BetPanel({ seat, phase, multiplier, roundId, myBets, onNotice }) {
 
   async function cashout() {
     try {
-      const res = await fetch(`${API}/api/cashout`, {
+      const res = await fetch(`${API}/api/games/aviator/cashout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

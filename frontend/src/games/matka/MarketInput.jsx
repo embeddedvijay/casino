@@ -36,7 +36,21 @@ setConfirming(false);
 
 return(
 <div className="mk-input-page">
-<button className="mk-input-back" onClick={()=>window.location.href="/matka"}>‹</button>
+          <header className="top">
+        <div className="brand">
+          <span className="home">⌂</span>
+          <span>GOLD</span>
+          <b>365</b>
+        </div>
+
+        <div className="profile">
+          <span>🌐</span>
+          <span className="balance">0.00</span>
+          <span>☰</span>
+          <span className="user">DEM123</span>
+        </div>
+      </header>
+
 <div className="mk-input-header">
 <h1>MATKA</h1>
 <h2>MARKET MESSAGE</h2>

@@ -250,6 +250,7 @@ button { font-family: inherit; }
 .dt-chip-list button:nth-child(3) { background: radial-gradient(circle, #8f27b7, #55106e 58%, #27012f); }
 .dt-chip-list button:nth-child(4) { background: radial-gradient(circle, #e5a525, #9a5807 58%, #4c2300); }
 .dt-chip-list button:nth-child(5) { background: radial-gradient(circle, #cf2b24, #80100c 58%, #3a0200); }
+.dt-chip-list button:nth-child(6) { background: radial-gradient(circle, #cf2b24, #80100c 58%, #3a0200); }
 .dt-chip-list button.active { transform: translateY(-10px) scale(1.08); box-shadow: 0 0 28px #fff33e; }
 .dt-action-btn { height: 58px; border-radius: 11px; border: 2px solid #d99a00; color: #ffd234; font-size: 24px; font-weight: 900; cursor: pointer; background: linear-gradient(180deg, rgba(32,17,0,.92), rgba(0,0,0,.96)); box-shadow: inset 0 0 16px rgba(255,164,0,.12), 0 0 14px rgba(255,164,0,.12); }
 .dt-action-btn.confirm { color: #fffad0; background: linear-gradient(180deg, #41ef12, #087d12); border-color: #baff29; box-shadow: 0 0 22px rgba(56,255,0,.45), inset 0 0 18px rgba(255,255,255,.24); }

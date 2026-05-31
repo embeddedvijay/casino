@@ -105,6 +105,20 @@ const results=resultDoc?.Result&&typeof resultDoc.Result==="object"?resultDoc.Re
 
 return(
 <div className="mk-page">
+          <header className="top">
+        <div className="brand">
+          <span className="home">⌂</span>
+          <span>GOLD</span>
+          <b>365</b>
+        </div>
+
+        <div className="profile">
+          <span>🌐</span>
+          <span className="balance">0.00</span>
+          <span>☰</span>
+          <span className="user">DEM123</span>
+        </div>
+      </header>
 <MoneyRain side="left"/>
 <MoneyRain side="right"/>
 <div className="mk-board">

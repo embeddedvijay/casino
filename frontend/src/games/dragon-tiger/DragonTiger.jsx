@@ -4,7 +4,7 @@ import "./dragonTiger.css";
 const API = "http://localhost:8005";
 const WS = "ws://localhost:8005/ws/dragon-tiger";
 const USER_ID = "demo_user";
-const CHIP_VALUES = [1, 5, 10, 50, 100];
+const CHIP_VALUES = [10, 50, 100, 200, 500, 1000];
 
 function formatMoney(n) {
   return Number(n || 0).toFixed(2);
@@ -25,7 +25,10 @@ function playChipSound() {
 function TopBar({ soundOn, setSoundOn }) {
   return (
     <header className="dt-topbar">
-      <a href="/aviator" className="dt-back">‹</a>
+      <div className="cr-brand">
+        <span className="cr-brand-badge">♛</span>
+        <strong>GOLD365</strong>
+      </div>
       <div className="dt-logo-wrap">
         <i className="dt-logo-dragon" />
         <div className="dt-logo">
@@ -35,11 +38,12 @@ function TopBar({ soundOn, setSoundOn }) {
         </div>
         <i className="dt-logo-tiger" />
       </div>
-      <button className="dt-wallet" onClick={() => setSoundOn(!soundOn)} title="Sound">
-        <strong>{soundOn ? "💼" : "🔇"}</strong>
-        <span>Credits</span>
-        <b>₹ 0.00</b>
-      </button>
+      <div className="cr-account">
+        <div className="cr-wallet">💼 ₹ 0.00</div>
+        <button className="cr-plus">+</button>
+        <b>DEMO123</b>
+        <span className="cr-user-dot">●</span>
+      </div>
     </header>
   );
 }
