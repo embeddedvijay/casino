@@ -3,6 +3,7 @@ import Aviator from "./games/aviator/Aviator.jsx";
 import DragonTiger from "./games/dragon-tiger/DragonTiger.jsx";
 import LuckyRace from "./games/car-roulet/LuckyRace.jsx";
 import MatkaDashboard from "./games/matka/MatkaDashboard.jsx";
+import MarketInput from "./games/matka/MarketInput.jsx";
 
 const lobbyGames = [
   { path: "/aviator", tag: "HOT", theme: "#ff0b58", image: "/casino-assets/aviator.png" },
@@ -129,6 +130,9 @@ export default function App() {
   if (path === "/dragon-tiger") return <DragonTiger />;
   if (path === "/lucky-race") return <LuckyRace />;
   if (path === "/matka") return <MatkaDashboard />;
+  
+  if (path.startsWith("/matka/market-input/")) { const marketName=decodeURIComponent(path.split("/matka/market-input/")[1]||""); window.history.replaceState({marketName}, "", "/matka/market-input"); return <MarketInput marketName={marketName}/>; }
+  if (path === "/matka/market-input") return <MarketInput marketName={window.history.state?.marketName||""}/>;
 
   return <GameLobby />;
 }
