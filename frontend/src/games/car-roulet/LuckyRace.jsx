@@ -150,11 +150,6 @@ function Sidebar({ activeTab, setActiveTab, players, myBets }) {
         </button>
       </div>
 
-      <div className="cr-side-title-row">
-        <h3>{activeTab === "all" ? "ALL BETS" : "MY BETS"}</h3>
-        <span>{activeTab === "all" ? players.length : myBets.length}</span>
-      </div>
-
       <div className="cr-bet-head">
         <span>User</span>
         <span>Bet(INR)</span>
