@@ -1,6 +1,10 @@
 import React,{useEffect,useState}from"react";
 import"./matkaDashboard.css";
-const API="http://localhost:8005";
+//const API="http://localhost:8005";
+
+const HOST=window.location.hostname;
+const API=`http://${HOST}:8005`;
+
 const games=[{key:"SRIDEVI_DAY",name:"SRIDEVI DAY"},{key:"SRIDEVI_NIGHT",name:"SRIDEVI NIGHT"},{key:"TIME_BAZAR_DAY",name:"TIME BAZAR DAY"},{key:"MAIN_BAZAR_NIGHT",name:"MAIN BAZAR NIGHT"},{key:"MADHUR_DAY",name:"MADHUR DAY"},{key:"MADHUR_NIGHT",name:"MADHUR NIGHT"},{key:"MILAN_DAY",name:"MILAN DAY"},{key:"MILAN_NIGHT",name:"MILAN NIGHT"},{key:"RAJDHANI_DAY",name:"RAJDHANI DAY"},{key:"RAJDHANI_NIGHT",name:"RAJDHANI NIGHT"},{key:"SUPREME_DAY",name:"SUPREME DAY"},{key:"SUPREME_NIGHT",name:"SUPREME NIGHT"},{key:"KALYAN_DAY",name:"KALYAN DAY"},{key:"KALYAN_NIGHT",name:"KALYAN NIGHT"}];
 const market_schedule={Saturday:{RAJDHANI_NIGHT:false,KALYAN_NIGHT:false,MAIN_BAZAR_NIGHT:false},Sunday:{TIME_BAZAR_DAY:false,MILAN_DAY:false,RAJDHANI_DAY:false,KALYAN_DAY:false,MADHUR_NIGHT:false,MILAN_NIGHT:false,RAJDHANI_NIGHT:false,KALYAN_NIGHT:false,MAIN_BAZAR_NIGHT:false}};
 const market_flow=["SRIDEVI_DAY","TIME_BAZAR_DAY","MADHUR_DAY","MILAN_DAY","RAJDHANI_DAY","SUPREME_DAY","KALYAN_DAY","SRIDEVI_NIGHT","MADHUR_NIGHT","SUPREME_NIGHT","MILAN_NIGHT","RAJDHANI_NIGHT","KALYAN_NIGHT","MAIN_BAZAR_NIGHT"];

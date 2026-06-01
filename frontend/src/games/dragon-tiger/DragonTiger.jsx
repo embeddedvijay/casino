@@ -1,8 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./dragonTiger.css";
 
-const API = "http://localhost:8005";
-const WS = "ws://localhost:8005/ws/dragon-tiger";
+// const API = "http://localhost:8005";
+// const WS = "ws://localhost:8005/ws/dragon-tiger";
+
+const HOST=window.location.hostname;
+const API=`http://${HOST}:8005`;
+const WS=`ws://${HOST}:8005/ws/dragon-tiger`;
+
 const USER_ID = "demo_user";
 const CHIP_VALUES = [10, 50, 100, 200, 500, 1000];
 

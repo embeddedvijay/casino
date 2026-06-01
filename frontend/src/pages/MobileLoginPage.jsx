@@ -27,12 +27,7 @@ return(
   </a>
 </div>
 </main>
-<footer className="login-footer">
-<a href="https://wa.me/919999999999" target="_blank" rel="noreferrer">🎧 Support</a>
-<a href="/terms">📄 Terms & Conditions</a>
-<a href="/privacy">🛡 Privacy Policy</a>
-<span>© 2024 {companyName}. All rights reserved.</span>
-</footer>
+
 </div>
 );
 }

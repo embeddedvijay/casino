@@ -1,10 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./luckyRace.css";
 
-const API = "http://localhost:8005";
-const WS = "ws://localhost:8005/ws/lucky-race";
-const USER_ID = "demo_user";
+// const API = "http://localhost:8005";
+// const WS = "ws://localhost:8005/ws/lucky-race";
 
+const HOST=window.location.hostname;
+const API=`http://${HOST}:8005`;
+const WS=`ws://${HOST}:8005/ws/lucky-race`;
+
+const USER_ID = "demo_user";
 const LOGO = "/new-logos/";
 
 const fileName = (name) =>

@@ -1,8 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./dragonTiger.css";
 
-const API = "http://localhost:8005";
-const WS = "ws://localhost:8005/ws/dragon-tiger";
+// const API = "http://localhost:8005";
+// const WS = "ws://localhost:8005/ws/dragon-tiger";
+
+const HOST=window.location.hostname;
+const API=`http://${HOST}:8005`;
+const WS=`ws://${HOST}:8005/ws/dragon-tiger`;
+
 const USER_ID = "demo_user";
 const CHIP_VALUES = [10, 50, 100, 200, 500, 1000];
 
@@ -64,7 +69,7 @@ function InfoBar({ data, totalBet, totalWin, phaseText, progress }) {
 function ResultHistory({ history }) {
   const fallback = ["T", "D", "D", "T", "T", "D", "T", "D", "T", "D", "Tie", "D", "T", "D", "T", "Tie", "D", "T"];
   const rawList = history && history.length ? [...history].reverse() : fallback;
-  const list = [...rawList, ...fallback].slice(0,18);
+  const list = [...rawList, ...fallback].slice(0,15);
   return (
     <section className="dt-history-panel">
       <div className="dt-history-title"><span />WIN / RESULT HISTORY<span /></div>

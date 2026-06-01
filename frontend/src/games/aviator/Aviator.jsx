@@ -2,8 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./aviator.css";
 
-const API = "http://localhost:8005";
-const WS = "ws://localhost:8005/ws/game";
+// const API = "http://localhost:8005";
+// const WS = "ws://localhost:8005/ws/game";
+
+const HOST=window.location.hostname;
+const API=`http://${HOST}:8005`;
+const WS=`ws://${HOST}:8005/ws/game`;
 
 function formatMoney(n) {
   return Number(n || 0).toFixed(2);

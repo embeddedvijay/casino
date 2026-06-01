@@ -1,10 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./luckyRace.css";
 
-const API = "http://localhost:8005";
-const WS = "ws://localhost:8005/ws/lucky-race";
-const USER_ID = "demo_user";
+// const API = "http://localhost:8005";
+// const WS = "ws://localhost:8005/ws/lucky-race";
 
+const HOST=window.location.hostname;
+const API=`http://${HOST}:8005`;
+const WS=`ws://${HOST}:8005/ws/lucky-race`;
+
+const USER_ID = "demo_user";
 const LOGO = "/new-logos/";
 
 const fileName = (name) =>
@@ -130,74 +134,7 @@ function TopBar({ totalBet, totalWin, roundId, phase, countdown }) {
   );
 }
 
-function Sidebar({ activeTab, setActiveTab, players, myBets }) {
-  const topPlayer = players[0];
 
-  return (
-    <aside className="cr-sidebar">
-      <div className="cr-tabs">
-        <button
-          className={activeTab === "all" ? "active" : ""}
-          onClick={() => setActiveTab("all")}
-        >
-          All Bets
-        </button>
-        <button
-          className={activeTab === "my" ? "active" : ""}
-          onClick={() => setActiveTab("my")}
-        >
-          My Bet
-        </button>
-      </div>
-
-      <div className="cr-bet-head">
-        <span>User</span>
-        <span>Bet(INR)</span>
-        <span>Cash out</span>
-      </div>
-
-      <div className="cr-user-list">
-        {activeTab === "all"
-          ? players.map((user, index) => (
-              <div className="cr-user-row" key={index}>
-                <span className="cr-user">
-                  <i>{user.avatar || "👤"}</i>
-                  {user.name}
-                </span>
-                <strong>₹ {money(user.balance)}</strong>
-                <strong className={user.tag === "WINNER" ? "winner" : ""}>
-                  {user.tag || "0.00"}
-                </strong>
-              </div>
-            ))
-          : myBets.map((bet) => (
-              <div className="cr-user-row" key={bet.id}>
-                <span className="cr-user">
-                  <i>🚗</i>
-                  {prettyName(bet.bet_type)}
-                </span>
-                <strong>₹ {money(bet.amount)}</strong>
-                <strong>₹ {money(bet.payout)}</strong>
-              </div>
-            ))}
-      </div>
-
-      <div className="cr-jackpot-card">
-        <span>JACKPOT</span>
-        <b>₹ 1,25,000</b>
-      </div>
-
-      <div className="cr-top-winner">
-        <i>👑</i>
-        <div>
-          <span>TOP WINNER</span>
-          <b>{topPlayer?.name || "Raj Banna Saa"}</b>
-          <strong>₹ {money(topPlayer?.balance || 95680)}</strong>
-        </div>
-      </div>
-    </aside>
-  );
-}
 
 function ResultStrip({ history }) {
   return (
@@ -400,13 +337,6 @@ export default function LuckyRace() {
         roundId={gameState?.round_id}
         phase={phase}
         countdown={countdown}
-      />
-
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        players={players}
-        myBets={myBets}
       />
 
       <main className="cr-main">
