@@ -1,0 +1,38 @@
+*{box-sizing:border-box}
+html,body,#root{margin:0;width:100%;min-height:100%;overflow-x:hidden;overflow-y:auto}
+body{background:#f3dfc1;font-family:Arial,sans-serif}
+:root{--board-w:1280px;--board-h:1430px;--open-w:82px;--open-h:46px;--open-size:13px;--close-w:82px;--close-h:46px;--close-size:13px;--result-w:78px;--result-h:62px;--result-size:28px;--panal-size:12px;--play-w:92px;--play-h:62px;--play-size:18px}
+.mk-page{width:100%;min-height:100vh;background:#f3dfc1;overflow-y:auto;position:relative;padding-top:70px}
+.mk-top{position:fixed;top:0;left:0;right:0;height:70px;z-index:99999;display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:#111;color:#fff}
+.mk-brand{display:flex;align-items:center;gap:7px;font-size:28px;font-weight:900;color:#fff}
+.mk-brand b{color:#ffd24a}
+.mk-home{font-size:26px}
+.mk-profile{display:flex;align-items:center;gap:14px;font-size:18px;font-weight:800;color:#fff}
+.mk-balance{color:#7CFF4B}
+.mk-user{background:#222;border:1px solid #444;border-radius:8px;padding:7px 10px}
+.mk-board{position:relative;width:var(--board-w);height:var(--board-h);min-width:var(--board-w);background:url("/assets/matka-bg.webp") top center/100% 100% no-repeat;z-index:2;margin:0 auto}
+.mk-overlay-card{position:absolute;z-index:15}
+.mk-open-time,.mk-close-time{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;color:#05051a;font-weight:900;line-height:1.05}
+.mk-open-time{width:var(--open-w);height:var(--open-h);font-size:var(--open-size)}
+.mk-close-time{width:var(--close-w);height:var(--close-h);font-size:var(--close-size)}
+.mk-result-main{position:absolute;width:var(--result-w);height:var(--result-h);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#28104d;font-size:var(--result-size);font-weight:1000;line-height:1;text-shadow:0 1px 0 #fff}
+.mk-result-main small{display:block;margin-top:5px;font-size:var(--panal-size);color:#c00040;font-weight:900;line-height:1.05;letter-spacing:.2px}
+.mk-result-main.market-off{font-size:24px;color:#d40000;text-shadow:0 1px 0 #fff,0 0 8px rgba(255,0,0,.35)}
+.mk-result-main.market-off small{font-size:9px;color:#d40000;letter-spacing:0}
+.mk-play-now{position:absolute;width:var(--play-w);height:var(--play-h);border:0;border-radius:14px;background:linear-gradient(180deg,#ff2aa0,#8c22ff);color:#fff;cursor:pointer;z-index:30;font-size:var(--play-size);font-weight:1000;line-height:1;box-shadow:0 0 15px rgba(150,0,255,.45),inset 0 0 10px rgba(255,255,255,.3)}
+.mk-play-now.blink-play{animation:playBlink 2.2s ease-in-out infinite}
+.mk-play-now.result-done{background:linear-gradient(180deg,#ff2727,#9b0000);animation:none;box-shadow:0 0 14px rgba(255,0,0,.5),inset 0 0 10px rgba(255,255,255,.25)}
+.mk-play-now:hover{filter:brightness(1.12);transform:scale(1.03)}
+.money-side{position:fixed;top:70px;width:250px;height:800px;border-radius:30px;background-position:center;background-size:100% 100%;background-repeat:no-repeat;z-index:1;overflow:hidden;filter:drop-shadow(0 0 24px rgba(184,120,0,.45));animation:sideGlow 2.4s ease-in-out infinite alternate}
+.money-side.left{left:50px;background-image:url("/assets/left-matk-animation.webp")}
+.money-side.right{right:50px;background-image:url("/assets/right-matk-animation.webp")}
+.money-side .money-matka,.money-side .money-coin,.money-side .money-pile{display:none!important}
+@keyframes sideGlow{from{filter:drop-shadow(0 0 14px rgba(184,120,0,.35));transform:scale(1)}to{filter:drop-shadow(0 0 32px rgba(255,185,0,.75));transform:scale(1.015)}}
+@keyframes playBlink{0%,100%{filter:brightness(1);transform:scale(1);box-shadow:0 0 12px rgba(150,0,255,.45),inset 0 0 10px rgba(255,255,255,.3)}50%{filter:brightness(1.45);transform:scale(1.07);box-shadow:0 0 24px rgba(255,0,190,.9),0 0 45px rgba(255,195,0,.55),inset 0 0 14px rgba(255,255,255,.65)}}
+.card-0{left:225px;top:270px}.card-1{left:820px;top:270px}.card-2{left:220px;top:420px}.card-3{left:820px;top:420px}.card-4{left:220px;top:570px}.card-5{left:820px;top:570px}.card-6{left:220px;top:710px}.card-7{left:820px;top:710px}.card-8{left:220px;top:850px}.card-9{left:820px;top:850px}.card-10{left:220px;top:980px}.card-11{left:820px;top:990px}.card-12{left:220px;top:1120px}.card-13{left:820px;top:1120px}
+.mk-overlay-card .mk-open-time{left:0px;top:56px}.mk-overlay-card .mk-result-main{left:90px;top:50px}.mk-overlay-card .mk-close-time{left:178px;top:56px}.mk-overlay-card .mk-play-now{left:305px;top:45px}
+.card-0 .mk-open-time{left:-15px;top:55px}.card-1 .mk-open-time{left:0px;top:55px}.card-2 .mk-open-time{left:-15px;top:60px}.card-3 .mk-open-time{left:0px;top:60px}.card-4 .mk-open-time{left:-15px;top:65px}.card-5 .mk-open-time{left:0px;top:65px}.card-6 .mk-open-time{left:-15px;top:70px}.card-7 .mk-open-time{left:0px;top:70px}.card-8 .mk-open-time{left:-15px;top:75px}.card-9 .mk-open-time{left:0px;top:75px}.card-10 .mk-open-time{left:-15px;top:85px}.card-11 .mk-open-time{left:0px;top:75px}.card-12 .mk-open-time{left:-15px;top:90px}.card-13 .mk-open-time{left:0px;top:85px}
+.card-0 .mk-result-main{left:90px;top:50px}.card-1 .mk-result-main{left:100px;top:50px}.card-2 .mk-result-main{left:90px;top:55px}.card-3 .mk-result-main{left:100px;top:55px}.card-4 .mk-result-main{left:90px;top:60px}.card-5 .mk-result-main{left:100px;top:60px}.card-6 .mk-result-main{left:90px;top:65px}.card-7 .mk-result-main{left:100px;top:65px}.card-8 .mk-result-main{left:90px;top:70px}.card-9 .mk-result-main{left:100px;top:70px}.card-10 .mk-result-main{left:90px;top:80px}.card-11 .mk-result-main{left:100px;top:75px}.card-12 .mk-result-main{left:90px;top:80px}.card-13 .mk-result-main{left:100px;top:80px}
+.card-0 .mk-close-time{left:190px;top:56px}.card-1 .mk-close-time{left:200px;top:56px}.card-2 .mk-close-time{left:190px;top:61px}.card-3 .mk-close-time{left:200px;top:61px}.card-4 .mk-close-time{left:190px;top:66px}.card-5 .mk-close-time{left:200px;top:66px}.card-6 .mk-close-time{left:190px;top:71px}.card-7 .mk-close-time{left:200px;top:71px}.card-8 .mk-close-time{left:190px;top:76px}.card-9 .mk-close-time{left:200px;top:76px}.card-10 .mk-close-time{left:190px;top:86px}.card-11 .mk-close-time{left:200px;top:81px}.card-12 .mk-close-time{left:190px;top:86px}.card-13 .mk-close-time{left:200px;top:86px}
+.card-0 .mk-play-now{left:302px;top:38px}.card-1 .mk-play-now{left:305px;top:41px}.card-2 .mk-play-now{left:308px;top:47px}.card-3 .mk-play-now{left:305px;top:48px}.card-4 .mk-play-now{left:307px;top:50px}.card-5 .mk-play-now{left:305px;top:50px}.card-6 .mk-play-now{left:307px;top:58px}.card-7 .mk-play-now{left:305px;top:59px}.card-8 .mk-play-now{left:306px;top:61px}.card-9 .mk-play-now{left:303px;top:61px}.card-10 .mk-play-now{left:307px;top:70px}.card-11 .mk-play-now{left:305px;top:61px}.card-12 .mk-play-now{left:307px;top:67px}.card-13 .mk-play-now{left:305px;top:66px}
+@media(max-width:1300px){.money-side{display:none}.mk-board{transform-origin:top center;transform:scale(calc(100vw / 1280));margin-bottom:calc(-1430px + (1430px * (100vw / 1280)))}}

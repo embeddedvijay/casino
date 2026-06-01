@@ -1,0 +1,312 @@
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; width: 100%; min-height: 100%; }
+body { background: #030303; font-family: Arial, Helvetica, sans-serif; }
+button { font-family: inherit; }
+
+.dt-page-new {
+  position: relative;
+  width: 100vw;
+  min-width: 1180px;
+  min-height: 100vh;
+  overflow-x: auto;
+  overflow-y: auto;
+  color: #fff;
+  background: #030303;
+}
+
+.dt-bg-new {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(0,0,0,.05), rgba(0,0,0,.72) 70%),
+    linear-gradient(90deg, rgba(145,0,0,.58), rgba(0,0,0,.30) 47%, rgba(0,55,180,.55)),
+    url("/assets/dragon-tiger-bg.png") center / cover no-repeat;
+  filter: saturate(1.35) contrast(1.15);
+}
+
+.dt-topbar {
+  position: relative;
+  z-index: 5;
+  height: 74px;
+  display: grid;
+  grid-template-columns: 88px 1fr 150px;
+  align-items: center;
+  padding: 8px 18px;
+  background:
+    radial-gradient(circle at 28% 50%, rgba(255,62,0,.36), transparent 18%),
+    radial-gradient(circle at 74% 50%, rgba(0,120,255,.42), transparent 18%),
+    linear-gradient(90deg, rgba(0,0,0,.98), rgba(20,8,0,.94) 42%, rgba(0,10,30,.95));
+  border-bottom: 1px solid rgba(255,176,0,.85);
+  box-shadow: 0 0 30px rgba(255,150,0,.18);
+}
+
+.dt-back {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 2px solid #d79500;
+  color: #ffcf28;
+  background: linear-gradient(180deg, rgba(18,13,0,.92), rgba(0,0,0,.9));
+  text-decoration: none;
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 800;
+  box-shadow: inset 0 0 15px rgba(255,190,0,.14), 0 0 15px rgba(255,140,0,.18);
+}
+
+.dt-logo-wrap {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.dt-logo-dragon,
+.dt-logo-tiger {
+  width: 130px;
+  height: 58px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+.dt-logo-dragon { background-image: url("/assets/dragon.png"); filter: drop-shadow(0 0 18px #ff2b00); }
+.dt-logo-tiger { background-image: url("/assets/tiger.png"); filter: drop-shadow(0 0 18px #187dff); }
+
+.dt-logo {
+  text-align: center;
+  font-family: Georgia, serif;
+  font-size: 45px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.dt-logo span { color: #ff3b22; text-shadow: 0 0 12px #ff2400, 0 2px 0 #340400; }
+.dt-logo b { color: #70c9ff; text-shadow: 0 0 14px #0077ff, 0 2px 0 #001b38; }
+.dt-logo em { margin: 0 15px; color: #ffd233; font-style: normal; text-shadow: 0 0 16px #ff9d00; }
+
+.dt-wallet {
+  height: 52px;
+  border-radius: 10px;
+  border: 1.5px solid #d79500;
+  background: rgba(0,0,0,.72);
+  color: #fff;
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  grid-template-rows: 1fr 1fr;
+  align-items: center;
+  column-gap: 7px;
+  cursor: pointer;
+  box-shadow: inset 0 0 18px rgba(255,160,0,.12);
+}
+.dt-wallet strong { grid-row: 1 / 3; color: #69ff00; font-size: 28px; }
+.dt-wallet span { align-self: end; color: #ffe16c; font-size: 14px; font-weight: 700; }
+.dt-wallet b { align-self: start; color: #6cff22; font-size: 15px; }
+
+.dt-shell-new {
+  position: relative;
+  z-index: 3;
+  width: min(100vw - 20px, 1500px);
+  margin: 0 auto;
+  padding: 0 0 112px;
+}
+
+.dt-info-row {
+  height: 74px;
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.45fr 1fr .9fr 1.65fr;
+  overflow: hidden;
+  border: 1px solid rgba(218,146,0,.78);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(13,8,0,.93), rgba(0,0,0,.86));
+  box-shadow: inset 0 0 34px rgba(255,130,0,.11), 0 0 18px rgba(255,140,0,.09);
+}
+.dt-info-row div {
+  position: relative;
+  padding: 12px 16px 10px 54px;
+  border-right: 1px solid rgba(216,142,0,.45);
+}
+.dt-info-row div:last-child { border-right: 0; }
+.dt-info-row i { position: absolute; left: 20px; top: 24px; color: #ffd100; font-style: normal; font-size: 22px; }
+.dt-info-row span { display: block; color: #ffe45c; font-size: 15px; font-weight: 900; }
+.dt-info-row b { display: block; margin-top: 7px; color: #fff; font-size: 17px; }
+.dt-info-row .dt-count strong { display: block; margin-top: 0; color: #ff2736; font-size: 34px; line-height: 1; font-weight: 900; letter-spacing: 2px; }
+.dt-info-row .dt-time { padding-left: 22px; }
+.dt-info-row .dt-time em { display: block; height: 10px; margin-top: 15px; overflow: hidden; border-radius: 999px; background: rgba(50,31,0,.95); border: 1px solid rgba(255,190,0,.17); }
+.dt-info-row .dt-time u { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ff1734, #ff8e00, #ffe44a); box-shadow: 0 0 15px rgba(255,75,0,.9); }
+
+.dt-history-panel {
+  position: relative;
+  margin-top: 12px;
+  padding: 10px 70px 13px;
+  border: 1px solid rgba(218,146,0,.82);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(12,8,0,.90), rgba(0,0,0,.84));
+  box-shadow: inset 0 0 30px rgba(0,0,0,.88), 0 0 18px rgba(255,150,0,.12);
+}
+.dt-history-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: #ffc02b;
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: .9px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.dt-history-title span { width: 145px; height: 1px; background: linear-gradient(90deg, transparent, #dc9400, transparent); }
+.dt-history-list { display: grid; grid-template-columns: repeat(18, 1fr); gap: 11px; }
+.dt-history-list span {
+  width: 50px;
+  height: 50px;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: 900;
+  font-family: Georgia, serif;
+  background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.23), rgba(0,0,0,.8) 66%);
+  box-shadow: inset 0 0 14px rgba(255,255,255,.10), 0 0 14px rgba(0,0,0,.85);
+}
+.dt-history-list .dragon { color: #fff0a8; border: 1.8px solid #ff2424; background-color: rgba(170,0,0,.82); }
+.dt-history-list .tiger { color: #cfeeff; border: 1.8px solid #287cff; background-color: rgba(0,50,160,.78); }
+.dt-history-list .tie { color: #d4ff67; border: 1.8px solid #6cff17; background-color: rgba(0,100,24,.75); font-size: 17px; }
+
+.dt-hero-panel {
+  position: relative;
+  height: 360px;
+  margin-top: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(90deg, rgba(135,0,0,.35), rgba(0,0,0,.2) 50%, rgba(0,45,165,.35)),
+    url("/assets/dragon-tiger-bg.png") center / cover no-repeat;
+  box-shadow: inset 0 0 90px rgba(0,0,0,.78);
+}
+.dt-hero-vignette { position: absolute; inset: 0; z-index: 2; background: radial-gradient(circle at 50% 45%, transparent 0 22%, rgba(0,0,0,.23) 58%, rgba(0,0,0,.62)); }
+.dt-creature { position: absolute; z-index: 1; top: 0; width: 530px; height: 330px; background-size: contain; background-repeat: no-repeat; background-position: center; pointer-events: none; animation: creatureFloat 3s ease-in-out infinite; }
+.dt-dragon-img { left: 48px; background-image: url("/assets/dragon.png"); filter: drop-shadow(0 0 30px #ff2b00); }
+.dt-tiger-img { right: 50px; background-image: url("/assets/tiger.png"); filter: drop-shadow(0 0 34px #0e78ff); animation-delay: .35s; }
+.dt-dragon-title, .dt-tiger-title { position: absolute; bottom: 34px; z-index: 4; margin: 0; font-family: Georgia, serif; font-size: 42px; letter-spacing: 3px; font-weight: 900; }
+.dt-dragon-title { left: 132px; color: #ff4b29; text-shadow: 0 0 16px #ff1900; }
+.dt-tiger-title { right: 150px; color: #48caff; text-shadow: 0 0 18px #0087ff; }
+.dt-card-stage { position: absolute; z-index: 5; left: 50%; top: 48%; transform: translate(-50%, -50%); display: grid; grid-template-columns: 128px 132px 128px; gap: 46px; align-items: center; }
+.dt-playing-card { width: 118px; height: 172px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 10px; border: 3px solid #ffd16b; color: #111; background: linear-gradient(135deg, #fff6d4, #fff 46%, #ffe3a2); font-weight: 900; box-shadow: 0 0 22px rgba(255,190,0,.88), 0 16px 30px rgba(0,0,0,.78); animation: cardFlip .45s ease; }
+.dt-playing-card span { font-size: 25px; }
+.dt-playing-card b { text-align: center; font-size: 58px; }
+.dt-playing-card.red { color: #d40023; }
+.dt-playing-card.back { display: grid; place-items: center; color: #ffe967; background: linear-gradient(135deg, #0b2556, #020818); border-color: #3d8dff; }
+.dt-playing-card.dragon.back { border-color: #ffdb7a; background: linear-gradient(135deg, #720014, #280004); }
+.dt-playing-card.back i { font-style: normal; font-size: 54px; font-family: Georgia, serif; text-shadow: 0 0 15px #ffcf22; }
+.dt-vs-orb { width: 126px; height: 126px; display: grid; place-items: center; border-radius: 50%; border: 5px solid #ffe342; color: #fff15e; font-size: 38px; font-weight: 900; background: radial-gradient(circle, #24df16, #087818 60%, #002e07); box-shadow: 0 0 28px #22ff24, 0 0 45px rgba(255,186,0,.66), inset 0 0 28px rgba(255,255,255,.22); animation: pulseOrb 1.45s ease-in-out infinite; }
+.dt-mini-winner { position: absolute; left: 50%; top: 16px; z-index: 8; transform: translateX(-50%); min-width: 260px; padding: 10px 18px; text-align: center; border-radius: 16px; border: 2px solid #ffe45d; background: rgba(0,0,0,.82); box-shadow: 0 0 28px #ffd700; }
+.dt-mini-winner span { display: block; color: #ffe45d; font-weight: 900; }
+.dt-mini-winner b { display: block; font-size: 25px; }
+.dt-mini-winner em { color: #42ff42; font-style: normal; font-weight: 900; }
+
+.dt-main-bets-new { display: grid; grid-template-columns: 1fr 360px 1fr; gap: 16px; margin-top: 0; }
+.dt-tie-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 10px; }
+.dt-bet-box { position: relative; min-height: 128px; overflow: hidden; border-radius: 10px; border: 2px solid #e4a300; color: white; font-weight: 900; cursor: pointer; isolation: isolate; text-transform: uppercase; box-shadow: inset 0 0 45px rgba(0,0,0,.48), 0 0 18px rgba(255,170,0,.22); }
+.dt-bet-box::before, .dt-bet-box::after { content: ""; position: absolute; width: 28px; height: 28px; border-color: #ffd65d; opacity: .85; }
+.dt-bet-box::before { left: 8px; top: 8px; border-left: 2px solid; border-top: 2px solid; }
+.dt-bet-box::after { right: 8px; bottom: 8px; border-right: 2px solid; border-bottom: 2px solid; }
+.dt-bet-box.small { min-height: 59px; border-radius: 8px; }
+.dt-bet-shine { position: absolute; inset: 0; z-index: -1; opacity: .52; }
+.dt-bet-box span { position: relative; z-index: 2; display: block; font-size: 30px; letter-spacing: .4px; text-shadow: 0 2px 0 rgba(0,0,0,.8); }
+.dt-bet-box mark { margin-left: 8px; color: #ffe04f; background: transparent; font-size: .72em; }
+.dt-bet-box.small span { font-size: 22px; }
+.dt-bet-box b { position: relative; z-index: 2; display: block; margin-top: 12px; color: #ffea36; font-size: 20px; }
+.dt-bet-box.small b { margin-top: 4px; font-size: 17px; }
+.dt-bet-badge { position: absolute; right: 24px; bottom: 12px; z-index: 1; color: rgba(255,255,255,.08); font-family: Georgia, serif; font-size: 48px; font-style: normal; font-weight: 900; pointer-events: none; }
+.dt-bet-box.dragon { background: linear-gradient(180deg, #c60011, #720006 52%, #2b0002); }
+.dt-bet-box.dragon .dt-bet-shine { background: radial-gradient(circle at 17% 50%, rgba(255,122,0,.25), transparent 30%), url("/assets/dragon.png") 3% 52% / 42% auto no-repeat; }
+.dt-bet-box.tiger { background: linear-gradient(180deg, #094cff, #082378 52%, #04051f); }
+.dt-bet-box.tiger .dt-bet-shine { background: radial-gradient(circle at 86% 50%, rgba(50,195,255,.28), transparent 30%), url("/assets/tiger.png") 98% 52% / 42% auto no-repeat; }
+.dt-bet-box.tie { background: linear-gradient(180deg, #0b6f13, #004407 58%, #001a03); }
+.dt-bet-box.tie .dt-bet-shine { background: radial-gradient(circle at 50% 45%, rgba(97,255,31,.36), transparent 42%); }
+.dt-bet-box.sub-dragon { background: linear-gradient(180deg, #92120d, #350301); border-color: #e27018; }
+.dt-bet-box.sub-tiger { background: linear-gradient(180deg, #0d3daa, #050d33); border-color: #286fff; }
+
+.dt-side-bets-new { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; margin-top: 10px; }
+.dt-side-bets-new .dt-bet-box { min-height: 70px; }
+.dt-suit-bets-new { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; margin-top: 10px; }
+.dt-suit-bets-new button { height: 62px; border: 1.5px solid rgba(231,156,0,.82); border-radius: 8px; color: #1b0e00; font-size: 36px; font-weight: 900; cursor: pointer; background: radial-gradient(circle at 50% 25%, #fffef2, #fff4b7 56%, #d8a84e); box-shadow: inset 0 0 16px rgba(0,0,0,.22), 0 5px 12px rgba(0,0,0,.44); }
+.dt-suit-bets-new button:nth-child(1), .dt-suit-bets-new button:nth-child(3), .dt-suit-bets-new button:nth-child(5), .dt-suit-bets-new button:nth-child(7) { color: #d00018; }
+
+.dt-chip-panel-new { position: relative; z-index: 9; width: min(1180px, calc(100vw - 32px)); min-height: 78px; margin: 12px auto 18px; display: grid; grid-template-columns: 230px 1fr 260px; align-items: center; gap: 22px; padding: 10px 18px; border-top: 1px solid rgba(255,168,0,.36); background: linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.86)); }
+.dt-chip-list { display: flex; justify-content: center; gap: 24px; }
+.dt-chip-list button { width: 76px; height: 76px; border-radius: 50%; border: 6px dashed rgba(255,255,255,.86); color: #fff; font-size: 26px; font-weight: 900; cursor: pointer; text-shadow: 0 2px 0 rgba(0,0,0,.7); box-shadow: 0 0 18px rgba(255,230,0,.38), inset 0 0 13px rgba(255,255,255,.5); }
+.dt-chip-list button:nth-child(1) { background: radial-gradient(circle, #1fb842, #087c18 58%, #003b08); }
+.dt-chip-list button:nth-child(2) { background: radial-gradient(circle, #1775d9, #0b438b 58%, #031a3d); }
+.dt-chip-list button:nth-child(3) { background: radial-gradient(circle, #8f27b7, #55106e 58%, #27012f); }
+.dt-chip-list button:nth-child(4) { background: radial-gradient(circle, #e5a525, #9a5807 58%, #4c2300); }
+.dt-chip-list button:nth-child(5) { background: radial-gradient(circle, #cf2b24, #80100c 58%, #3a0200); }
+.dt-chip-list button:nth-child(6) { background: radial-gradient(circle, #cf2b24, #80100c 58%, #3a0200); }
+.dt-chip-list button.active { transform: translateY(-10px) scale(1.08); box-shadow: 0 0 28px #fff33e; }
+.dt-action-btn { height: 58px; border-radius: 11px; border: 2px solid #d99a00; color: #ffd234; font-size: 24px; font-weight: 900; cursor: pointer; background: linear-gradient(180deg, rgba(32,17,0,.92), rgba(0,0,0,.96)); box-shadow: inset 0 0 16px rgba(255,164,0,.12), 0 0 14px rgba(255,164,0,.12); }
+.dt-action-btn.confirm { color: #fffad0; background: linear-gradient(180deg, #41ef12, #087d12); border-color: #baff29; box-shadow: 0 0 22px rgba(56,255,0,.45), inset 0 0 18px rgba(255,255,255,.24); }
+.dt-toast-new { position: fixed; right: 18px; bottom: 20px; z-index: 20; padding: 9px 16px; border-radius: 999px; background: rgba(0,0,0,.76); border: 1px solid rgba(255,220,80,.45); color: white; font-size: 13px; }
+.dt-toast-new::first-letter { color: #00d91d; }
+
+.dt-win-effect-new { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; pointer-events: none; background: radial-gradient(circle, rgba(255,185,0,.25), rgba(0,0,0,.42) 52%, rgba(0,0,0,.78)); }
+.dt-win-burst { position: absolute; inset: 0; background: radial-gradient(circle at 22% 25%, rgba(255,0,40,.9), transparent 8%), radial-gradient(circle at 78% 25%, rgba(0,93,255,.9), transparent 8%), radial-gradient(circle at 50% 57%, rgba(255,220,0,.8), transparent 11%); filter: blur(2px); animation: fireworks 1s ease-in-out infinite alternate; }
+.dt-win-card-new { width: 420px; padding: 24px; text-align: center; border-radius: 26px; border: 3px solid #ffe45d; background: linear-gradient(180deg, rgba(57,24,0,.96), rgba(0,0,0,.96)); box-shadow: 0 0 38px #ffd700, 0 0 90px rgba(255,100,0,.72); animation: winnerPop .7s ease infinite alternate; }
+.dt-crown { color: #ffe600; font-size: 58px; text-shadow: 0 0 22px #ff9d00; }
+.dt-win-card-new h1 { margin: 0; color: #ffd86b; font-size: 60px; letter-spacing: 4px; }
+.dt-win-card-new h2 { margin: 8px 0; font-size: 36px; }
+.dt-win-card-new p { margin: 0; color: #fff068; font-size: 25px; font-weight: 900; }
+.dt-coin-fall { position: fixed; top: -40px; color: #ffd700; font-size: 25px; text-shadow: 0 0 12px #ff9900; animation: coinFall 2.2s linear infinite; }
+.coin-0 { left: 5%; animation-delay: 0s; } .coin-1 { left: 9%; animation-delay: .2s; } .coin-2 { left: 14%; animation-delay: .5s; } .coin-3 { left: 20%; animation-delay: .1s; } .coin-4 { left: 25%; animation-delay: .7s; } .coin-5 { left: 30%; animation-delay: .3s; } .coin-6 { left: 36%; animation-delay: .9s; } .coin-7 { left: 42%; animation-delay: .4s; } .coin-8 { left: 48%; animation-delay: .8s; } .coin-9 { left: 54%; animation-delay: .15s; } .coin-10 { left: 60%; animation-delay: .6s; } .coin-11 { left: 66%; animation-delay: .25s; } .coin-12 { left: 72%; animation-delay: .75s; } .coin-13 { left: 78%; animation-delay: .35s; } .coin-14 { left: 84%; animation-delay: .95s; } .coin-15 { left: 90%; animation-delay: .45s; } .coin-16 { left: 95%; animation-delay: .65s; }
+
+@keyframes creatureFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.025); } }
+@keyframes cardFlip { from { transform: rotateY(90deg) scale(.8); opacity: 0; } to { transform: rotateY(0) scale(1); opacity: 1; } }
+@keyframes pulseOrb { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@keyframes fireworks { from { opacity: .35; transform: scale(.95); } to { opacity: .85; transform: scale(1.08); } }
+@keyframes winnerPop { from { transform: scale(1); } to { transform: scale(1.06); } }
+@keyframes coinFall { 0% { transform: translateY(-40px) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+@media (max-width: 900px) {
+  .dt-page-new { min-width: 0; }
+  .dt-topbar { height: 62px; grid-template-columns: 56px 1fr 82px; padding: 6px; }
+  .dt-back { width: 44px; height: 44px; font-size: 38px; }
+  .dt-logo-dragon, .dt-logo-tiger { display: none; }
+  .dt-logo { font-size: 22px; letter-spacing: 1px; }
+  .dt-wallet { height: 44px; grid-template-columns: 26px 1fr; font-size: 11px; }
+  .dt-wallet strong { font-size: 18px; }
+  .dt-shell-new { width: 100%; padding: 0 8px 100px; }
+  .dt-info-row { height: auto; grid-template-columns: repeat(2, 1fr); }
+  .dt-info-row div { padding-left: 42px; }
+  .dt-history-panel { padding: 8px; }
+  .dt-history-title span { display: none; }
+  .dt-history-list { grid-template-columns: repeat(6, 1fr); gap: 7px; }
+  .dt-history-list span { width: 38px; height: 38px; font-size: 16px; }
+  .dt-hero-panel { height: 280px; }
+  .dt-creature { width: 230px; height: 190px; top: 34px; }
+  .dt-dragon-img { left: -25px; }
+  .dt-tiger-img { right: -25px; }
+  .dt-dragon-title, .dt-tiger-title { font-size: 25px; bottom: 24px; }
+  .dt-dragon-title { left: 24px; }
+  .dt-tiger-title { right: 28px; }
+  .dt-card-stage { grid-template-columns: 72px 80px 72px; gap: 20px; }
+  .dt-playing-card { width: 72px; height: 106px; }
+  .dt-playing-card b { font-size: 34px; }
+  .dt-vs-orb { width: 78px; height: 78px; font-size: 22px; }
+  .dt-main-bets-new { grid-template-columns: 1fr; gap: 8px; }
+  .dt-bet-box { min-height: 96px; }
+  .dt-side-bets-new, .dt-suit-bets-new { grid-template-columns: repeat(4, 1fr); }
+  .dt-chip-panel-new { width: 100%; margin: 10px auto 12px; grid-template-columns: 78px 1fr 78px; gap: 7px; padding: 8px; }
+  .dt-chip-list { gap: 6px; }
+  .dt-chip-list button { width: 45px; height: 45px; font-size: 13px; }
+  .dt-action-btn { height: 45px; font-size: 13px; }
+}
+.dt-history-list{width:100%;display:grid;grid-template-columns:repeat(18,1fr);gap:8px}
+.dt-history-list span{width:100%;height:50px;justify-self:stretch;display:flex;align-items:center;justify-content:center}
