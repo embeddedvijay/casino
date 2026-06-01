@@ -4,6 +4,9 @@ import DragonTiger from "./games/dragon-tiger/DragonTiger.jsx";
 import LuckyRace from "./games/car-roulet/LuckyRace.jsx";
 import MatkaDashboard from "./games/matka/MatkaDashboard.jsx";
 import MarketInput from "./games/matka/MarketInput.jsx";
+import LoginPage from "./pages/LoginPage.jsx";
+import CreateAccount from "./pages/CreateAccount.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
 
 const lobbyGames = [
   { path: "/aviator", tag: "HOT", theme: "#ff0b58", image: "/casino-assets/aviator.png" },
@@ -69,7 +72,7 @@ function GameLobby() {
       <section style={styles.cards}>
         {lobbyGames.map((game) => (
           <a
-            href={game.path}
+            href={`/login?redirect=${encodeURIComponent(game.path)}`}
             key={game.path}
             style={{
               ...styles.card,
@@ -130,7 +133,9 @@ export default function App() {
   if (path === "/dragon-tiger") return <DragonTiger />;
   if (path === "/lucky-race") return <LuckyRace />;
   if (path === "/matka") return <MatkaDashboard />;
-  
+  if (path === "/login") return <LoginPage />;
+  if (path === "/create-account") return <CreateAccount />;
+  if (path === "/forgot-password") return <ForgotPassword />;
   if (path.startsWith("/matka/market-input/")) { const marketName=decodeURIComponent(path.split("/matka/market-input/")[1]||""); window.history.replaceState({marketName}, "", "/matka/market-input"); return <MarketInput marketName={marketName}/>; }
   if (path === "/matka/market-input") return <MarketInput marketName={window.history.state?.marketName||""}/>;
 
