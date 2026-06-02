@@ -214,6 +214,7 @@ def find_stop_index_for_winner(winner_key: str):
 
 
 async def game_loop():
+    # await asyncio.sleep(6000)
     while True:
         round_id = make_round_id()
 
