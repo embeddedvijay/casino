@@ -17,6 +17,7 @@ body{
   font-family:Arial,Helvetica,sans-serif;
   -webkit-text-size-adjust:100%;
   text-size-adjust:100%;
+  overscroll-behavior:none;
 }
 
 button{
@@ -27,15 +28,11 @@ button{
 
 .mlr-page{
   position:relative;
-  width:100%;
-  max-width:430px;
   min-height:100dvh;
-  margin:0 auto;
-  overflow-x:hidden;
-  overflow-y:auto;
+  overflow:hidden;
   color:#fff;
   background:radial-gradient(circle at 50% 25%,rgba(255,190,0,.16),transparent 22%),radial-gradient(circle at 20% 70%,rgba(255,0,170,.23),transparent 28%),linear-gradient(180deg,#160020,#040006 68%);
-  padding:10px 10px 76px;
+  padding:10px 10px 74px;
 }
 
 .mlr-page:before{
@@ -167,9 +164,9 @@ button{
 
 .mlr-track-area{
   position:absolute;
-  left:8px;
-  right:8px;
-  top:12px;
+  left:0;
+  right:0;
+  top:0;
   height:280px;
   z-index:5;
   overflow:hidden;
@@ -184,10 +181,10 @@ button{
   place-items:center;
   border-radius:50%;
   background:#030303;
-  border:2px solid rgba(255,255,255,.82);
+  border:1.5px solid rgba(255,255,255,.82);
   transform:translate(-50%,-50%);
-  box-shadow:0 5px 10px rgba(0,0,0,.85);
-  transition:.08s linear;
+  box-shadow:0 4px 8px rgba(0,0,0,.85);
+  transition:left .08s linear,top .08s linear,transform .08s linear;
 }
 
 .mlr-track-logo img{
@@ -198,14 +195,14 @@ button{
 
 .mlr-track-logo.active{
   border-color:#00ff51;
-  transform:translate(-50%,-50%) scale(1.16);
-  box-shadow:0 0 15px #00ff51,0 0 32px rgba(0,255,81,.8);
+  transform:translate(-50%,-50%) scale(1.18);
+  box-shadow:0 0 14px #00ff51,0 0 28px rgba(0,255,81,.8);
 }
 
 .mlr-moving-marker{
   position:absolute;
-  width:44px;
-  height:44px;
+  width:56px;
+  height:56px;
   display:grid;
   place-items:center;
   border-radius:50%;
@@ -219,8 +216,8 @@ button{
 }
 
 .mlr-moving-marker img{
-  width:34px;
-  height:34px;
+  width:56px;
+  height:56px;
   object-fit:contain;
 }
 
@@ -303,11 +300,10 @@ button{
 
 .mlr-coins{
   position:fixed;
-  left:50%;
+  left:0;
+  right:0;
   bottom:0;
   z-index:30;
-  width:100%;
-  max-width:430px;
   height:68px;
   display:flex;
   align-items:center;
@@ -316,7 +312,6 @@ button{
   padding:8px 10px;
   background:rgba(6,0,12,.92);
   border-top:1px solid rgba(255,199,45,.45);
-  transform:translateX(-50%);
 }
 
 .mlr-coins button{
@@ -431,7 +426,7 @@ button{
   }
 
   .mlr-track-area{
-    height:265px;
+    height:268px;
   }
 
   .mlr-track-logo{
@@ -440,13 +435,13 @@ button{
   }
 
   .mlr-moving-marker{
-    width:40px;
-    height:40px;
+    width:42px;
+    height:42px;
   }
 
   .mlr-moving-marker img{
-    width:31px;
-    height:31px;
+    width:52px;
+    height:52px;
   }
 
   .mlr-betting-grid{
@@ -474,52 +469,132 @@ button{
   }
 }
 
-@media(orientation:landscape) and (max-height:520px){
+@media screen and (max-width:768px) and (orientation:landscape){
   .mlr-page{
-    max-width:none;
-    padding:8px 10px 76px;
+    display:none;
   }
 
-  .mlr-top{
-    height:74px;
+  body::before{
+    content:"Please rotate your device to portrait mode";
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#000;
+    color:#fff;
+    font-size:22px;
+    z-index:99999;
+    text-align:center;
+    padding:20px;
+  }
+}
+
+.mlr-betting-grid .mlr-bet-cell .mlr-bet-logo{
+  width:25px!important;
+  height:25px!important;
+
+  top:2px!important;
+  left:4px!important;
+
+  right:auto!important;
+  transform:none!important;
+}
+.mlr-betting-grid .mlr-bet-cell span{
+  right:3px!important;
+  bottom:2px!important;
+  text-align:right!important;
+}
+
+/* FINAL MOVING MARKER SIZE FIX */
+.mlr-track-area .mlr-moving-marker{
+  width:70px!important;
+  height:70px!important;
+  border-width:5px!important;
+  z-index:50!important;
+}
+
+.mlr-track-area .mlr-moving-marker img{
+  width:58px!important;
+  height:58px!important;
+  object-fit:contain!important;
+}
+
+.mlr-track-area .mlr-moving-marker.stop-effect{
+  animation:mlrStopBounce 1.2s ease-out both!important;
+}
+
+@media(max-width:360px){
+  .mlr-track-area .mlr-moving-marker{
+    width:64px!important;
+    height:64px!important;
+    border-width:5px!important;
   }
 
-  .mlr-brand{
-    font-size:20px;
+  .mlr-track-area .mlr-moving-marker img{
+    width:54px!important;
+    height:54px!important;
   }
+}
 
-  .mlr-results{
-    height:52px;
-    margin:8px 0;
-  }
+.mlr-track-area .mlr-track-logo{
+  width:40px!important;
+  height:40px!important;
+}
 
-  .mlr-board{
-    height:360px;
-  }
+.mlr-track-area .mlr-track-logo img{
+  width:100%!important;
+  height:100%!important;
+}
 
-  .mlr-track-area{
-    height:225px;
-  }
+.mlr-track-area .mlr-track-logo.active{
+  transform:translate(-50%,-50%) scale(1.25)!important;
+}
 
-  .mlr-track-logo{
-    width:22px;
-    height:22px;
-  }
 
-  .mlr-moving-marker{
-    width:38px;
-    height:38px;
-  }
+/* FINAL ROUND LOGO FIX */
+.mlr-track-area .mlr-track-logo{
+  overflow:hidden!important;
+  border-radius:50%!important;
+  background:#030303!important;
+}
 
-  .mlr-moving-marker img{
-    width:29px;
-    height:29px;
-  }
+.mlr-track-area .mlr-track-logo img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  border-radius:50%!important;
+  clip-path:circle(50% at 50% 50%)!important;
+}
 
-  .mlr-betting-grid{
-    left:90px;
-    right:90px;
-    bottom:16px;
-    height:106px;
-  }
+.mlr-track-area .mlr-moving-marker{
+  overflow:hidden!important;
+  border-radius:50%!important;
+  background:#04130a!important;
+}
+
+.mlr-track-area .mlr-moving-marker img{
+  display:block!important;
+  border-radius:50%!important;
+  clip-path:circle(50% at 50% 50%)!important;
+  object-fit:cover!important;
+}
+
+.mlr-result-logo{
+  overflow:hidden!important;
+  border-radius:50%!important;
+}
+
+.mlr-result-logo img{
+  display:block!important;
+  border-radius:50%!important;
+  clip-path:circle(50% at 50% 50%)!important;
+  object-fit:cover!important;
+}
+
+.mlr-bet-logo{
+  border-radius:50%!important;
+  clip-path:circle(50% at 50% 50%)!important;
+  object-fit:cover!important;
 }

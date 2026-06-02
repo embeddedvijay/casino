@@ -1003,7 +1003,7 @@ body {
   .cr-table { width: min(900px, calc(100vw - 350px)); height: 388px; }
   .cr-logo { width: 48px; height: 48px; }
   .cr-moving-marker { width: 62px; height: 62px; }
-  .cr-betting-grid { left: 92px; right: 92px; top: 108px; bottom: 80px; }
+  .cr-betting-grid { left: 85px; right: 92px; top: 100px; bottom: 80px; }
   .cr-rupee { font-size: 22px; bottom: 9px; }
   .cr-bet-logo { width: 54px; height: 54px; top: 8px; }
   .cr-coin { width: 62px; height: 62px; font-size: 15px; }
