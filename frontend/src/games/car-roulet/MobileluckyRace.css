@@ -27,6 +27,12 @@ button{
   appearance:none;
   border:0;
   outline:0;
+  background:transparent;
+}
+
+img{
+  display:block;
+  max-width:100%;
 }
 
 .mlr-page{
@@ -35,30 +41,34 @@ button{
   overflow-x:hidden;
   overflow-y:auto;
   color:#fff;
-  padding:10px 10px 108px;
+  padding:10px 10px 18px;
   background:#040007;
 }
 
-.mlr-page:before{
+.mlr-page::before{
   content:"";
   position:fixed;
   inset:0;
-  background:radial-gradient(circle at 50% 26%,rgba(255,0,255,.28),transparent 32%),radial-gradient(circle at 50% 70%,rgba(255,190,0,.10),transparent 30%),linear-gradient(180deg,#07000f,#020006 70%);
+  background:radial-gradient(circle at 50% 26%,rgba(255,0,255,.24),transparent 32%),radial-gradient(circle at 50% 70%,rgba(255,190,0,.10),transparent 30%),linear-gradient(180deg,#07000f,#020006 70%);
   z-index:0;
+  pointer-events:none;
 }
 
-.mlr-page:after{
+.mlr-page::after{
   content:"";
   position:fixed;
   inset:0;
-  background:url("/assets/car-roulette-bg.png") center/cover no-repeat;
+  background-image:url("/assets/car-roulette-bg.png");
+  background-position:center;
+  background-size:cover;
+  background-repeat:no-repeat;
   opacity:.12;
   filter:saturate(1.35);
   z-index:1;
   pointer-events:none;
 }
 
-.mlr-page>*{
+.mlr-page > *{
   position:relative;
   z-index:2;
 }
@@ -83,10 +93,12 @@ button{
   font-size:31px;
   font-weight:1000;
   text-shadow:0 0 16px rgba(255,215,0,.72);
+  white-space:nowrap;
 }
 
 .mlr-header-brand span{
   font-size:35px;
+  line-height:1;
 }
 
 .mlr-user-pill{
@@ -109,12 +121,14 @@ button{
   background:linear-gradient(180deg,#ffe56a,#b56e00);
   color:#111;
   font-size:22px;
+  flex:0 0 auto;
 }
 
 .mlr-user-pill strong{
   display:block;
   font-size:14px;
   line-height:1;
+  white-space:nowrap;
 }
 
 .mlr-user-pill small{
@@ -123,6 +137,7 @@ button{
   color:#30ff62;
   font-size:13px;
   font-weight:1000;
+  white-space:nowrap;
 }
 
 .mlr-results{
@@ -152,7 +167,9 @@ button{
 }
 
 .mlr-result-list{
+  min-width:0;
   display:flex;
+  align-items:center;
   gap:10px;
   overflow:hidden;
 }
@@ -171,7 +188,6 @@ button{
 }
 
 .mlr-result-logo img{
-  display:block;
   width:100%;
   height:100%;
   object-fit:cover;
@@ -192,7 +208,10 @@ button{
   overflow:hidden;
   border-radius:0;
   border:0;
-  background:url("/new-logos/mobile-view-bg-table.png") center top/100% 100% no-repeat;
+  background-image:url("/new-logos/mobile-view-bg-table.png");
+  background-position:center top;
+  background-size:100% 100%;
+  background-repeat:no-repeat;
   box-shadow:none;
 }
 
@@ -200,14 +219,15 @@ button{
   position:absolute;
   left:50%;
   top:255px;
-  transform:translateX(-50%);
   width:75%;
-  z-index:5;
+  transform:translateX(-50%);
+  z-index:12;
+  pointer-events:none;
 }
 
 .mlr-dashboard-panel{
   position:relative;
-  min-height:137px;
+  min-height:136px;
   border-radius:24px;
   background:transparent;
   border:0;
@@ -258,7 +278,9 @@ button{
   margin-top:4px;
   color:#ffe829;
   font-size:19px;
+  line-height:1;
   font-weight:1000;
+  white-space:nowrap;
 }
 
 .mlr-dash-box.right{
@@ -276,7 +298,7 @@ button{
 .mlr-progress-wrap{
   position:relative;
   height:20px;
-  margin:11px 8px 0;
+  margin:10px 8px 0;
   border-radius:999px;
   overflow:hidden;
   background:transparent;
@@ -295,17 +317,17 @@ button{
 
 .mlr-progress-car{
   position:absolute;
-  top:-11px;
+  top:-10px;
   transform:translateX(-50%);
-  font-size:23px;
+  font-size:21px;
   transition:left .45s linear;
   filter:drop-shadow(0 0 8px #00eaff);
 }
 
 .mlr-finish{
   position:absolute;
-  right:5px;
-  top:-7px;
+  right:1px;
+  top:-9px;
   font-size:25px;
 }
 
@@ -341,7 +363,7 @@ button{
   right:0;
   top:8px;
   height:470px;
-  z-index:8;
+  z-index:20;
   overflow:hidden;
   pointer-events:none;
 }
@@ -362,7 +384,6 @@ button{
 }
 
 .mlr-track-logo img{
-  display:block;
   width:100%;
   height:100%;
   object-fit:cover;
@@ -394,7 +415,6 @@ button{
 }
 
 .mlr-moving-marker img{
-  display:block;
   width:50px;
   height:50px;
   object-fit:cover;
@@ -406,51 +426,17 @@ button{
   animation:mlrStopBounce 1.2s ease-out both;
 }
 
-.mlr-betting-grid{
-  position:absolute;
-  left:22px;
-  right:22px;
-  bottom:24px;
-  height:178px;
-  z-index:20;
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  grid-template-rows:repeat(2,1fr);
-  border:0;
-  border-radius:24px;
-  overflow:hidden;
-  background:transparent;
-  box-shadow:none;
-}
 
-.mlr-bet-cell{
-  position:relative;
-  border:0;
-  background:transparent;
-  overflow:hidden;
-}
-
-.mlr-bet-logo{
-  position:absolute;
-  top:9px;
-  left:50%;
-  width:48px;
-  height:48px;
-  transform:translateX(-50%);
-  object-fit:cover;
-  border-radius:50%;
-  clip-path:circle(50% at 50% 50%);
-  filter:drop-shadow(0 5px 6px #000);
-}
-
-.mlr-bet-cell span{
+.mlr-bet-cell span,
+.mlr-rupee{
   position:absolute;
   left:0;
   right:0;
-  bottom:10px;
+  bottom:7px;
   color:#ffe829;
   text-align:center;
-  font-size:20px;
+  font-size:16px;
+  line-height:1;
   font-weight:1000;
   text-shadow:0 0 8px rgba(255,216,0,.85),0 2px 5px #000;
 }
@@ -484,33 +470,34 @@ button{
 }
 
 .mlr-coins{
-  position:fixed;
-  left:0;
-  right:0;
-  bottom:0;
-  z-index:30;
-  height:84px;
+  position:relative;
+  z-index:2;
+  width:100%;
+  height:72px;
+  margin-top:12px;
   display:flex;
   align-items:center;
-  gap:11px;
-  overflow-x:auto;
-  padding:9px 12px 11px;
+  justify-content:space-between;
+  gap:6px;
+  overflow:hidden;
+  padding:7px 8px;
+  border-radius:18px;
   background:rgba(6,0,12,.96);
-  border-top:1px solid rgba(255,199,45,.45);
+  border:1px solid rgba(255,199,45,.45);
 }
 
 .mlr-coins button{
-  flex:0 0 auto;
-  width:64px;
-  height:64px;
+  flex:0 0 49px;
+  width:49px;
+  height:49px;
   border-radius:50%;
-  border:5px dashed rgba(255,255,255,.88);
+  border:4px dashed rgba(255,255,255,.88);
   color:#fff;
-  font-size:16px;
+  font-size:13px;
   font-weight:1000;
   text-shadow:0 2px 4px #000;
   background:radial-gradient(circle,#fff7d4,#d87800 48%,#5a2a00);
-  box-shadow:inset 0 0 12px rgba(255,255,255,.72),0 7px 13px rgba(0,0,0,.72);
+  box-shadow:inset 0 0 10px rgba(255,255,255,.72),0 6px 10px rgba(0,0,0,.72);
 }
 
 .mlr-coins button:nth-child(1){
@@ -534,17 +521,18 @@ button{
 }
 
 .mlr-coins button.active{
-  transform:translateY(-6px) scale(1.07);
-  box-shadow:0 0 22px rgba(255,240,0,.95);
+  transform:translateY(-4px) scale(1.05);
+  box-shadow:0 0 18px rgba(255,240,0,.95);
 }
 
 .mlr-coins .clear{
-  flex:0 0 118px;
-  width:118px;
-  border-radius:22px;
+  flex:0 0 76px;
+  width:76px;
+  height:50px;
+  border-radius:18px;
   border:2px solid #ff2859;
   background:linear-gradient(180deg,rgba(210,35,47,.96),rgba(66,5,16,.98));
-  font-size:22px;
+  font-size:16px;
 }
 
 .mlr-win{
@@ -633,8 +621,13 @@ button{
 }
 
 @media(max-width:390px){
+  .mlr-page{
+    padding:8px 8px 14px;
+  }
+
   .mlr-header{
     height:66px;
+    padding:8px 10px;
   }
 
   .mlr-header-brand{
@@ -674,7 +667,7 @@ button{
   }
 
   .mlr-dashboard-panel{
-    min-height:128px;
+    min-height:126px;
     padding-top:18px;
   }
 
@@ -692,7 +685,7 @@ button{
 
   .mlr-progress-wrap{
     height:19px;
-    margin-top:10px;
+    margin-top:9px;
   }
 
   .mlr-time-left b{
@@ -701,7 +694,7 @@ button{
 
   .mlr-track-area{
     top:8px;
-    height:470px;
+    height:450px;
   }
 
   .mlr-track-logo{
@@ -710,46 +703,33 @@ button{
   }
 
   .mlr-moving-marker{
-    width:60px;
-    height:60px;
+    width:58px;
+    height:58px;
   }
 
   .mlr-moving-marker img{
-    width:50px;
-    height:50px;
-  }
-
-  .mlr-betting-grid{
-    left:18px;
-    right:15px;
-    bottom:10px;
-    height:140px;
-  }
-
-  .mlr-bet-logo{
-    width:42px;
-    height:42px;
-  }
-
-  .mlr-bet-cell span{
-    font-size:18px;
+    width:48px;
+    height:48px;
   }
 
   .mlr-coins{
-    height:78px;
-    gap:8px;
+    height:68px;
+    gap:5px;
+    padding:7px 7px;
   }
 
   .mlr-coins button{
-    width:58px;
-    height:58px;
-    font-size:14px;
+    flex-basis:46px;
+    width:46px;
+    height:46px;
+    font-size:12px;
   }
 
   .mlr-coins .clear{
-    flex-basis:98px;
-    width:98px;
-    font-size:20px;
+    flex-basis:70px;
+    width:70px;
+    height:48px;
+    font-size:15px;
   }
 }
 
@@ -772,4 +752,145 @@ button{
     text-align:center;
     padding:20px;
   }
+}
+
+.mlr-betting-grid{
+  position:absolute;
+  left:18px;
+  right:18px;
+  bottom:10px;
+  height:148px;
+  z-index:30;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  grid-template-rows:repeat(2,1fr);
+  border:1px solid #ff4dff;
+  border-radius:18px;
+  overflow:hidden;
+  background:rgba(0,0,0,.15);
+  box-shadow:0 0 12px #ff4dff;
+}
+
+.mlr-bet-cell{
+  position:relative;
+  border-right:1px solid rgba(255,77,255,.75);
+  border-bottom:1px solid rgba(255,77,255,.75);
+  background:transparent;
+  overflow:hidden;
+}
+
+.mlr-bet-cell:nth-child(4n){
+  border-right:0;
+}
+
+.mlr-bet-cell:nth-child(n+5){
+  border-bottom:0;
+}
+
+.mlr-bet-logo{
+  position:absolute;
+  top:6px;
+  left:50%;
+  width:34px;
+  height:34px;
+  transform:translateX(-50%);
+  object-fit:contain;
+  filter:drop-shadow(0 5px 6px #000);
+}
+
+.mlr-bet-cell span,
+.mlr-rupee{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:9px;
+  color:#ffe829;
+  text-align:center;
+  font-size:16px;
+  font-weight:1000;
+}
+
+@media(max-width:390px){
+  .mlr-betting-grid{
+    left:18px;
+    right:18px;
+    bottom:10px;
+    height:148px;
+  }
+
+  .mlr-bet-logo{
+    top:10px;
+    width:34px;
+    height:34px;
+  }
+}
+
+/* override spacing */
+.mlr-page{
+  padding:0 10px 18px !important;
+}
+
+.mlr-results{
+  margin:0 !important;
+  border-radius:0 !important;
+}
+
+.mlr-board{
+  margin-top:0 !important;
+}
+
+@media(max-width:390px){
+  .mlr-page{
+    padding:0 8px 14px !important;
+  }
+
+  .mlr-results{
+    margin:0 !important;
+  }
+}
+
+html,body,#root{
+  margin:0 !important;
+  padding:0 !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  overflow-x:hidden !important;
+  background:#020006 !important;
+}
+
+body{
+  overflow-y:auto !important;
+}
+
+.mlr-page{
+  min-height:0 !important;
+  height:auto !important;
+  overflow:hidden !important;
+  padding-bottom:0 !important;
+  background:#020006 !important;
+}
+
+.mlr-board{
+  margin-bottom:0 !important;
+}
+
+.mlr-coins{
+  margin-bottom:0 !important;
+}
+@media(max-width:390px){
+  .mlr-center-dashboard{
+    top:222px;
+    width:55%;
+  }
+
+  .mlr-progress-wrap{
+    margin:14px 8px 0;
+  }
+}
+.mlr-round-id{
+  top:-100px !important;
+}
+.mlr-time-left{
+  display:none !important;
 }

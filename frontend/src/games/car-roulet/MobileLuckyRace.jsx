@@ -9,66 +9,78 @@ const LOGO="/new-logos/";
 
 const fileName=(name)=>name==="land_rover"?"land_rover.png":`${name}.png`;
 
-// const logos=[
-// ["ferrari",27,14],
-// ["bmw",36,14],
-// ["lamborghini",45,14],
-// ["land_rover",53,14],
-// ["maserati",62,14],
-// ["mercedes",70,14],
-// ["porsche",80,16],
-// ["bmw",87,22],
-// ["ferrari",91,33],
-// ["jaguar",91,44],
-// ["land_rover",91,55],
-// ["maserati",91,66],
-// ["lamborghini",87,76],
-// ["jaguar",80,83],
-// ["ferrari",71,85],
-// ["bmw",62,85],
-// ["porsche",53,85],
-// ["land_rover",44,85],
-// ["jaguar",35,85],
-// ["bmw",27,85],
-// ["porsche",18,83],
-// ["land_rover",12,76],
-// ["maserati",8,66],
-// ["mercedes",8,55],
-// ["porsche",8,44],
-// ["land_rover",8,33],
-// ["maserati",12,23],
-// ["mercedes",17,16]
-// ];
-
 const logos=[
-["ferrari",27,14],
-["bmw",36,14],
-["lamborghini",45,14],
-["land_rover",53,14],
+["bmw",27,14],
+["ferrari",36,14],
+["jaguar",45,14],
+["lamborghini",53,14],
+["land_rover",62,14],
+["maserati",70,14],
+["mercedes",80,16],
+["porsche",87,23],
+
+["bmw",91,34],
+["ferrari",91,47],
+["jaguar",91,59],
+["lamborghini",91,71],
+["land_rover",87,82],
+["maserati",80,89],
+["mercedes",71,91],
+["porsche",62,91],
+
+["bmw",53,91],
+["ferrari",44,91],
+["jaguar",35,91],
+["lamborghini",27,91],
+["land_rover",18,89],
+["maserati",12,82],
+["mercedes",8,71],
+["porsche",8,59],
+
+["bmw",8,47],
+["ferrari",8,35],
+["jaguar",12,23],
+["lamborghini",19,16]
+];
+
+const trackLogos=[
+["bmw",27,14],
+["ferrari",34,14],
+["jaguar",41,14],
+["lamborghini",48,14],
+["land_rover",55,14],
 ["maserati",62,14],
 ["mercedes",70,14],
-["porsche",80,16],
-["bmw",87,22],
-["ferrari",91,33],
-["jaguar",91,44],
-["land_rover",91,55],
-["maserati",91,66],
-["lamborghini",87,76],
-["jaguar",80,83],
-["ferrari",71,85],
-["bmw",62,85],
-["porsche",53,85],
-["land_rover",44,85],
-["jaguar",35,85],
-["bmw",27,85],
-["porsche",18,83],
-["land_rover",12,76],
-["maserati",8,66],
-["mercedes",8,55],
-["porsche",8,44],
-["land_rover",8,33],
-["maserati",12,23],
-["mercedes",19,16]
+["porsche",78,16],
+["bmw",86,23],
+["ferrari",91,34],
+["jaguar",91,47],
+["lamborghini",91,59],
+["land_rover",91,71],
+["maserati",87,82],
+["mercedes",80,89],
+["porsche",71,91],
+["bmw",62,91],
+["ferrari",53,91],
+["jaguar",44,91],
+["lamborghini",35,91],
+["land_rover",27,91],
+["maserati",18,89],
+["mercedes",12,82],
+["porsche",8,71],
+["bmw",8,59],
+["ferrari",8,47],
+["jaguar",8,35],
+["lamborghini",12,23],
+["land_rover",19,16],
+["maserati",27,14],
+["mercedes",36,14],
+["porsche",45,14],
+["bmw",53,14],
+["ferrari",62,14],
+["jaguar",70,14],
+["lamborghini",80,16],
+["land_rover",87,23]
 ];
 
 const betCars=[
@@ -130,7 +142,7 @@ return(
 </div>
 <div className="mlr-time-left">
 <span>TIME LEFT</span>
-<b>{phase==="betting"?safeCount:phase==="spinning"?"GO":phase==="stopping"?"STOP":"0"}</b>
+<b>{phase==="betting"?safeCount:phase===""?"GO":phase===""?"STOP":"0"}</b>
 <small>{phase==="betting"?"SEC":phase.toUpperCase()}</small>
 </div>
 </div>
@@ -242,6 +254,7 @@ onClick={()=>setSelectedCoin(coin)}
 ))}
 <button className="clear" onClick={clearBets}>CLEAR</button>
 </div>
+
 );
 }
 
@@ -304,7 +317,7 @@ return()=>socket.close();
 const phase=gameState?.phase||"waiting";
 const countdown=gameState?.countdown??0;
 const waitingSeconds=gameState?.waiting_seconds||15;
-const trackIndex=(gameState?.track_index??0)%logos.length;
+const trackIndex=(gameState?.track_index??0)%trackLogos.length;
 const history=gameState?.history||[];
 const myBets=gameState?.my_bets||[];
 const winner=gameState?.winner||null;
