@@ -1,6 +1,7 @@
 import React,{useState}from"react";
-import"./matkaDashboardInput.css";
-const API="http://localhost:8005";
+import"./MobilematkaDashboardInput.css";
+const HOST=window.location.hostname;
+const API=`http://${HOST}:8005`;
 export default function MatkaInput({marketName:marketFromApp=""}){
 const marketName=(marketFromApp||decodeURIComponent(window.location.pathname.split("/matka/market-input/")[1]||"")).toUpperCase();
 const[message,setMessage]=useState("");
