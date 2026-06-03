@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import "./aviator.css";
+import "./Mobileaviator.css";
 
 // const API = "http://localhost:8005";
 // const WS = "ws://localhost:8005/ws/game";
@@ -363,7 +363,7 @@ function App() {
     data.phase === "betting" ? "WAITING" : `${Number(data.multiplier || 1).toFixed(2)}x`;
 
   return (
-    <div className="app">
+    <div className="mobile-aviator app">
       <header className="top">
         <div className="brand">
           <span className="home">⌂</span>
@@ -390,38 +390,6 @@ function App() {
       </div>
 
       <main className="layout">
-        <aside className="sidebar">
-          <div className="tabs">
-            <button className="active">All Bets</button>
-            <button>My Bet</button>
-          </div>
-
-          <div className="table-head">
-            <span>User</span>
-            <span>Bet(INR)</span>
-            <span>X</span>
-            <span>Cash out(INR)</span>
-          </div>
-
-          <div className="bet-list">
-            {data.all_bets.map((b) => (
-              <div className="row" key={b.id}>
-                <span className="u">
-                  <i>{b.avatar}</i>
-                  {b.user}
-                </span>
-                <span>{formatMoney(b.bet)}</span>
-                <span></span>
-                <b>{formatMoney(b.cashout)}</b>
-              </div>
-            ))}
-          </div>
-
-          <div className="fair">
-            This game is <u>Provably fair</u>
-          </div>
-        </aside>
-
         <section className="game-area">
           <div className="history-wrap">
             <div className="history">
