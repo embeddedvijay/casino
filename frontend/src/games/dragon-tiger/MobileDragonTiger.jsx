@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import "./dragonTiger.css";
+import "./MobiledragonTiger.css";
 
 // const API = "http://localhost:8005";
 // const WS = "ws://localhost:8005/ws/dragon-tiger";
@@ -36,48 +36,36 @@ function TopBar({ soundOn, setSoundOn }) {
       </div>
       <div className="dt-logo-wrap">
         <i className="dt-logo-dragon" />
-        <div className="dt-logo">
-          <span>DRAGON</span>
-          <em>VS</em>
-          <b>TIGER</b>
-        </div>
+
         <i className="dt-logo-tiger" />
       </div>
-      <div className="cr-account">
-        <div className="cr-wallet">💼 ₹ 0.00</div>
-        <button className="cr-plus">+</button>
-        <b>DEMO123</b>
-        <span className="cr-user-dot">●</span>
-      </div>
+
     </header>
   );
 }
 
-function InfoBar({ data, totalBet, totalWin, phaseText, progress }) {
-  return (
-    <section className="dt-info-row">
-      <div><i>🪙</i><span>Total Bet</span><b>₹ {formatMoney(totalBet)}</b></div>
-      <div><i>🏆</i><span>Last Win</span><b>₹ {formatMoney(totalWin)}</b></div>
-      <div><i>▣</i><span>Round ID</span><b>{data.round_id || "-"}</b></div>
-      <div><i>●</i><span>Status</span><b>{phaseText}</b></div>
-      <div className="dt-count"><i>⏱</i><span>Countdown</span><strong>{String(data.countdown || 0).padStart(2, "0")}</strong></div>
-      <div className="dt-time"><span>Betting Time</span><em><u style={{ width: `${progress}%` }} /></em></div>
+function InfoBar({ totalBet, totalWin }){
+  return(
+    <section className="dt-top-popup">
+      <div><span>Total Bet</span><b>₹ {formatMoney(totalBet)}</b></div>
+      <div><span>Last Win</span><b>₹ {formatMoney(totalWin)}</b></div>
     </section>
   );
 }
 
-function ResultHistory({ history }) {
-  const fallback = ["T", "D", "D", "T", "T", "D", "T", "D", "T", "D", "Tie", "D", "T", "D", "T", "Tie", "D", "T"];
-  const rawList = history && history.length ? [...history].reverse() : fallback;
-  const list = [...rawList, ...fallback].slice(0,15);
-  return (
+function ResultHistory({ history, progress }){
+  const fallback=["T","D","D","T","T","D","T","D","T","D","Tie","D","T","D","T","Tie","D","T"];
+  const rawList=history&&history.length?[...history].reverse():fallback;
+  const list=[...rawList,...fallback].slice(0,15);
+  return(
     <section className="dt-history-panel">
-      <div className="dt-history-title"><span />WIN / RESULT HISTORY<span /></div>
+      <div className="dt-history-title"><span/>RESULT<span/></div>
+      <div className="dt-result-progress"><em><u style={{width:`${progress}%`}}/></em></div>
       <div className="dt-history-list">
-        {list.map((item, index) => {
-          const value = item === "SUITED TIE" ? "Tie" : item;
-          const cls = value === "D" || value === "DRAGON" ? "dragon" : value === "T" || value === "TIGER" ? "tiger" : "tie";
-          const label = value === "DRAGON" ? "D" : value === "TIGER" ? "T" : value;
+        {list.map((item,index)=>{
+          const value=item==="SUITED TIE"?"Tie":item;
+          const cls=value==="D"||value==="DRAGON"?"dragon":value==="T"||value==="TIGER"?"tiger":"tie";
+          const label=value==="DRAGON"?"D":value==="TIGER"?"T":value;
           return <span key={`${label}-${index}`} className={cls}>{label}</span>;
         })}
       </div>
@@ -179,13 +167,17 @@ function SuitBets({ placeBet }) {
 function ChipPanel({ chip, setChip, clearBets }) {
   return (
     <footer className="dt-chip-panel-new">
-      <button className="dt-action-btn" onClick={clearBets}>⟳ CLEAR</button>
       <div className="dt-chip-list">
         {CHIP_VALUES.map((value) => (
-          <button key={value} className={chip === value ? "active" : ""} onClick={() => setChip(value)}>{value}</button>
+          <button
+            key={value}
+            className={chip === value ? "active" : ""}
+            onClick={() => setChip(value)}
+          >
+            {value}
+          </button>
         ))}
       </div>
-      <button className="dt-action-btn confirm">🪙 BET</button>
     </footer>
   );
 }
@@ -208,7 +200,7 @@ function WinEffect({ winner, totalWin }) {
 
 export default function DragonTiger() {
   const [data, setData] = useState({ phase: "waiting", round_id: "", countdown: 0, waiting_seconds: 15, dragon_card: null, tiger_card: null, result: null, my_bets: [] });
-  const [chip, setChip] = useState(1);
+  const [chip, setChip] = useState(10);
   const [notice, setNotice] = useState("");
   const [soundOn, setSoundOn] = useState(true);
   const [resultHistory, setResultHistory] = useState([]);
@@ -272,12 +264,11 @@ export default function DragonTiger() {
   const phaseText = data.phase === "betting" ? "Betting" : data.phase === "dealing" ? "Dealing" : data.phase === "result" ? "Result" : "Waiting";
 
   return (
-    <div className={`dt-page-new ${winner ? "result-on" : ""}`}>
+    <div className={`mdt-page ${winner ? "result-on" : ""}`}>
       <div className="dt-bg-new" />
       <TopBar soundOn={soundOn} setSoundOn={setSoundOn} />
       <main className="dt-shell-new">
-        <InfoBar data={data} totalBet={totalBet} totalWin={totalWin} phaseText={phaseText} progress={progress} />
-        <ResultHistory history={resultHistory} />
+        <ResultHistory history={resultHistory} progress={progress}/>
         <HeroPanel data={data} winner={winner} totalWin={totalWin} />
         <MainBets betMap={betMap} placeBet={placeBet} />
         <SideBets betMap={betMap} placeBet={placeBet} />
