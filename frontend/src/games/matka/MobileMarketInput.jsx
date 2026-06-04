@@ -98,33 +98,33 @@ export default function MatkaInput({marketName:marketFromApp=""}){
   };
 
   return(
-    <div className="mk-chat-page">
-      <header className="mk-chat-top">
-        <button className="mk-chat-back" onClick={goBack}>‹</button>
+    <div className="mci-chat-page">
+      <header className="mci-chat-top">
+        <button className="mci-chat-back" onClick={goBack}>‹</button>
 
-        <div className="mk-chat-logo">
+        <div className="mci-chat-logo">
           <span>♛</span>
         </div>
 
-        <div className="mk-chat-title">
+        <div className="mci-chat-title">
           <h3>{marketName||"MARKET"}</h3>
           <p>Market Message</p>
         </div>
 
-        <div className="mk-secure">
+        <div className="mci-secure">
           <span>🛡</span>
           <b>Secure</b>
         </div>
       </header>
 
-      <main className="mk-chat-body">
-        <div className="mk-date-pill">
+      <main className="mci-chat-body">
+        <div className="mci-date-pill">
           Today
         </div>
 
-        <div className="mk-msg-row bot">
-          <div className="mk-bot-icon">🤖</div>
-          <div className="mk-bubble bot">
+        <div className="mci-msg-row bot">
+          <div className="mci-bot-icon">🤖</div>
+          <div className="mci-bubble bot">
             <p>Welcome to <b>{marketName}</b> market.</p>
             <p>Type your market message below and send. You will receive response from server.</p>
             <small>{nowTime()}</small>
@@ -132,8 +132,8 @@ export default function MatkaInput({marketName:marketFromApp=""}){
         </div>
 
         {sentMessage&&(
-          <div className="mk-msg-row user">
-            <div className="mk-bubble user">
+          <div className="mci-msg-row user">
+            <div className="mci-bubble user">
               <p>{sentMessage}</p>
               <small>{msgTime} ✓✓</small>
             </div>
@@ -141,9 +141,9 @@ export default function MatkaInput({marketName:marketFromApp=""}){
         )}
 
         {serverResponse&&(
-          <div className="mk-msg-row bot">
-            <div className="mk-bot-icon">🤖</div>
-            <div className="mk-bubble bot response">
+          <div className="mci-msg-row bot">
+            <div className="mci-bot-icon">🤖</div>
+            <div className="mci-bubble bot response">
               <h4>{marketName} RESPONSE</h4>
               <pre>{serverResponse}</pre>
               <small>{responseTime}</small>
@@ -152,7 +152,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
         )}
 
         {serverResponse&&!confirmed&&(
-          <button className="mk-confirm-message" onClick={confirmMessage} disabled={confirming}>
+          <button className="mci-confirm-message" onClick={confirmMessage} disabled={confirming}>
             <span>🛡</span>
             {confirming?"CONFIRMING...":"CONFIRM MESSAGE"}
           </button>
@@ -160,16 +160,16 @@ export default function MatkaInput({marketName:marketFromApp=""}){
 
         {confirmed&&(
           <>
-            <div className="mk-msg-row user">
-              <div className="mk-bubble user">
+            <div className="mci-msg-row user">
+              <div className="mci-bubble user">
                 <p>Confirm</p>
                 <small>{confirmTime} ✓✓</small>
               </div>
             </div>
 
-            <div className="mk-msg-row bot">
-              <div className="mk-bot-icon">🤖</div>
-              <div className="mk-bubble bot">
+            <div className="mci-msg-row bot">
+              <div className="mci-bot-icon">🤖</div>
+              <div className="mci-bubble bot">
                 <p>✅ Market message confirmed successfully.</p>
                 <small>{confirmTime}</small>
               </div>
@@ -178,8 +178,8 @@ export default function MatkaInput({marketName:marketFromApp=""}){
         )}
       </main>
 
-      <footer className="mk-chat-input">
-        <div className="mk-input-box">
+      <footer className="mci-chat-input">
+        <div className="mci-input-box">
           <span>☺</span>
           <textarea
             value={message}
@@ -190,12 +190,12 @@ export default function MatkaInput({marketName:marketFromApp=""}){
           />
         </div>
 
-        <button className="mk-send-btn" onClick={sendMessage} disabled={loading}>
+        <button className="mci-send-btn" onClick={sendMessage} disabled={loading}>
           {loading?"...":"➤"}
         </button>
       </footer>
 
-      <div className="mk-encrypt-note">
+      <div className="mci-encrypt-note">
         <span>🔒</span>
         <div>
           <b>Your messages are secure</b>

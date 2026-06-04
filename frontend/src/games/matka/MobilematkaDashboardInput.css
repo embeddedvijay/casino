@@ -1,31 +1,15 @@
-*{
+.mci-chat-page,
+.mci-chat-page *{
   box-sizing:border-box;
   -webkit-tap-highlight-color:transparent;
 }
 
-html,
-body,
-#root{
-  margin:0;
-  padding:0;
-  width:100%;
-  min-height:100%;
-  overflow-x:hidden;
-  background:#03120d;
-}
-
-body{
-  font-family:Arial,Helvetica,sans-serif;
-  -webkit-text-size-adjust:100%;
-  text-size-adjust:100%;
-}
-
-button,
-textarea{
+.mci-chat-page button,
+.mci-chat-page textarea{
   font:inherit;
 }
 
-button{
+.mci-chat-page button{
   border:0;
   outline:0;
   cursor:pointer;
@@ -33,8 +17,7 @@ button{
   -webkit-appearance:none;
   appearance:none;
 }
-
-.mk-chat-page{
+.mci-chat-page{
   width:100%;
   min-height:100vh;
   color:#fff;
@@ -46,7 +29,7 @@ button{
   overflow-x:hidden;
 }
 
-.mk-chat-top{
+.mci-chat-top{
   position:sticky;
   top:0;
   z-index:20;
@@ -60,7 +43,7 @@ button{
   box-shadow:0 6px 18px rgba(0,0,0,.35);
 }
 
-.mk-chat-back{
+.mci-chat-back{
   width:46px;
   height:46px;
   border-radius:50%;
@@ -73,7 +56,7 @@ button{
   border:1px solid rgba(255,255,255,.12);
 }
 
-.mk-chat-logo{
+.mci-chat-logo{
   width:48px;
   height:48px;
   border-radius:50%;
@@ -84,17 +67,17 @@ button{
   box-shadow:0 0 12px rgba(255,210,74,.45);
 }
 
-.mk-chat-logo span{
+.mci-chat-logo span{
   font-size:28px;
   color:#fff;
 }
 
-.mk-chat-title{
+.mci-chat-title{
   flex:1;
   min-width:0;
 }
 
-.mk-chat-title h3{
+.mci-chat-title h3{
   margin:0;
   color:#fff;
   font-size:20px;
@@ -105,14 +88,14 @@ button{
   text-overflow:ellipsis;
 }
 
-.mk-chat-title p{
+.mci-chat-title p{
   margin:4px 0 0;
   color:#42ff8c;
   font-size:13px;
   font-weight:900;
 }
 
-.mk-secure{
+.mci-secure{
   display:flex;
   align-items:center;
   gap:5px;
@@ -121,11 +104,11 @@ button{
   font-weight:1000;
 }
 
-.mk-secure span{
+.mci-secure span{
   font-size:18px;
 }
 
-.mk-chat-body{
+.mci-chat-body{
   flex:1;
   padding:12px 12px 110px;
   overflow-y:auto;
@@ -134,7 +117,7 @@ button{
     radial-gradient(circle at 90% 60%,rgba(37,211,102,.035),transparent 20%);
 }
 
-.mk-date-pill{
+.mci-date-pill{
   width:max-content;
   margin:4px auto 14px;
   padding:7px 16px;
@@ -146,18 +129,18 @@ button{
   box-shadow:0 4px 12px rgba(0,0,0,.28);
 }
 
-.mk-msg-row{
+.mci-msg-row{
   width:100%;
   display:flex;
   gap:8px;
   margin:10px 0;
 }
 
-.mk-msg-row.user{
+.mci-msg-row.user{
   justify-content:flex-end;
 }
 
-.mk-bot-icon{
+.mci-bot-icon{
   width:36px;
   height:36px;
   flex:0 0 36px;
@@ -169,7 +152,7 @@ button{
   margin-top:4px;
 }
 
-.mk-bubble{
+.mci-bubble{
   max-width:82%;
   position:relative;
   padding:11px 12px 22px;
@@ -180,15 +163,15 @@ button{
   box-shadow:0 6px 16px rgba(0,0,0,.3);
 }
 
-.mk-bubble p{
+.mci-bubble p{
   margin:0 0 5px;
 }
 
-.mk-bubble p:last-child{
+.mci-bubble p:last-child{
   margin-bottom:0;
 }
 
-.mk-bubble small{
+.mci-bubble small{
   position:absolute;
   right:11px;
   bottom:6px;
@@ -196,25 +179,25 @@ button{
   font-size:11px;
 }
 
-.mk-bubble.bot{
+.mci-bubble.bot{
   background:linear-gradient(180deg,#0d4037,#0a2a25);
   border:1px solid rgba(255,255,255,.10);
   border-top-left-radius:5px;
 }
 
-.mk-bubble.user{
+.mci-bubble.user{
   background:linear-gradient(180deg,#008d56,#006c42);
   border-top-right-radius:5px;
 }
 
-.mk-bubble.response h4{
+.mci-bubble.response h4{
   margin:0 0 8px;
   color:#42ff8c;
   font-size:15px;
   font-weight:1000;
 }
 
-.mk-bubble.response pre{
+.mci-bubble.response pre{
   margin:0;
   color:#fff;
   font-family:Arial,Helvetica,sans-serif;
@@ -224,7 +207,7 @@ button{
   line-height:1.45;
 }
 
-.mk-confirm-message{
+.mci-confirm-message{
   width:86%;
   min-height:52px;
   margin:18px auto;
@@ -241,11 +224,11 @@ button{
   box-shadow:0 0 18px rgba(164,255,0,.55),inset 0 0 14px rgba(255,255,255,.18);
 }
 
-.mk-confirm-message:disabled{
+.mci-confirm-message:disabled{
   opacity:.7;
 }
 
-.mk-chat-input{
+.mci-chat-input{
   position:fixed;
   left:0;
   right:0;
@@ -258,7 +241,7 @@ button{
   background:linear-gradient(180deg,rgba(3,18,13,.2),#03120d 35%);
 }
 
-.mk-input-box{
+.mci-input-box{
   flex:1;
   min-height:48px;
   display:flex;
@@ -271,12 +254,12 @@ button{
   box-shadow:inset 0 0 10px rgba(255,255,255,.03);
 }
 
-.mk-input-box span{
+.mci-input-box span{
   color:#d2ddd8;
   font-size:24px;
 }
 
-.mk-input-box textarea{
+.mci-input-box textarea{
   width:100%;
   max-height:95px;
   border:0;
@@ -288,11 +271,11 @@ button{
   line-height:1.25;
 }
 
-.mk-input-box textarea::placeholder{
+.mci-input-box textarea::placeholder{
   color:#9ea9a5;
 }
 
-.mk-send-btn{
+.mci-send-btn{
   width:52px;
   height:52px;
   flex:0 0 52px;
@@ -306,11 +289,11 @@ button{
   box-shadow:0 0 15px rgba(37,211,102,.45);
 }
 
-.mk-send-btn:disabled{
+.mci-send-btn:disabled{
   opacity:.7;
 }
 
-.mk-encrypt-note{
+.mci-encrypt-note{
   position:fixed;
   left:10px;
   right:10px;
@@ -327,7 +310,7 @@ button{
   border:1px solid rgba(255,210,74,.5);
 }
 
-.mk-encrypt-note span{
+.mci-encrypt-note span{
   width:34px;
   height:34px;
   flex:0 0 34px;
@@ -338,68 +321,61 @@ button{
   color:#ffd24a;
 }
 
-.mk-encrypt-note b{
+.mci-encrypt-note b{
   display:block;
   color:#ffe36a;
   font-size:12px;
 }
 
-.mk-encrypt-note p{
+.mci-encrypt-note p{
   margin:2px 0 0;
   color:#e8f5ef;
   font-size:11px;
 }
 
 @media(max-width:360px){
-  .mk-chat-top{
+  .mci-chat-top{
     height:70px;
     padding:8px 10px;
   }
 
-  .mk-chat-back{
+  .mci-chat-back{
     width:42px;
     height:42px;
   }
 
-  .mk-chat-logo{
+  .mci-chat-logo{
     width:42px;
     height:42px;
   }
 
-  .mk-chat-title h3{
+  .mci-chat-title h3{
     font-size:17px;
   }
 
-  .mk-secure{
+  .mci-secure{
     display:none;
   }
 
-  .mk-bubble{
+  .mci-bubble{
     max-width:86%;
     font-size:15px;
   }
 
-  .mk-confirm-message{
+  .mci-confirm-message{
     width:92%;
     font-size:15px;
   }
 }
 
 @supports(-webkit-touch-callout:none){
-  html,
-  body,
-  #root{
-    height:100%;
-    overflow:hidden;
-  }
-
-  .mk-chat-page{
+  .mci-chat-page{
     height:100%;
     min-height:0;
     overflow:hidden;
   }
 
-  .mk-chat-body{
+  .mci-chat-body{
     overflow-y:auto;
     -webkit-overflow-scrolling:touch;
   }

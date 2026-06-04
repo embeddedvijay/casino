@@ -93,21 +93,21 @@ function MarketBox({game,market}){
     window.location.href=`/matka/market-input/${marketName}`;
   };
   return(
-    <button className={`mk-market-box ${game.type} ${off?"market-off":"blink-play"}`} onClick={openMarketInput}>
-    <div className="mk-market-title">{game.name}</div>
-      <div className="mk-market-body">
-        <div className="mk-row">
+    <button className={`mb-market-box ${game.type} ${off?"market-off":"blink-play"}`} onClick={openMarketInput}>
+    <div className="mb-market-title">{game.name}</div>
+      <div className="mb-market-body">
+        <div className="mb-row">
           <i>◷</i>
           <span>OPEN</span>
           <strong>{openTime}</strong>
         </div>
-        <div className="mk-row mk-result-row">
+        <div className="mb-row mk-result-row">
           <i>♛</i>
           <span>RESULT</span>
           <strong>{result}</strong>
           <em>{off?"MARKET CLOSED":`${opana} - ${cpana}`}</em>
         </div>
-        <div className="mk-row">
+        <div className="mb-row">
           <i>◴</i>
           <span>CLOSE</span>
           <strong>{closeTime}</strong>
@@ -119,9 +119,9 @@ function MarketBox({game,market}){
 
 function MarketGroup({group,results}){
   return(
-    <section className="mk-group-card">
+    <section className="mb-group-card">
       <h3>{group.title}</h3>
-      <div className="mk-group-row">
+      <div className="mb-group-row">
         <MarketBox game={group.day} market={getMarket(results,group.day.key)}/>
         <MarketBox game={group.night} market={getMarket(results,group.night.key)}/>
       </div>
@@ -147,30 +147,30 @@ export default function MatkaDashboard(){
   const results=resultDoc?.Result&&typeof resultDoc.Result==="object"?resultDoc.Result:resultDoc||{};
 
   return(
-    <div className="mk-page">
-      <header className="mk-top">
-        <div className="mk-brand">
+    <div className="mb-page">
+      <header className="mb-top">
+        <div className="mb-brand">
           <span>MATKA</span>
           <b>BOOK</b>
         </div>
-        <div className="mk-profile">
-          <span className="mk-balance">₹0.00</span>
-          <span className="mk-user">DEM123</span>
+        <div className="mb-profile">
+          <span className="mb-balance">₹0.00</span>
+          <span className="mb-user">DEM123</span>
         </div>
       </header>
 
-      <section className="mk-hero">
+      <section className="mb-hero">
         <h1>MATKA BOOK</h1>
         <p>FAST RESULT • FAIR GAME • TRUSTED PLATFORM</p>
       </section>
 
-      <main className="mk-list">
+      <main className="mb-list">
         {gameGroups.map((group)=>(
           <MarketGroup key={group.title} group={group} results={results}/>
         ))}
       </main>
 
-      <div className="mk-help-bar">
+      <div className="mb-help-bar">
         <span>ⓘ</span>
         <b>Tap on any box to open market input</b>
       </div>
