@@ -218,16 +218,31 @@ filter:drop-shadow(0 0 24px rgba(184,120,0,.45));
 animation:sideGlow 2.4s ease-in-out infinite alternate
 }
 
-.money-side.left{
+/* .money-side.left{
 left:50px;
-background-image:url("/assets/left-matk-animation.webp")
+
 }
 
 .money-side.right{
 right:50px;
 background-image:url("/assets/right-matk-animation.webp")
+} */
+.money-side{
+  position:fixed;
+  top:70px;
+  width:180px;
+  height:1100px;
 }
 
+.money-side.left{
+  left:calc((100vw - 1280px) / 2 - 190px);
+  background-image:url("/assets/left-matk-animation.webp")
+}
+
+.money-side.right{
+  right:calc((100vw - 1280px) / 2 - 190px);
+  background-image:url("/assets/left-matk-animation.webp")
+}
 .money-side .money-matka,.money-side .money-coin,.money-side .money-pile{
 display:none!important
 }
