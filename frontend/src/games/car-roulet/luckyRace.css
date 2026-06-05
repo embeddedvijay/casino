@@ -485,8 +485,8 @@ body {
 
 .cr-table {
   position: relative;
-  width: min(1050px, calc(100vw - 440px));
-  height: 450px;
+  width:1200px;
+  height:520px;
 }
 
 .cr-outer {
@@ -1011,3 +1011,302 @@ body {
 }
 .cr-moving-marker.stop-effect{animation:stopBounce 1.2s ease-out both}
 @keyframes stopBounce{0%{transform:translate(-50%,-50%) scale(1)}25%{transform:translate(-50%,-50%) scale(1.35)}45%{transform:translate(-50%,-50%) scale(.9)}65%{transform:translate(-50%,-50%) scale(1.18)}100%{transform:translate(-50%,-50%) scale(1.08);box-shadow:0 0 35px #fff000,0 0 75px #00ff51}}
+
+
+/* ===== 28 CAR WEB REDESIGN PATCH ===== */
+.cr-page{
+  background:
+    radial-gradient(circle at 50% 32%,rgba(255,199,45,.18),transparent 18%),
+    radial-gradient(circle at 18% 82%,rgba(191,0,255,.25),transparent 24%),
+    radial-gradient(circle at 83% 80%,rgba(255,0,120,.22),transparent 24%),
+    linear-gradient(90deg,rgba(10,0,20,.82),rgba(0,0,0,.42),rgba(16,0,28,.82)),
+    url("/assets/car-roulette-bg.png") center/cover no-repeat!important;
+}
+.cr-topbar{
+  height:92px;
+  grid-template-columns:300px 1fr 390px;
+  padding:14px 20px;
+}
+.cr-brand{
+  min-height:70px;
+  padding:8px 15px;
+  border:1px solid rgba(255,211,76,.35);
+  border-radius:12px;
+  background:rgba(0,0,0,.52);
+}
+.cr-brand strong{
+  font-size:36px;
+}
+.cr-top-stats{
+  height:66px;
+  transform:none;
+  border-color:rgba(255,184,0,.35);
+  border-radius:12px;
+}
+.cr-stat-card{
+  transform:none;
+  padding:11px 20px;
+}
+.cr-account{
+  gap:16px;
+}
+.cr-wallet{
+  height:52px;
+  display:flex;
+  align-items:center;
+}
+.cr-sidebar{
+  top:126px;
+  bottom:118px;
+  width:310px;
+  border-color:rgba(210,0,255,.65);
+  background:
+    radial-gradient(circle at 50% 85%,rgba(140,0,255,.24),transparent 34%),
+    linear-gradient(180deg,rgba(18,5,28,.95),rgba(4,4,8,.96));
+}
+.cr-jackpot-card{
+  border-color:rgba(205,0,255,.82);
+  background:linear-gradient(180deg,rgba(55,0,75,.82),rgba(14,0,20,.92));
+}
+
+.cr-main{
+  left:340px;
+  right:18px;
+  top:118px;
+  bottom:18px;
+}
+.cr-round-row{
+  margin:2px 0 10px;
+}
+.cr-result-panel{
+  height:86px;
+  min-width:680px;
+  border-color:rgba(210,0,255,.95);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(35,8,45,.96),rgba(7,2,12,.96));
+  box-shadow:0 0 26px rgba(207,0,255,.45);
+}
+.cr-result-logo{
+  width:54px;
+  height:54px;
+  border-color:#da00ff;
+}
+.cr-round-info{
+  height:86px;
+  min-width:160px;
+  border-color:rgba(210,0,255,.95);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(43,0,55,.95),rgba(8,2,12,.96));
+  box-shadow:0 0 22px rgba(207,0,255,.35);
+}
+.cr-table{
+  width:min(1120px,calc(100vw - 390px));
+  height:480px;
+}
+.cr-outer{
+  border:3px solid rgba(229,0,255,.95);
+  border-radius:235px;
+  background:
+    radial-gradient(ellipse at center,rgba(255,255,255,.06) 0 19%,rgba(15,15,20,.84) 20% 50%,rgba(6,6,12,.94) 51%),
+    linear-gradient(90deg,rgba(255,0,180,.18),rgba(0,0,0,.25),rgba(0,95,255,.14));
+  box-shadow:
+    0 0 18px #e000ff,
+    0 0 55px rgba(210,0,255,.55),
+    inset 0 0 0 42px rgba(12,12,18,.92),
+    inset 0 0 0 48px rgba(255,255,255,.22),
+    inset 0 0 84px rgba(0,0,0,.85);
+}
+.cr-outer::before{
+  content:"";
+  position:absolute;
+  z-index:2;
+  left:95px;
+  right:95px;
+  top:78px;
+  bottom:78px;
+  border-radius:170px;
+  border:2px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 0 36px rgba(255,0,245,.25);
+  pointer-events:none;
+}
+.cr-track-glow{
+  inset:16px;
+  border:2px dashed rgba(255,255,255,.45);
+  box-shadow:inset 0 0 55px rgba(255,0,220,.22),0 0 35px rgba(222,0,255,.42);
+}
+.cr-logo{
+  width:62px;
+  height:62px;
+  border:2px solid #d8d8d8;
+  box-shadow:0 0 14px rgba(255,255,255,.14),0 6px 14px rgba(0,0,0,.85);
+}
+.cr-logo::after{
+  content:attr(data-name);
+}
+.cr-logo-active{
+  border-color:#00ff51;
+  transform:translate(-50%,-50%) scale(1.2);
+  box-shadow:0 0 19px #00ff51,0 0 50px rgba(0,255,81,.95);
+}
+.cr-moving-marker{
+  width:78px;
+  height:78px;
+}
+.cr-center-title{
+  position:absolute;
+  z-index:7;
+  left:50%;
+  top:92px;
+  transform:translateX(-50%);
+  text-align:center;
+  pointer-events:none;
+}
+.cr-center-title h2{
+  margin:0;
+  color:#f1d9ff;
+  font-size:50px;
+  line-height:.85;
+  font-weight:1000;
+  letter-spacing:5px;
+  text-shadow:0 0 16px rgba(255,255,255,.45),0 0 25px rgba(210,0,255,.75);
+}
+.cr-center-title p{
+  margin:6px 0 0;
+  color:#fff;
+  font-size:20px;
+  font-weight:1000;
+  letter-spacing:2px;
+}
+.cr-center-title span{
+  display:block;
+  margin-top:28px;
+  color:#fff;
+  font-size:18px;
+  font-weight:1000;
+  letter-spacing:1px;
+}
+.cr-betting-grid{
+  left:210px;
+  right:210px;
+  top:192px;
+  bottom:84px;
+  border:2px solid rgba(210,0,255,.95);
+  border-radius:10px;
+  background:rgba(0,0,0,.42);
+  box-shadow:0 0 18px rgba(210,0,255,.35),inset 0 0 24px rgba(255,255,255,.04);
+}
+.cr-bet-cell{
+  border-color:rgba(255,255,255,.24);
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.18));
+}
+.cr-bet-cell:nth-child(1){background:linear-gradient(180deg,rgba(0,145,255,.22),rgba(0,20,40,.4))}
+.cr-bet-cell:nth-child(2){background:linear-gradient(180deg,rgba(255,20,20,.22),rgba(45,0,0,.4))}
+.cr-bet-cell:nth-child(3){background:linear-gradient(180deg,rgba(0,210,90,.22),rgba(0,35,20,.42))}
+.cr-bet-cell:nth-child(4){background:linear-gradient(180deg,rgba(255,172,0,.22),rgba(45,22,0,.42))}
+.cr-bet-cell:nth-child(5){background:linear-gradient(180deg,rgba(20,255,100,.2),rgba(0,45,15,.42))}
+.cr-bet-cell:nth-child(6){background:linear-gradient(180deg,rgba(0,114,255,.22),rgba(0,20,70,.42))}
+.cr-bet-cell:nth-child(7){background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(20,20,20,.5))}
+.cr-bet-cell:nth-child(8){background:linear-gradient(180deg,rgba(255,30,90,.22),rgba(55,0,18,.42))}
+.cr-bet-logo{
+  top:12px;
+  width:58px;
+  height:58px;
+}
+.cr-rupee{
+  bottom:12px;
+  font-size:22px;
+}
+.cr-rupee::before{
+  content:"x8.0";
+  display:block;
+  color:#ffe300;
+  font-size:26px;
+  line-height:1;
+}
+.cr-coin-panel{
+  width:min(1040px,calc(100vw - 410px));
+  margin-top:16px;
+  padding:12px 18px;
+  justify-content:center;
+  border-radius:14px;
+  background:rgba(0,0,0,.42);
+  border:1px solid rgba(210,0,255,.35);
+  box-shadow:inset 0 0 30px rgba(255,255,255,.04);
+}
+.cr-coin{
+  width:72px;
+  height:72px;
+}
+.cr-clear-btn{
+  min-width:118px;
+}
+.cr-bet-submit{
+  min-width:250px;
+}
+.cr-feature-cards{
+  width:min(1040px,calc(100vw - 410px));
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  z-index:16;
+}
+.cr-feature-cards div{
+  min-height:72px;
+  display:grid;
+  grid-template-columns:48px 1fr;
+  grid-template-rows:1fr 1fr;
+  column-gap:12px;
+  align-items:center;
+  padding:10px 14px;
+  border:1px solid rgba(210,0,255,.36);
+  border-radius:12px;
+  background:rgba(10,0,16,.72);
+  box-shadow:inset 0 0 18px rgba(255,255,255,.04);
+}
+.cr-feature-cards i{
+  grid-row:1/3;
+  width:44px;
+  height:44px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  color:#ffd42b;
+  font-style:normal;
+  font-size:22px;
+  border:1px solid rgba(255,212,43,.55);
+}
+.cr-feature-cards b{
+  color:#fff;
+  font-size:14px;
+}
+.cr-feature-cards span{
+  color:#ddd;
+  font-size:12px;
+}
+.cr-live-box{
+  right:22px;
+  bottom:16px;
+}
+@media(max-width:1400px){
+  .cr-page{min-width:1180px}
+  .cr-topbar{grid-template-columns:230px 1fr 260px;height:82px}
+  .cr-sidebar{width:285px;left:10px;top:104px;bottom:105px}
+  .cr-main{left:305px;right:10px;top:102px}
+  .cr-table{width:min(920px,calc(100vw - 330px));height:410px}
+  .cr-result-panel{min-width:520px;height:68px}
+  .cr-round-info{height:68px}
+  .cr-logo{width:50px;height:50px}
+  .cr-moving-marker{width:64px;height:64px}
+  .cr-center-title{top:82px}
+  .cr-center-title h2{font-size:38px}
+  .cr-center-title p{font-size:16px}
+  .cr-center-title span{margin-top:18px;font-size:15px}
+  .cr-betting-grid{left:170px;right:170px;top:160px;bottom:72px}
+  .cr-bet-logo{width:48px;height:48px}
+  .cr-rupee{font-size:18px}
+  .cr-rupee::before{font-size:21px}
+  .cr-coin-panel,.cr-feature-cards{width:min(900px,calc(100vw - 330px))}
+  .cr-coin{width:58px;height:58px;font-size:14px}
+  .cr-feature-cards{display:none}
+}

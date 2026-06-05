@@ -15,47 +15,37 @@ const fileName = (name) =>
   name === "land_rover" ? "land_rover.png" : `${name}.png`;
 
 const logos = [
-  ["bmw", 22, 7],
-  ["ferrari", 28, 7],
-  ["jaguar", 34, 7],
-  ["lamborghini", 40, 7],
-  ["land_rover", 47, 7],
-  ["maserati", 53, 7],
-  ["mercedes", 59, 7],
-  ["porsche", 65, 7],
+  ["bmw", 27, 14],
+  ["ferrari", 36, 14],
+  ["jaguar", 45, 14],
+  ["lamborghini", 53, 14],
+  ["land_rover", 62, 14],
+  ["maserati", 70, 14],
+  ["mercedes", 80, 16],
+  ["porsche", 87, 23],
 
-  ["bmw", 72, 7],
-  ["ferrari", 78, 7],
-  ["jaguar", 84, 9],
-  ["lamborghini", 90, 15],
-  ["land_rover", 94, 27],
-  ["maserati", 97, 40],
-  ["mercedes", 97, 55],
-  ["porsche", 95, 70],
+  ["bmw", 91, 34],
+  ["ferrari", 91, 47],
+  ["jaguar", 91, 59],
+  ["lamborghini", 91, 71],
+  ["land_rover", 87, 82],
+  ["maserati", 80, 89],
+  ["mercedes", 71, 91],
+  ["porsche", 62, 91],
 
-  ["bmw", 91, 83],
-  ["ferrari", 86, 90],
-  ["jaguar", 80, 92],
-  ["lamborghini", 74, 93],
-  ["land_rover", 68, 93],
-  ["maserati", 62, 93],
-  ["mercedes", 56, 93],
-  ["porsche", 50, 93],
-
-  ["bmw", 44, 93],
-  ["ferrari", 38, 93],
-  ["jaguar", 32, 93],
-  ["lamborghini", 26, 93],
-  ["land_rover", 20, 93],
-  ["maserati", 14, 90],
-  ["mercedes", 9, 83],
-  ["porsche", 5, 70],
-
-  ["bmw", 3, 55],
-  ["ferrari", 3, 40],
-  ["jaguar", 6, 27],
-  ["lamborghini", 10, 15],
-  ["land_rover", 16, 9],
+  ["bmw", 53, 91],
+  ["ferrari", 44, 91],
+  ["jaguar", 35, 91],
+  ["lamborghini", 27, 91],
+  ["land_rover", 18, 89],
+  ["maserati", 12, 82],
+  ["mercedes", 8, 71],
+  ["porsche", 8, 59],
+  
+  ["bmw", 8, 47],
+  ["ferrari", 8, 35],
+  ["jaguar", 12, 23],
+  ["lamborghini", 19, 16],
 ];
 
 const betCars = [
@@ -249,6 +239,12 @@ function RaceBoard({ logos, trackIndex, activeLogo, betCars, localBets, placeCoi
           <CarLogo name={activeLogo[0]} />
         </div>
 
+        <div className="cr-center-title">
+          <h2>CAR</h2>
+          <p>🏁 ROULETTE 🏁</p>
+          <span>PLACE YOUR BETS</span>
+        </div>
+
         <div className="cr-betting-grid">
           {betCars.map((car) => (
             <button
@@ -270,6 +266,34 @@ function RaceBoard({ logos, trackIndex, activeLogo, betCars, localBets, placeCoi
         )}
       </div>
     </div>
+  );
+}
+
+
+function FeatureCards() {
+  return (
+    <section className="cr-feature-cards">
+      <div>
+        <i>🛡</i>
+        <b>FAIR PLAY</b>
+        <span>100% Secure & Fair</span>
+      </div>
+      <div>
+        <i>🎧</i>
+        <b>24/7 SUPPORT</b>
+        <span>We are always here</span>
+      </div>
+      <div>
+        <i>⚡</i>
+        <b>FAST PAYOUTS</b>
+        <span>Instant Withdrawals</span>
+      </div>
+      <div>
+        <i>🏆</i>
+        <b>BEST ODDS</b>
+        <span>High Winning Chance</span>
+      </div>
+    </section>
   );
 }
 
@@ -351,7 +375,8 @@ export default function LuckyRace() {
   const phase = gameState?.phase || "waiting";
   const countdown = gameState?.countdown ?? 0;
   const rawTrackIndex = gameState?.track_index ?? 0;
-  const trackIndex = rawTrackIndex % logos.length;
+  const serverTrackLength = 28;
+  const trackIndex = rawTrackIndex % serverTrackLength;
 
   const history = gameState?.history || [];
   const players = gameState?.players || [];
@@ -439,6 +464,8 @@ export default function LuckyRace() {
           setSelectedCoin={setSelectedCoin}
           clearBets={clearBets}
         />
+
+        <FeatureCards />
       </main>
 
       {phase === "result" && winner && (

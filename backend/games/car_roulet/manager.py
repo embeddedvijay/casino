@@ -5,8 +5,40 @@ from typing import Dict, List
 
 from fastapi import WebSocket
 
-from .engine import calculate_payout, get_cars, get_track_sequence, pick_winner
+from .engine import calculate_payout, get_cars, pick_winner
 
+
+
+TRACK_SEQUENCE_28 = [
+    {"key": "bmw", "x": 27, "y": 14},
+    {"key": "ferrari", "x": 36, "y": 14},
+    {"key": "jaguar", "x": 45, "y": 14},
+    {"key": "lamborghini", "x": 53, "y": 14},
+    {"key": "land_rover", "x": 62, "y": 14},
+    {"key": "maserati", "x": 70, "y": 14},
+    {"key": "mercedes", "x": 80, "y": 16},
+    {"key": "porsche", "x": 87, "y": 23},
+    {"key": "bmw", "x": 91, "y": 34},
+    {"key": "ferrari", "x": 91, "y": 47},
+    {"key": "jaguar", "x": 91, "y": 59},
+    {"key": "lamborghini", "x": 91, "y": 71},
+    {"key": "land_rover", "x": 87, "y": 82},
+    {"key": "maserati", "x": 80, "y": 89},
+    {"key": "mercedes", "x": 71, "y": 91},
+    {"key": "porsche", "x": 62, "y": 91},
+    {"key": "bmw", "x": 53, "y": 91},
+    {"key": "ferrari", "x": 44, "y": 91},
+    {"key": "jaguar", "x": 35, "y": 91},
+    {"key": "lamborghini", "x": 27, "y": 91},
+    {"key": "land_rover", "x": 18, "y": 89},
+    {"key": "maserati", "x": 12, "y": 82},
+    {"key": "mercedes", "x": 8, "y": 71},
+    {"key": "porsche", "x": 8, "y": 59},
+    {"key": "bmw", "x": 8, "y": 47},
+    {"key": "ferrari", "x": 8, "y": 35},
+    {"key": "jaguar", "x": 12, "y": 23},
+    {"key": "lamborghini", "x": 19, "y": 16},
+]
 
 WAITING_SECONDS = 10
 RESULT_SECONDS = 5
@@ -19,7 +51,7 @@ state = {
     "countdown": WAITING_SECONDS,
     "waiting_seconds": WAITING_SECONDS,
     "cars": get_cars(),
-    "track": get_track_sequence(),
+    "track": TRACK_SEQUENCE_28,
     "winner": None,
     "track_index": 0,
     "history": [],
