@@ -42,11 +42,33 @@ return(
 function MobileLobby(){
 return(
 <div style={mStyles.page}>
-<div style={mStyles.bg}/>
+<style>{`@keyframes bgZoom{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}@keyframes lightMove{0%{transform:translateX(-130%);opacity:0}35%{opacity:.35}100%{transform:translateX(130%);opacity:0}}@keyframes floatGlow{0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(-14px);opacity:.8}}.casino-bg-anim{animation:bgZoom 18s ease-in-out infinite}.casino-light-sweep{animation:lightMove 7s linear infinite}.casino-float-glow{animation:floatGlow 4s ease-in-out infinite}`}</style>
+<div style={mStyles.animatedBg} className="casino-bg-anim"/>
 <div style={mStyles.overlay}/>
-<header style={mStyles.header}><div style={mStyles.brand}>♛ GOLD<span>365</span></div><p style={mStyles.sub}>PLAY · WIN · REPEAT</p></header>
-<section style={mStyles.cards}>{lobbyGames.map((game)=><a href={`/login?redirect=${encodeURIComponent(game.path)}`} key={game.path} style={{...mStyles.card,borderColor:game.theme,boxShadow:`0 0 20px ${game.theme}66`}}><div style={{...mStyles.image,backgroundImage:`url(${game.image})`}}/><div style={mStyles.info}><b>{game.name}</b><span style={{background:game.theme}}>{game.tag}</span></div><button style={{...mStyles.btn,borderColor:game.theme}}>PLAY NOW ›</button></a>)}</section>
-<footer style={mStyles.footer}>🎧 Support · 🛡 Secure · 🏆 Fair Play</footer>
+<div style={mStyles.lightSweep} className="casino-light-sweep"/>
+<div style={mStyles.floatGlowOne} className="casino-float-glow"/>
+<div style={mStyles.floatGlowTwo} className="casino-float-glow"/>
+<header style={mStyles.header}>
+  <div style={mStyles.logoBox}>
+    <div style={mStyles.brand}><span style={mStyles.crown}>♛</span><strong>GOLD<span>365</span></strong></div>
+    <p style={mStyles.brandSub}>PLAY · WIN · REPEAT</p>
+  </div>
+</header>
+<section style={mStyles.cards}>
+  {lobbyGames.map((game)=>
+    <a href={`/login?redirect=${encodeURIComponent(game.path)}`} key={game.path} style={{...mStyles.card,borderColor:game.theme,boxShadow:`0 0 22px ${game.theme}66`}}>
+      <div style={{...mStyles.ribbon,background:game.theme}}>{game.tag}</div>
+      <div style={{...mStyles.visual,backgroundImage:`url(${game.image})`}}/>
+      <button style={{...mStyles.playBtn,borderColor:game.theme,boxShadow:`0 0 14px ${game.theme}88`}}>PLAY NOW ›</button>
+    </a>
+  )}
+</section>
+<footer style={mStyles.footer}>
+  <div style={mStyles.footerItem}><span>🛡️</span><strong>100% SECURE</strong></div>
+  <div style={mStyles.footerItem}><span>🎧</span><strong>24/7 SUPPORT</strong></div>
+  <div style={mStyles.footerItem}><span>🏆</span><strong>FAIR PLAY</strong></div>
+  <div style={mStyles.footerItem}><span>🎁</span><strong>DAILY BONUS</strong></div>
+</footer>
 </div>
 );
 }
@@ -77,6 +99,44 @@ return isMobile?<MobileMarketInput marketName={marketName}/>:<MarketInput market
 return isMobile?<MobileLobby/>:<GameLobby/>;
 }
 
-const styles={page:{minHeight:"100vh",position:"relative",overflow:"hidden",color:"#fff",fontFamily:"Arial,sans-serif",padding:"26px 48px 34px",background:"#050505"},animatedBg:{position:"absolute",inset:"-35px",backgroundImage:"url('/casino-assets/casino-bg.png')",backgroundSize:"cover",backgroundPosition:"center top",backgroundRepeat:"no-repeat",zIndex:0},overlay:{position:"absolute",inset:0,pointerEvents:"none",zIndex:1,background:"linear-gradient(180deg,rgba(0,0,0,.02) 0%,rgba(0,0,0,.16) 45%,rgba(0,0,0,.74) 100%)"},lightSweep:{position:"absolute",top:0,bottom:0,left:0,width:"45%",background:"linear-gradient(90deg,transparent,rgba(255,214,92,.18),transparent)",zIndex:2,pointerEvents:"none"},floatGlowOne:{position:"absolute",left:"8%",top:"20%",width:180,height:180,borderRadius:"50%",background:"rgba(255,196,0,.18)",filter:"blur(55px)",zIndex:1},floatGlowTwo:{position:"absolute",right:"8%",top:"26%",width:210,height:210,borderRadius:"50%",background:"rgba(176,0,255,.18)",filter:"blur(60px)",zIndex:1},header:{position:"relative",zIndex:5,display:"flex",justifyContent:"flex-end",alignItems:"center"},logoBox:{textAlign:"right",background:"rgba(0,0,0,.38)",border:"1px solid rgba(255,214,92,.35)",borderRadius:18,padding:"10px 18px 8px",backdropFilter:"blur(7px)"},brand:{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,color:"#ffd65c",fontSize:36,fontWeight:1000,textShadow:"0 0 18px rgba(255,214,92,.65)",lineHeight:1},crown:{fontSize:44},brandSub:{margin:"6px 0 0",color:"#f7d36a",letterSpacing:4,fontWeight:700,fontSize:12},cards:{position:"relative",zIndex:5,display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:28,marginTop:145},card:{position:"relative",minHeight:430,border:"2px solid",borderRadius:24,overflow:"hidden",padding:18,textDecoration:"none",color:"#fff",background:"linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.48))",backdropFilter:"blur(4px)"},ribbon:{position:"absolute",top:22,left:-42,transform:"rotate(-45deg)",width:165,textAlign:"center",padding:"8px 0",fontWeight:1000,fontSize:17,zIndex:3},visual:{height:282,width:"100%",borderRadius:18,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat",boxShadow:"inset 0 -45px 70px rgba(0,0,0,.45)",marginBottom:14},playBtn:{position:"absolute",left:32,right:32,bottom:26,height:58,borderRadius:18,border:"2px solid",background:"rgba(0,0,0,.50)",color:"#fff",fontSize:23,fontWeight:1000,cursor:"pointer"},footer:{position:"relative",zIndex:5,maxWidth:1400,margin:"34px auto 0",minHeight:88,borderRadius:26,background:"rgba(0,0,0,.56)",border:"1px solid rgba(255,255,255,.16)",display:"grid",gridTemplateColumns:"repeat(4,1fr)",alignItems:"center",padding:"0 34px",backdropFilter:"blur(8px)"},footerItem:{display:"flex",alignItems:"center",gap:8,color:"#fff"}};
+const styles={
+page:{minHeight:"100vh",position:"relative",overflowX:"hidden",overflowY:"auto",color:"#fff",fontFamily:"Arial,sans-serif",padding:"28px 36px 34px",background:"#050505"},
+animatedBg:{position:"absolute",inset:"-35px",backgroundImage:"url('/casino-assets/casino-bg.png')",backgroundSize:"cover",backgroundPosition:"center top",backgroundRepeat:"no-repeat",zIndex:0},
+overlay:{position:"absolute",inset:0,pointerEvents:"none",zIndex:1,background:"linear-gradient(180deg,rgba(0,0,0,.04) 0%,rgba(0,0,0,.14) 42%,rgba(0,0,0,.72) 100%)"},
+lightSweep:{position:"absolute",top:0,bottom:0,left:0,width:"45%",background:"linear-gradient(90deg,transparent,rgba(255,214,92,.18),transparent)",zIndex:2,pointerEvents:"none"},
+floatGlowOne:{position:"absolute",left:"8%",top:"20%",width:180,height:180,borderRadius:"50%",background:"rgba(255,196,0,.18)",filter:"blur(55px)",zIndex:1},
+floatGlowTwo:{position:"absolute",right:"8%",top:"26%",width:210,height:210,borderRadius:"50%",background:"rgba(176,0,255,.18)",filter:"blur(60px)",zIndex:1},
+header:{position:"relative",zIndex:5,display:"flex",justifyContent:"flex-end",alignItems:"center"},
+logoBox:{textAlign:"right",background:"rgba(0,0,0,.38)",border:"1px solid rgba(255,214,92,.35)",borderRadius:18,padding:"10px 18px 8px",backdropFilter:"blur(7px)"},
+brand:{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,color:"#ffd65c",fontSize:36,fontWeight:1000,textShadow:"0 0 18px rgba(255,214,92,.65)",lineHeight:1},
+crown:{fontSize:44},
+brandSub:{margin:"6px 0 0",color:"#f7d36a",letterSpacing:4,fontWeight:700,fontSize:12},
+cards:{position:"relative",zIndex:5,display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:24,marginTop:225},
+card:{position:"relative",minHeight:500,border:"2px solid",borderRadius:24,overflow:"hidden",padding:18,textDecoration:"none",color:"#fff",background:"linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.48))",backdropFilter:"blur(4px)"},
+ribbon:{position:"absolute",top:22,left:-42,transform:"rotate(-45deg)",width:165,textAlign:"center",padding:"8px 0",fontWeight:1000,fontSize:17,zIndex:3},
+visual:{height:345,width:"100%",borderRadius:18,backgroundSize:"100% 100%",backgroundPosition:"center",backgroundRepeat:"no-repeat",boxShadow:"inset 0 -45px 70px rgba(0,0,0,.45)",marginBottom:14},
+playBtn:{position:"absolute",left:32,right:32,bottom:26,height:62,borderRadius:18,border:"2px solid",background:"rgba(0,0,0,.50)",color:"#fff",fontSize:24,fontWeight:1000,cursor:"pointer"},
+footer:{position:"relative",zIndex:5,maxWidth:1180,margin:"34px auto 0",minHeight:82,borderRadius:24,background:"rgba(0,0,0,.56)",border:"1px solid rgba(255,255,255,.16)",display:"grid",gridTemplateColumns:"repeat(4,1fr)",alignItems:"center",padding:"0 34px",backdropFilter:"blur(8px)"},
+footerItem:{display:"flex",alignItems:"center",justifyContent:"center",gap:8,color:"#fff"}
+};
 
-const mStyles={page:{minHeight:"100vh",position:"relative",overflowY:"auto",overflowX:"hidden",color:"#fff",fontFamily:"Arial,sans-serif",background:"#050505",padding:"18px 14px 24px"},bg:{position:"fixed",inset:0,backgroundImage:"url('/casino-assets/casino-bg.png')",backgroundSize:"cover",backgroundPosition:"center",zIndex:0},overlay:{position:"fixed",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.82))",zIndex:1},header:{position:"relative",zIndex:2,textAlign:"center",padding:"10px 0 18px"},brand:{fontSize:34,fontWeight:1000,color:"#ffd65c",textShadow:"0 0 16px rgba(255,214,92,.75)"},sub:{margin:"6px 0 0",color:"#f7d36a",letterSpacing:3,fontSize:11,fontWeight:800},cards:{position:"relative",zIndex:2,display:"grid",gridTemplateColumns:"1fr",gap:16},card:{position:"relative",display:"block",minHeight:230,border:"2px solid",borderRadius:20,overflow:"hidden",padding:12,textDecoration:"none",color:"#fff",background:"rgba(0,0,0,.45)",backdropFilter:"blur(5px)"},image:{height:138,borderRadius:15,backgroundSize:"cover",backgroundPosition:"center",boxShadow:"inset 0 -35px 60px rgba(0,0,0,.55)"},info:{display:"flex",alignItems:"center",justifyContent:"space-between",margin:"12px 4px 10px",fontSize:20,fontWeight:1000},btn:{width:"100%",height:48,borderRadius:14,border:"2px solid",background:"rgba(0,0,0,.55)",color:"#fff",fontSize:18,fontWeight:1000},footer:{position:"relative",zIndex:2,marginTop:18,textAlign:"center",padding:"14px",borderRadius:18,background:"rgba(0,0,0,.55)",color:"#eee",fontSize:13}};
+const mStyles={
+page:{minHeight:"100vh",position:"relative",overflowY:"auto",overflowX:"hidden",color:"#fff",fontFamily:"Arial,sans-serif",padding:"18px 12px 24px",background:"#050505"},
+animatedBg:{position:"fixed",inset:"-24px",backgroundImage:"url('/casino-assets/casino-bg.png')",backgroundSize:"cover",backgroundPosition:"center top",backgroundRepeat:"no-repeat",zIndex:0},
+overlay:{position:"fixed",inset:0,pointerEvents:"none",zIndex:1,background:"linear-gradient(180deg,rgba(0,0,0,.10) 0%,rgba(0,0,0,.35) 42%,rgba(0,0,0,.82) 100%)"},
+lightSweep:{position:"fixed",top:0,bottom:0,left:0,width:"55%",background:"linear-gradient(90deg,transparent,rgba(255,214,92,.12),transparent)",zIndex:2,pointerEvents:"none"},
+floatGlowOne:{position:"fixed",left:"8%",top:"18%",width:110,height:110,borderRadius:"50%",background:"rgba(255,196,0,.17)",filter:"blur(42px)",zIndex:1},
+floatGlowTwo:{position:"fixed",right:"8%",top:"30%",width:130,height:130,borderRadius:"50%",background:"rgba(176,0,255,.17)",filter:"blur(45px)",zIndex:1},
+header:{position:"relative",zIndex:5,display:"flex",justifyContent:"center",alignItems:"center",padding:"4px 0 10px"},
+logoBox:{textAlign:"center",background:"rgba(0,0,0,.45)",border:"1px solid rgba(255,214,92,.35)",borderRadius:16,padding:"9px 16px 7px",backdropFilter:"blur(7px)"},
+brand:{display:"flex",alignItems:"center",justifyContent:"center",gap:8,color:"#ffd65c",fontSize:28,fontWeight:1000,textShadow:"0 0 16px rgba(255,214,92,.7)",lineHeight:1},
+crown:{fontSize:32},
+brandSub:{margin:"5px 0 0",color:"#f7d36a",letterSpacing:3,fontWeight:700,fontSize:10},
+cards:{position:"relative",zIndex:5,display:"grid",gridTemplateColumns:"1fr",gap:16,marginTop:10},
+card:{position:"relative",minHeight:300,border:"2px solid",borderRadius:22,overflow:"hidden",padding:13,textDecoration:"none",color:"#fff",background:"linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.55))",backdropFilter:"blur(4px)"},
+ribbon:{position:"absolute",top:18,left:-43,transform:"rotate(-45deg)",width:150,textAlign:"center",padding:"7px 0",fontWeight:1000,fontSize:13,zIndex:3},
+visual:{height:200,width:"100%",borderRadius:17,backgroundSize:"100% 100%",backgroundPosition:"center",backgroundRepeat:"no-repeat",boxShadow:"inset 0 -45px 70px rgba(0,0,0,.48)",marginBottom:12},
+playBtn:{position:"absolute",left:20,right:20,bottom:18,height:50,borderRadius:16,border:"2px solid",background:"rgba(0,0,0,.55)",color:"#fff",fontSize:18,fontWeight:1000,cursor:"pointer"},
+footer:{position:"relative",zIndex:5,margin:"18px auto 0",minHeight:72,borderRadius:18,background:"rgba(0,0,0,.56)",border:"1px solid rgba(255,255,255,.16)",display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,alignItems:"center",padding:"12px",backdropFilter:"blur(8px)"},
+footerItem:{display:"flex",alignItems:"center",justifyContent:"center",gap:6,color:"#fff",fontSize:12}
+};
