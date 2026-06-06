@@ -74,7 +74,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
       <div className="mi-header">
         <h1>MATKA</h1>
         <h2>MARKET MESSAGE</h2>
-        <p>Send message for this market. You will receive response from server.</p>
+        <p>Send Game for this market. </p>
       </div>
 
       <div className="mi-card">

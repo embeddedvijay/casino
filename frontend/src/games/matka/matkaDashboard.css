@@ -588,3 +588,20 @@ margin-right:auto;
 margin-bottom:calc(-1430px + (1430px * (100vw / 1280)))
 }
 }
+
+.mk-info-btn{
+width:38px;
+height:38px;
+border:1px solid #555;
+border-radius:50%;
+background:#222;
+color:#ffd24a;
+font-size:22px;
+font-weight:900;
+cursor:pointer;
+}
+
+.mk-info-btn:hover{
+background:#ffd24a;
+color:#111;
+}

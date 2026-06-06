@@ -156,6 +156,7 @@ export default function MatkaDashboard(){
           <b>BOOK</b>
         </div>
         <div className="mb-profile">
+          <button className="mk-info-btn" onClick={()=>window.location.href="/matka/info"}>ⓘ</button>
           <span className="mb-balance">₹0.00</span>
           <span className="mb-user">DEM123</span>
         </div>

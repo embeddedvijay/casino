@@ -163,6 +163,7 @@ export default function MatkaDashboard(){
           <b>365</b>
         </div>
         <div className="mk-profile">
+          <button className="mk-info-btn" onClick={()=>window.location.href="/matka/info"}>ⓘ</button>
           <span>🌐</span>
           <span className="mk-balance">0.00</span>
           <span>☰</span>

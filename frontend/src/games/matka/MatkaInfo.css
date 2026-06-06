@@ -1,0 +1,63 @@
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#050008}
+.mi-page{min-height:100vh;background:radial-gradient(circle at top,#22002e,#050008 65%);color:#fff;padding:18px}
+.mi-top{height:70px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.mi-back{background:none;border:0;color:#fff;font-size:58px;line-height:1;cursor:pointer}
+.mi-top h2{font-size:42px;margin:0;font-weight:1000;letter-spacing:1px}
+.mi-top h2 span{color:#ffc928}
+.mi-user{display:flex;align-items:center;gap:18px}
+.mi-user b{color:#35ff45;font-size:28px}
+.mi-user strong{border:1px solid #666;border-radius:18px;padding:12px 22px;background:#17171d;font-size:24px}
+.mi-hero{display:flex;align-items:center;justify-content:space-between;gap:30px;border:2px solid #e6ad18;border-radius:18px;padding:28px;background:linear-gradient(135deg,#13001f,#090009)}
+.mi-pot{font-size:120px;filter:drop-shadow(0 0 20px #ffb300)}
+.mi-hero h1{font-size:64px;margin:0;color:#ffd84a;text-shadow:0 3px 0 #5d3200}
+.mi-hero p{font-size:22px;font-weight:800;margin:15px 0 0}
+.mi-num{font-size:46px;font-weight:1000;color:#ffd84a}
+.mi-rate-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+.mi-rate-card,.mi-time-card,.mi-ad{border:2px solid #e6ad18;border-radius:18px;background:linear-gradient(135deg,#16001f,#070008);box-shadow:0 0 20px rgba(255,190,0,.18)}
+.mi-rate-card{padding:22px}
+.mi-rate-card h3,.mi-time-card h3{margin:0 0 16px;color:#ffd334;text-align:center;font-size:32px}
+.mi-rate-row{display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.16);padding:16px 8px;font-size:24px;font-weight:900}
+.mi-rate-row b{color:#ffd334}
+.mi-time-card{margin-top:18px;padding:18px}
+.mi-table{border:1px solid rgba(255,190,0,.5);border-radius:14px;overflow:hidden}
+.mi-head,.mi-tr{display:grid;grid-template-columns:1.4fr 1fr 1fr}
+.mi-head span{background:#25062f;color:#ffd334;font-size:22px;font-weight:1000;padding:12px;text-align:center}
+.mi-tr span{padding:12px;border-top:1px solid rgba(255,255,255,.12);font-size:22px;text-align:center}
+.mi-tr span:first-child{text-align:left;font-weight:800}
+.mi-tr i{font-style:normal;margin-right:12px}
+.mi-ad{margin-top:18px;padding:32px 45px;display:flex;align-items:center;justify-content:space-between;background:radial-gradient(circle at right,#4b0060,#0a0010 65%)}
+.mi-ad h2{font-size:58px;line-height:.95;margin:0}
+.mi-ad h2 span{color:#ffd334}
+.mi-ad p{font-size:24px;font-weight:900;color:#fff}
+.mi-ad button{border:0;border-radius:10px;background:linear-gradient(#ffe16a,#d89500);padding:14px 55px;font-size:26px;font-weight:1000;cursor:pointer}
+.mi-ad-pot{font-size:150px;filter:drop-shadow(0 0 25px #ffb300)}
+
+@media(max-width:768px){
+.mi-page{padding:10px}
+.mi-top{height:58px}
+.mi-back{font-size:46px}
+.mi-top h2{font-size:28px}
+.mi-user{gap:8px}
+.mi-user b{font-size:17px}
+.mi-user strong{font-size:15px;padding:8px 12px;border-radius:14px}
+.mi-hero{padding:16px;gap:10px;border-radius:12px}
+.mi-pot{font-size:58px}
+.mi-hero h1{font-size:30px}
+.mi-hero p{font-size:12px}
+.mi-num{font-size:24px}
+.mi-rate-grid{grid-template-columns:1fr;gap:12px;margin-top:12px}
+.mi-rate-card{padding:16px}
+.mi-rate-card h3,.mi-time-card h3{font-size:22px}
+.mi-rate-row{font-size:18px;padding:13px 4px}
+.mi-time-card{padding:10px;margin-top:12px}
+.mi-head,.mi-tr{grid-template-columns:1.5fr .9fr .9fr}
+.mi-head span{font-size:13px;padding:9px 4px}
+.mi-tr span{font-size:13px;padding:9px 4px}
+.mi-tr i{margin-right:5px}
+.mi-ad{padding:18px;align-items:center}
+.mi-ad h2{font-size:34px}
+.mi-ad p{font-size:13px}
+.mi-ad button{font-size:16px;padding:10px 28px}
+.mi-ad-pot{font-size:76px}
+}
