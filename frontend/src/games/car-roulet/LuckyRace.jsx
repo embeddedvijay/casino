@@ -225,7 +225,7 @@ function ResultStrip({ history }) {
         {history.length === 0 && <span className="cr-empty">No Result</span>}
 
         {history
-          .slice(-8)
+          .slice(-27)
           .reverse()
           .map((item) => (
             <div className="cr-result-logo" key={item.round_id}>
