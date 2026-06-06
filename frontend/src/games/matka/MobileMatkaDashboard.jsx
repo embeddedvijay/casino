@@ -82,18 +82,20 @@ function MarketBox({game,market}){
   const off=isMarketOff(game.key);
   const open=getValue(market,["OPEN","open"],"*");
   const close=getValue(market,["CLOSE","close"],"*");
+  const resultDone=isRealResult(open)&&isRealResult(close);
   const openTime=getValue(market,["OTIME","openTime","open_time"],"--:--");
   const closeTime=getValue(market,["CTIME","closeTime","close_time"],"--:--");
   const opana=getValue(market,["OPANAL","OPANA","OPENPANA","openPana","open_pana"],"***");
   const cpana=getValue(market,["CPANAL","CPANA","CLOSEPANA","closePana","close_pana"],"***");
   const result=off?"OFF":!isRealResult(open)&&!isRealResult(close)?"--":`${isRealResult(open)?open:"*"}${isRealResult(close)?close:"*"}`;
+  const fullResult=isRealResult(open)&&isRealResult(close);
   const openMarketInput=()=>{
-    if(off)return;
+    if(off||fullResult)return;
     const marketName=market_flow.includes(game.key)?game.key:game.key;
     window.location.href=`/matka/market-input/${marketName}`;
   };
   return(
-    <button className={`mb-market-box ${game.type} ${off?"market-off":"blink-play"}`} onClick={openMarketInput}>
+    <button className={`mb-market-box ${game.type} ${off||resultDone?"market-off":"blink-play"}`} onClick={openMarketInput}>
     <div className="mb-market-title">{game.name}</div>
       <div className="mb-market-body">
         <div className="mb-row">
@@ -105,7 +107,7 @@ function MarketBox({game,market}){
           <i>♛</i>
           <span>RESULT</span>
           <strong>{result}</strong>
-          <em>{off?"MARKET CLOSED":`${opana} - ${cpana}`}</em>
+          <em>{off?"OFF":`${opana} - ${cpana}`}</em>
         </div>
         <div className="mb-row">
           <i>◴</i>
@@ -172,7 +174,7 @@ export default function MatkaDashboard(){
 
       <div className="mb-help-bar">
         <span>ⓘ</span>
-        <b>Tap on any box to open market input</b>
+        <b>Game play k liye market ko select kre</b>
       </div>
     </div>
   );

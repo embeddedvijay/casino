@@ -125,8 +125,8 @@ export default function MatkaInput({marketName:marketFromApp=""}){
         <div className="mci-msg-row bot">
           <div className="mci-bot-icon">🤖</div>
           <div className="mci-bubble bot">
-            <p>Welcome to <b>{marketName}</b> market.</p>
-            <p>Type your market message below and send. You will receive response from server.</p>
+            <p>Welcome to <b>{marketName?.split("_").join(" ")}</b> market.</p>
+            <p>Type your Game message below and send. </p>
             <small>{nowTime()}</small>
           </div>
         </div>

@@ -117,21 +117,22 @@ function ResultOverlay({game,market,index}){
   const openTime=getValue(market,["OTIME","openTime","open_time"],"--:--");
   const closeTime=getValue(market,["CTIME","closeTime","close_time"],"--:--");
   const fullResult=isRealResult(open)&&isRealResult(close);
+  const disableMarket=off||fullResult;
   const result=off?"OFF":!isRealResult(open)&&!isRealResult(close)?"--":`${isRealResult(open)?open:"*"}${isRealResult(close)?close:"*"}`;
   const openMarketInput=()=>{
-    if(off)return;
+    if(disableMarket)return;
     const marketName=market_flow.includes(game.key)?game.key:game.key;
     window.location.href=`/matka/market-input/${marketName}`;
   };
   return(
     <div className={`mk-overlay-card card-${index}`}>
       <div className="mk-open-time">{openTime}</div>
-      <div className={`mk-result-main ${off?"market-off":""}`}>
+      <div className={`mk-result-main ${disableMarket?"market-off":""}`}>
         {result}
         <small>{off?"MARKET CLOSED":`${splitPana(opana).join("")} - ${splitPana(cpana).join("")}`}</small>
       </div>
       <div className="mk-close-time">{closeTime}</div>
-      <button className={`mk-play-now ${off||fullResult?"result-done":"blink-play"}`} onClick={openMarketInput}>PLAY NOW</button>
+      <button disabled={disableMarket} className={`mk-play-now ${disableMarket?"result-done":"blink-play"}`} onClick={openMarketInput}>PLAY NOW</button>
     </div>
   );
 }
