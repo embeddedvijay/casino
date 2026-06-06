@@ -9,7 +9,6 @@ CARS = [
     {"key": "maserati", "label": "MASERATI", "payout": 6},
     {"key": "mercedes", "label": "MERCEDES", "payout": 6},
     {"key": "porsche", "label": "PORSCHE", "payout": 6},
-    {"key": "star", "label": "STAR", "payout": 12},
 ]
 
 TRACK_SEQUENCE_KEYS = [

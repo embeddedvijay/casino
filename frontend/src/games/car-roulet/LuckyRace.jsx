@@ -15,37 +15,37 @@ const fileName = (name) =>
   name === "land_rover" ? "land_rover.png" : `${name}.png`;
 
 const logos = [
-  ["bmw", 27, 14],
-  ["ferrari", 36, 14],
-  ["jaguar", 45, 14],
-  ["lamborghini", 53, 14],
-  ["land_rover", 62, 14],
-  ["maserati", 70, 14],
-  ["mercedes", 80, 16],
-  ["porsche", 87, 23],
+  ["bmw", 27, 10],
+  ["ferrari", 36, 10],
+  ["jaguar", 45, 10],
+  ["lamborghini", 53, 10],
+  ["land_rover", 62, 10],
+  ["maserati", 70, 10],
+  ["mercedes", 80, 10],
+  ["porsche", 87, 14],
 
-  ["bmw", 91, 34],
-  ["ferrari", 91, 47],
-  ["jaguar", 91, 59],
-  ["lamborghini", 91, 71],
-  ["land_rover", 87, 82],
-  ["maserati", 80, 89],
-  ["mercedes", 71, 91],
-  ["porsche", 62, 91],
+  ["bmw", 93, 25],
+  ["ferrari", 96, 42],
+  ["jaguar", 96, 59],
+  ["lamborghini", 93, 75],
+  ["land_rover", 87, 85],
+  ["maserati", 80, 88],
+  ["mercedes", 71, 88],
+  ["porsche", 62, 88],
 
-  ["bmw", 53, 91],
-  ["ferrari", 44, 91],
-  ["jaguar", 35, 91],
-  ["lamborghini", 27, 91],
-  ["land_rover", 18, 89],
-  ["maserati", 12, 82],
-  ["mercedes", 8, 71],
-  ["porsche", 8, 59],
+  ["bmw", 53, 88],
+  ["ferrari", 44, 88],
+  ["jaguar", 35, 88],
+  ["lamborghini", 27, 88],
+  ["land_rover", 18, 88],
+  ["maserati", 11, 82],
+  ["mercedes", 6, 70],
+  ["porsche", 4, 55],
   
-  ["bmw", 8, 47],
-  ["ferrari", 8, 35],
-  ["jaguar", 12, 23],
-  ["lamborghini", 19, 16],
+  ["bmw", 4, 40],
+  ["ferrari", 6, 25],
+  ["jaguar", 12, 16],
+  ["lamborghini", 19, 10],
 ];
 
 const betCars = [
@@ -67,6 +67,10 @@ function money(value) {
 
 function prettyName(name = "") {
   return String(name).replace("_", " ").toUpperCase();
+}
+
+function trackShortName(name = "") {
+  return prettyName(name).replace("LAMBORGHINI", "LAMBO").replace("LAND ROVER", "LAND ROVER");
 }
 
 function CarLogo({ name, className = "" }) {
@@ -192,6 +196,26 @@ function Sidebar({ activeTab, setActiveTab, players, myBets }) {
   );
 }
 
+
+function RightPanel({ players }) {
+  const topPlayer = players[0];
+  return (
+    <aside className="cr-right-panel">
+      <div className="cr-daily-jackpot">
+        <span>DAILY JACKPOT</span>
+        <i>🏆</i>
+        <b>₹ 1,25,000</b>
+      </div>
+      <div className="cr-last-winner-card">
+        <span>LAST WINNER</span>
+        <div className="cr-last-car">🏎️</div>
+        <b>{topPlayer?.name || "Raj Banna Saa"}</b>
+        <strong>₹ {money(topPlayer?.balance || 42569)}</strong>
+      </div>
+    </aside>
+  );
+}
+
 function ResultStrip({ history }) {
   return (
     <section className="cr-result-panel">
@@ -225,7 +249,9 @@ function RaceBoard({ logos, trackIndex, activeLogo, betCars, localBets, placeCoi
             className={`cr-logo ${trackIndex === i ? "cr-logo-active" : ""}`}
             style={{ left: `${x}%`, top: `${y}%` }}
           >
+            {/* <span className="cr-track-no">{String(i + 1).padStart(2, "0")}</span> */}
             <CarLogo name={logo} />
+            {/* <span className="cr-track-name">{trackShortName(logo)}</span> */}
           </div>
         ))}
 
@@ -239,25 +265,6 @@ function RaceBoard({ logos, trackIndex, activeLogo, betCars, localBets, placeCoi
           <CarLogo name={activeLogo[0]} />
         </div>
 
-        <div className="cr-center-title">
-          <h2>CAR</h2>
-          <p>🏁 ROULETTE 🏁</p>
-          <span>PLACE YOUR BETS</span>
-        </div>
-
-        <div className="cr-betting-grid">
-          {betCars.map((car) => (
-            <button
-              className="cr-bet-cell"
-              key={car}
-              onClick={() => placeCoinBet(car)}
-            >
-              <CarLogo name={car} className="cr-bet-logo" />
-              <span className="cr-rupee">₹ {localBets[car] || "0"}</span>
-            </button>
-          ))}
-        </div>
-
         {phase === "result" && winner && (
           <div className="cr-winner-popup">
             <span>WINNER</span>
@@ -269,6 +276,25 @@ function RaceBoard({ logos, trackIndex, activeLogo, betCars, localBets, placeCoi
   );
 }
 
+
+function BettingBoard({ betCars, localBets, placeCoinBet }) {
+  return (
+    <div className="cr-betting-grid cr-betting-grid-under">
+      {betCars.map((car) => (
+        <button
+          className="cr-bet-cell"
+          key={car}
+          onClick={() => placeCoinBet(car)}
+        >
+          <CarLogo name={car} className="cr-bet-logo" />
+          <span className="cr-bet-name">{prettyName(car)}</span>
+          <span className="cr-odds">x8.0</span>
+          <span className="cr-rupee">₹ {localBets[car] || "0"}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function FeatureCards() {
   return (
@@ -437,6 +463,8 @@ export default function LuckyRace() {
         myBets={myBets}
       />
 
+      <RightPanel players={players} />
+
       <main className="cr-main">
         <div className="cr-round-row">
           <ResultStrip history={history} />
@@ -456,6 +484,12 @@ export default function LuckyRace() {
           placeCoinBet={placeCoinBet}
           phase={phase}
           winner={winner}
+        />
+
+        <BettingBoard
+          betCars={betCars}
+          localBets={localBets}
+          placeCoinBet={placeCoinBet}
         />
 
         <CoinPanel
