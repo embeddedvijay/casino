@@ -379,16 +379,6 @@ function App() {
         </div>
       </header>
 
-      <div className="sub">
-        <div className="aviator">AviatorX</div>
-        <button>How To Play ?</button>
-        <div className="spacer" />
-        <span className="wifi">≋</span>
-        <span>C</span>
-        <span className="green">0.00</span>
-        <span>_</span>
-      </div>
-
       <main className="layout">
         <section className="game-area">
           <div className="history-wrap">
