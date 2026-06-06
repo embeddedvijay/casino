@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./MobiledragonTiger.css";
+import UserMenuLayout from "../../shared/UserMenuLayout";
 
 // const API = "http://localhost:8005";
 // const WS = "ws://localhost:8005/ws/dragon-tiger";
@@ -30,16 +31,17 @@ function playChipSound() {
 function TopBar({ soundOn, setSoundOn }) {
   return (
     <header className="dt-topbar">
-      <div className="cr-brand">
-        <span className="cr-brand-badge">♛</span>
-        <strong>GOLD365</strong>
+      <div className="cr-account">
+        <UserMenuLayout/>
+        <b>DEMO123</b>
+        <div className="cr-wallet"> ₹ 0.00</div>
+        <span className="cr-user-dot">●</span>
       </div>
+
       <div className="dt-logo-wrap">
         <i className="dt-logo-dragon" />
-
         <i className="dt-logo-tiger" />
       </div>
-
     </header>
   );
 }

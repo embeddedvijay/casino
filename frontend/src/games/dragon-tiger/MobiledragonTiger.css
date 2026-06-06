@@ -970,3 +970,22 @@ body:has(.mdt-page),
     padding-bottom:12px;
   }
 }
+
+.mdt-page .dt-topbar{
+display:flex;
+align-items:center;
+justify-content:flex-start;
+gap:10px;
+}
+
+.mdt-page .cr-account{
+display:flex;
+align-items:center;
+justify-content:flex-start;
+gap:6px;
+flex:0 0 auto;
+}
+
+.mdt-page .dt-logo-wrap{
+margin-left:auto;
+}

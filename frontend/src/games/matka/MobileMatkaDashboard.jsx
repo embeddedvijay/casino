@@ -1,5 +1,6 @@
 import React,{useEffect,useState}from"react";
 import"./MobilematkaDashboard.css";
+import UserMenuLayout from "../../shared/UserMenuLayout";
 
 const HOST=window.location.hostname;
 const API=`http://${HOST}:8005`;
@@ -158,6 +159,7 @@ export default function MatkaDashboard(){
         <div className="mb-profile">
           <button className="mk-info-btn" onClick={()=>window.location.href="/matka/info"}>ⓘ</button>
           <span className="mb-balance">₹0.00</span>
+          <UserMenuLayout/>
           <span className="mb-user">DEM123</span>
         </div>
       </header>

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./Mobileaviator.css";
+import UserMenuLayout from "../../shared/UserMenuLayout";
 
 // const API = "http://localhost:8005";
 // const WS = "ws://localhost:8005/ws/game";
@@ -374,7 +375,7 @@ function App() {
         <div className="profile">
           <span>🌐</span>
           <span className="balance">0.00</span>
-          <span>☰</span>
+          <UserMenuLayout/>
           <span className="user">DEM123</span>
         </div>
       </header>

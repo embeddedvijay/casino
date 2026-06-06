@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./luckyRace.css";
+import UserMenuLayout from "../../shared/UserMenuLayout";
 
 // const API = "http://localhost:8005";
 // const WS = "ws://localhost:8005/ws/lucky-race";
@@ -119,6 +120,7 @@ function TopBar({ totalBet, totalWin, roundId, phase, countdown }) {
 
       <div className="cr-account">
         <div className="cr-wallet">💼 ₹ 0.00</div>
+        <UserMenuLayout/>
         <button className="cr-plus">+</button>
         <b>DEMO123</b>
         <span className="cr-user-dot">●</span>

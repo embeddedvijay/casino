@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./dragonTiger.css";
+import UserMenuLayout from "../../shared/UserMenuLayout";
 
 // const API = "http://localhost:8005";
 // const WS = "ws://localhost:8005/ws/dragon-tiger";
@@ -45,7 +46,7 @@ function TopBar({ soundOn, setSoundOn }) {
       </div>
       <div className="cr-account">
         <div className="cr-wallet">💼 ₹ 0.00</div>
-        <button className="cr-plus">+</button>
+        <UserMenuLayout/>
         <b>DEMO123</b>
         <span className="cr-user-dot">●</span>
       </div>

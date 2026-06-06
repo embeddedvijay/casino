@@ -1,5 +1,6 @@
 import React,{useEffect,useMemo,useState}from"react";
 import"./MobileluckyRace.css";
+import UserMenuLayout from "../../shared/UserMenuLayout";
 
 const HOST=window.location.hostname;
 const API=`http://${HOST}:8005`;
@@ -216,10 +217,8 @@ return(
 </div>
 <div className="mlr-user-pill">
 <div className="mlr-user-avatar">👤</div>
-<div>
 <strong>DEMO USER</strong>
-<small>₹ 5,245.00 ●</small>
-</div>
+<UserMenuLayout/>
 </div>
 </header>
 );
