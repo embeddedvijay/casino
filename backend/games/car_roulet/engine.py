@@ -29,10 +29,8 @@ def get_track_sequence():
     return [car_map[key] for key in TRACK_SEQUENCE_KEYS]
 
 def pick_winner():
-    r = random.random()
-    if r < 0.06:
-        return next(car for car in CARS if car["key"] == "star")
-    return random.choice([car for car in CARS if car["key"] != "star"])
+    weights = [1] * len(CARS)
+    return random.choices(CARS, weights=weights, k=1)[0]
 
 def calculate_payout(bet_type: str, amount: float, winner: dict):
     if bet_type != winner["key"]:
