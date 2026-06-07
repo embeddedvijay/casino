@@ -1,38 +1,24 @@
 import React,{useState}from"react";
 import"./ForgotPassword.css";
-
-const HOST=window.location.hostname;
-const API=`http://${HOST}:8005`;
-const getClientId=()=>{
-const params=new URLSearchParams(window.location.search);
-return params.get("client_id")||localStorage.getItem("client_id")||"demo";
-};
-const getRedirect=()=>new URLSearchParams(window.location.search).get("redirect")||"/";
-const saveUser=(user,isDemo=false)=>{
-localStorage.setItem("client_id",user?.client_id||getClientId());
-localStorage.setItem("user",user?.username||user?.mobile||"DEMO123");
-localStorage.setItem("user_id",user?.id||"");
-localStorage.setItem("user_name",user?.full_name||user?.username||"");
-localStorage.setItem("user_mobile",user?.mobile||"");
-localStorage.setItem("balance",String(user?.balance??0));
-localStorage.setItem("isDemo",String(isDemo));
-};
+import{getClientId,getApi}from"../shared/userSession";
 
 export default function ForgotPassword(){
 const companyName="Gold 365";
 const[name,setName]=useState("");
 const[mobile,setMobile]=useState("");
 const[loading,setLoading]=useState(false);
+
 const requestReset=async()=>{
 if(!name.trim()||!mobile.trim()){alert("Name aur mobile number dono bharo");return;}
 try{
 setLoading(true);
-const res=await fetch(`${API}/auth/forgot-password`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({client_id:getClientId(),name:name.trim(),mobile:mobile.trim()})});
+const res=await fetch(`${getApi()}/auth/forgot-password`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({client_id:getClientId(),name:name.trim(),mobile:mobile.trim()})});
 const data=await res.json();
 if(!res.ok){alert(data.detail||"Reset request submit nahi hua");return;}
 alert("Password reset request submitted");
 }catch(err){alert("Backend connect nahi ho raha");}finally{setLoading(false);}
 };
+
 return(
 <div className="forgot-page">
 <div className="forgot-bg"/>

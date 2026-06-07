@@ -1,22 +1,8 @@
 import React,{useState}from"react";
 import"./LoginPage.css";
+import{saveUserSession,getClientId,getApi}from"../shared/userSession";
 
-const HOST=window.location.hostname;
-const API=`http://${HOST}:8005`;
-const getClientId=()=>{
-const params=new URLSearchParams(window.location.search);
-return params.get("client_id")||localStorage.getItem("client_id")||"demo";
-};
 const getRedirect=()=>new URLSearchParams(window.location.search).get("redirect")||"/";
-const saveUser=(user,isDemo=false)=>{
-localStorage.setItem("client_id",user?.client_id||getClientId());
-localStorage.setItem("user",user?.username||user?.mobile||"DEMO123");
-localStorage.setItem("user_id",user?.id||"");
-localStorage.setItem("user_name",user?.full_name||user?.username||"");
-localStorage.setItem("user_mobile",user?.mobile||"");
-localStorage.setItem("balance",String(user?.balance??0));
-localStorage.setItem("isDemo",String(isDemo));
-};
 
 export default function LoginPage(){
 const[companyName]=useState("Gold 365");
@@ -24,32 +10,37 @@ const[mobile,setMobile]=useState("");
 const[password,setPassword]=useState("");
 const[loading,setLoading]=useState(false);
 const[demoLoading,setDemoLoading]=useState(false);
+
 const login=async()=>{
 if(!mobile.trim()||!password.trim()){alert("Mobile number aur password bharo");return;}
 try{
 setLoading(true);
-const res=await fetch(`${API}/auth/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({client_id:getClientId(),mobile:mobile.trim(),password:password})});
+const res=await fetch(`${getApi()}/auth/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({client_id:getClientId(),mobile:mobile.trim(),password:password})});
 const data=await res.json();
 if(!res.ok){alert(data.detail||"Login failed");return;}
-saveUser(data.user,false);
+saveUserSession(data.user);
 window.location.href=getRedirect();
 }catch(err){alert("Backend connect nahi ho raha");}finally{setLoading(false);}
 };
+
 const loginDemo=async()=>{
 try{
 setDemoLoading(true);
-const res=await fetch(`${API}/auth/demo-login?client_id=${getClientId()}`,{method:"POST"});
+const res=await fetch(`${getApi()}/auth/demo-login?client_id=${getClientId()}`,{method:"POST"});
 const data=await res.json();
 if(!res.ok){alert(data.detail||"Demo login failed");return;}
-saveUser(data.user,true);
+saveUserSession(data.user);
 window.location.href=getRedirect();
 }catch(err){
 localStorage.setItem("client_id",getClientId());
 localStorage.setItem("user","DEMO123");
+localStorage.setItem("user_name","DEMO123");
+localStorage.setItem("balance","0");
 localStorage.setItem("isDemo","true");
 window.location.href=getRedirect();
 }finally{setDemoLoading(false);}
 };
+
 return(
 <div className="login-page">
 <div className="login-bg"/>

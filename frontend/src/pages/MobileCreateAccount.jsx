@@ -1,22 +1,6 @@
 import React,{useState}from"react";
 import"./MobileCreateAccount.css";
-
-const HOST=window.location.hostname;
-const API=`http://${HOST}:8005`;
-const getClientId=()=>{
-const params=new URLSearchParams(window.location.search);
-return params.get("client_id")||localStorage.getItem("client_id")||"demo";
-};
-const getRedirect=()=>new URLSearchParams(window.location.search).get("redirect")||"/";
-const saveUser=(user,isDemo=false)=>{
-localStorage.setItem("client_id",user?.client_id||getClientId());
-localStorage.setItem("user",user?.username||user?.mobile||"DEMO123");
-localStorage.setItem("user_id",user?.id||"");
-localStorage.setItem("user_name",user?.full_name||user?.username||"");
-localStorage.setItem("user_mobile",user?.mobile||"");
-localStorage.setItem("balance",String(user?.balance??0));
-localStorage.setItem("isDemo",String(isDemo));
-};
+import{getClientId,getApi}from"../shared/userSession";
 
 export default function MobileCreateAccount(){
 const companyName="Gold 365";
@@ -25,18 +9,20 @@ const[mobile,setMobile]=useState("");
 const[password,setPassword]=useState("");
 const[confirmPassword,setConfirmPassword]=useState("");
 const[loading,setLoading]=useState(false);
+
 const createAccount=async()=>{
 if(!fullName.trim()||!mobile.trim()||!password.trim()||!confirmPassword.trim()){alert("Sab field bharo");return;}
 if(password!==confirmPassword){alert("Password match nahi hai");return;}
 try{
 setLoading(true);
-const res=await fetch(`${API}/auth/create-account`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({client_id:getClientId(),full_name:fullName.trim(),mobile:mobile.trim(),password:password,confirm_password:confirmPassword})});
+const res=await fetch(`${getApi()}/auth/create-account`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({client_id:getClientId(),full_name:fullName.trim(),mobile:mobile.trim(),password:password,confirm_password:confirmPassword})});
 const data=await res.json();
 if(!res.ok){alert(data.detail||"Account create nahi hua");return;}
 alert("Account created successfully");
 window.location.href=`/login${window.location.search}`;
 }catch(err){alert("Backend connect nahi ho raha");}finally{setLoading(false);}
 };
+
 return(
 <div className="mcreate-page">
 <div className="mcreate-bg"/>
