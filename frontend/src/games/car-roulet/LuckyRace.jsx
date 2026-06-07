@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./luckyRace.css";
 import UserMenuLayout from "../../shared/UserMenuLayout";
+import{fetchCurrentUser}from"../../shared/userSession";
+
 
 // const API = "http://localhost:8005";
 // const WS = "ws://localhost:8005/ws/lucky-race";
@@ -88,6 +90,11 @@ function CarLogo({ name, className = "" }) {
 }
 
 function TopBar({ totalBet, totalWin, roundId, phase, countdown }) {
+  const[user,setUser]=useState({user_name:"DEMO123",balance:0});
+
+  useEffect(()=>{
+    fetchCurrentUser().then(setUser);
+  },[]);
   return (
     <header className="cr-topbar">
       <div className="cr-brand">
@@ -118,12 +125,11 @@ function TopBar({ totalBet, totalWin, roundId, phase, countdown }) {
         </div>
       </section>
 
-      <div className="cr-account">
-        <div className="cr-wallet">💼 ₹ 0.00</div>
+      <div className="profile">
+        <span>🌐</span>
+        <span className="balance">{Number(user.balance||0).toFixed(2)}</span>
         <UserMenuLayout/>
-        <button className="cr-plus">+</button>
-        <b>DEMO123</b>
-        <span className="cr-user-dot">●</span>
+        <span className="user">{user.user_name||"DEMO123"}</span>
       </div>
     </header>
   );

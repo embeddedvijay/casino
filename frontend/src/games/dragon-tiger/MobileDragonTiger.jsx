@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./MobiledragonTiger.css";
 import UserMenuLayout from "../../shared/UserMenuLayout";
+import{fetchCurrentUser}from"../../shared/userSession";
 
 // const API = "http://localhost:8005";
 // const WS = "ws://localhost:8005/ws/dragon-tiger";
@@ -29,13 +30,18 @@ function playChipSound() {
 }
 
 function TopBar({ soundOn, setSoundOn }) {
+  const[user,setUser]=useState({user_name:"DEMO123",balance:0});
+
+  useEffect(()=>{
+    fetchCurrentUser().then(setUser);
+  },[]);
+
   return (
     <header className="dt-topbar">
-      <div className="cr-account">
+      <div className="profile">
+        <span className="balance">{Number(user.balance||0).toFixed(2)}</span>
         <UserMenuLayout/>
-        <b>DEMO123</b>
-        <div className="cr-wallet"> ₹ 0.00</div>
-        <span className="cr-user-dot">●</span>
+        <span className="user">{user.user_name||"DEMO123"}</span>
       </div>
 
       <div className="dt-logo-wrap">

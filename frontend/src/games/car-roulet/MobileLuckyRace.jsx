@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState}from"react";
 import"./MobileluckyRace.css";
 import UserMenuLayout from "../../shared/UserMenuLayout";
+import{fetchCurrentUser}from"../../shared/userSession";
 
 const HOST=window.location.hostname;
 const API=`http://${HOST}:8005`;
@@ -209,16 +210,22 @@ onClick={()=>placeCoinBet(car)}
 }
 
 function TopBar(){
+const[user,setUser]=useState({user_name:"DEMO123",balance:0});
+
+useEffect(()=>{
+fetchCurrentUser().then(setUser);
+},[]);
 return(
 <header className="mlr-header">
 <div className="mlr-header-brand">
 <span>♛</span>
 <strong>GOLD365</strong>
 </div>
-<div className="mlr-user-pill">
-<div className="mlr-user-avatar">👤</div>
-<strong>DEMO USER</strong>
+<div className="profile">
+<span>🌐</span>
+<span className="balance">{Number(user.balance||0).toFixed(2)}</span>
 <UserMenuLayout/>
+<span className="user">{user.user_name||"DEMO123"}</span>
 </div>
 </header>
 );

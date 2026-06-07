@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./Mobileaviator.css";
 import UserMenuLayout from "../../shared/UserMenuLayout";
+import{fetchCurrentUser}from"../../shared/userSession";
+
 
 // const API = "http://localhost:8005";
 // const WS = "ws://localhost:8005/ws/game";
@@ -362,6 +364,12 @@ function App() {
 
   const shownMultiplier =
     data.phase === "betting" ? "WAITING" : `${Number(data.multiplier || 1).toFixed(2)}x`;
+  
+  const[user,setUser]=useState({user_name:"DEMO123",balance:0});
+
+  useEffect(()=>{
+    fetchCurrentUser().then(setUser);
+  },[]);
 
   return (
     <div className="mobile-aviator app">
@@ -372,12 +380,12 @@ function App() {
           <b>365</b>
         </div>
 
-        <div className="profile">
-          <span>🌐</span>
-          <span className="balance">0.00</span>
-          <UserMenuLayout/>
-          <span className="user">DEM123</span>
-        </div>
+      <div className="profile">
+        <span>🌐</span>
+        <span className="balance">{Number(user.balance||0).toFixed(2)}</span>
+        <UserMenuLayout/>
+        <span className="user">{user.user_name||"DEMO123"}</span>
+      </div>
       </header>
 
       <main className="layout">

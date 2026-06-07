@@ -1,6 +1,7 @@
 import React,{useEffect,useState}from"react";
 import"./matkaDashboard.css";
 import UserMenuLayout from "../../shared/UserMenuLayout";
+import{fetchCurrentUser}from"../../shared/userSession";
 
 const HOST=window.location.hostname;
 const API=`http://${HOST}:8005`;
@@ -140,6 +141,7 @@ function ResultOverlay({game,market,index}){
 
 export default function MatkaDashboard(){
   const[resultDoc,setResultDoc]=useState(null);
+  const[user,setUser]=useState({user_name:"DEMO123",balance:0});
 
   useEffect(()=>{
     const loadResults=()=>{
@@ -149,6 +151,7 @@ export default function MatkaDashboard(){
         .catch(()=>setResultDoc(null));
     };
     loadResults();
+    fetchCurrentUser().then(setUser);
     const interval=setInterval(loadResults,10000);
     return()=>clearInterval(interval);
   },[]);
@@ -165,9 +168,9 @@ export default function MatkaDashboard(){
         </div>
         <div className="mk-profile">
           <button className="mk-info-btn" onClick={()=>window.location.href="/matka/info"}>ⓘ</button>
-          <span className="mk-balance">0.00</span>
+          <span className="balance">{Number(user.balance||0).toFixed(2)}</span>
           <UserMenuLayout/>
-          <span className="mk-user">DEM123</span>
+          <span className="user">{user.user_name||"DEMO123"}</span>
         </div>
       </header>
       <MoneyRain side="left"/>

@@ -1,5 +1,7 @@
-import React,{useState}from"react";
+import React,{useEffect,useState}from"react";
 import"./matkaDashboardInput.css";
+import UserMenuLayout from "../../shared/UserMenuLayout";
+import{fetchCurrentUser}from"../../shared/userSession";
 
 const API="http://localhost:8005";
 
@@ -9,7 +11,11 @@ export default function MatkaInput({marketName:marketFromApp=""}){
   const[serverResponse,setServerResponse]=useState("");
   const[loading,setLoading]=useState(false);
   const[confirming,setConfirming]=useState(false);
+  const[user,setUser]=useState({user_name:"DEMO123",balance:0});
 
+  useEffect(()=>{
+    fetchCurrentUser().then(setUser);
+  },[]);
   const sendMessage=async()=>{
     if(!message.trim()){
       alert("Message type karo");
@@ -55,6 +61,8 @@ export default function MatkaInput({marketName:marketFromApp=""}){
     setConfirming(false);
   };
 
+
+
   return(
     <div className="mi-page">
       <header className="mi-top">
@@ -65,9 +73,9 @@ export default function MatkaInput({marketName:marketFromApp=""}){
         </div>
         <div className="mi-profile">
           <span>🌐</span>
-          <span className="mi-balance">0.00</span>
-          <span>☰</span>
-          <span className="mi-user">DEM123</span>
+          <span className="balance">{Number(user?.balance||0).toFixed(2)}</span>
+          <UserMenuLayout/>
+          <span className="user">{user?.user_name||"DEMO123"}</span>
         </div>
       </header>
 
