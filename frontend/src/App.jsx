@@ -17,6 +17,7 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 import MobileForgotPassword from "./pages/MobileForgotPassword.jsx";
 import MatkaInfo from "./games/matka/MatkaInfo.jsx";
 import MobileMatkaInfo from "./games/matka/MobileMatkaInfo.jsx";
+import CasinoAdmin from "./admin/CasinoAdmin.jsx";
 
 const lobbyGames=[
 {path:"/aviator",tag:"HOT",theme:"#ff0b58",image:"/casino-assets/aviator.png",name:"AVIATOR"},
@@ -87,6 +88,7 @@ if(path==="/login")return isMobile?<MobileLoginPage/>:<LoginPage/>;
 if(path==="/create-account")return isMobile?<MobileCreateAccount/>:<CreateAccount/>;
 if(path==="/forgot-password")return isMobile?<MobileForgotPassword/>:<ForgotPassword/>;
 if(path==="/matka/info")return isMobile?<MobileMatkaInfo/>:<MatkaInfo/>;
+if(path==="/casino")return isMobile?<CasinoAdmin/>:<CasinoAdmin/>;
 
 
 if(path.startsWith("/matka/market-input/")){

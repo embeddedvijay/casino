@@ -35,3 +35,13 @@ npm install vite@5.4.11 @vitejs/plugin-react@4.3.4 --save-dev
 npm install
 npm install lucide-react phaser
 npm run dev
+
+
+Casino Name
+Logo Upload
+Domain/Subdomain
+Theme Selection
+Games Enable/Disable
+Payment Gateway
+Telegram/WhatsApp Integration
+Commission Settings
