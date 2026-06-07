@@ -19,6 +19,14 @@ from games.matka.router import router as matka_router
 from games.matka.router import matka_socket
 from games.matka.manager import game_loop as matka_game_loop
 
+from fastapi.middleware.cors import CORSMiddleware
+from routes.auth_users import router as auth_users_router
+from routes.users import router as users_router
+
+from database import db
+from datetime import datetime
+
+
 app = FastAPI(title="Casino Multi Game Server")
 
 app.add_middleware(
@@ -29,6 +37,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(aviator_router)
+app.include_router(dragon_tiger_router)
+app.include_router(lucky_race_router)
+app.include_router(matka_router)
+app.include_router(users_router)
+app.include_router(auth_users_router)
 
 @app.get("/")
 def home():
@@ -57,11 +71,6 @@ def home():
     }
 
 
-app.include_router(aviator_router)
-app.include_router(dragon_tiger_router)
-app.include_router(lucky_race_router)
-app.include_router(matka_router)
-
 @app.websocket("/ws/aviator")
 async def websocket_aviator(websocket: WebSocket):
     await aviator_socket(websocket)
@@ -87,6 +96,20 @@ async def websocket_matka(websocket: WebSocket):
 
 @app.on_event("startup")
 async def startup_event():
+    db["clients"].update_one(
+        {"client_id":"demo"},
+        {"$set":{
+            "client_id":"demo",
+            "client_name":"Demo Casino",
+            "company_name":"Gold 365",
+            "domain":"demo",
+            "status":"active",
+            "updated_at":datetime.utcnow()
+        },"$setOnInsert":{
+            "created_at":datetime.utcnow()
+        }},
+        upsert=True
+    )
     asyncio.create_task(aviator_game_loop())
     asyncio.create_task(dragon_tiger_game_loop())
     asyncio.create_task(lucky_race_game_loop())
