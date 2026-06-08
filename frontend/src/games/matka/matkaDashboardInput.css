@@ -386,3 +386,34 @@
     -webkit-overflow-scrolling:touch;
   }
 }
+/* Desktop/Web MarketInput old layout support */
+.mi-page,.mi-page *{box-sizing:border-box}
+.mi-page{min-height:100vh;padding:18px;background:radial-gradient(circle at top,#143b2d,#06110d 70%);color:#fff;font-family:Arial,sans-serif}
+.mi-top{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-radius:14px;background:linear-gradient(180deg,#063b2f,#052018);border:1px solid rgba(37,211,102,.28);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.mi-brand{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:1000;color:#fff}
+.mi-brand b{color:#ffd84a}
+.mi-home{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.08);color:#42ff8c}
+.mi-profile{display:flex;align-items:center;gap:10px;font-weight:900;color:#fff}
+.mi-profile .balance{padding:8px 12px;border-radius:999px;background:#102820;color:#42ff8c;border:1px solid rgba(66,255,140,.3)}
+.mi-profile .user{max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#ffd84a}
+.mi-header{text-align:center;margin:22px auto 16px}
+.mi-header h1{margin:0;color:#ffd84a;font-size:42px;font-weight:1000;letter-spacing:2px}
+.mi-header h2{margin:4px 0;color:#fff;font-size:24px;font-weight:1000}
+.mi-header p{margin:6px 0 0;color:#cbd5e1;font-weight:800}
+.mi-card{width:min(760px,100%);margin:14px auto;padding:18px;border-radius:16px;background:linear-gradient(135deg,#0b2a22,#06130f);border:1px solid rgba(255,216,74,.35);box-shadow:0 10px 24px rgba(0,0,0,.35)}
+.mi-card h3{margin:0 0 14px;color:#ffd84a;font-size:20px;font-weight:1000;text-align:center}
+.mi-card label{display:block;margin:12px 0 7px;color:#e5fff2;font-size:14px;font-weight:900}
+.mi-card input,.mi-card textarea{width:100%;border:1px solid rgba(255,255,255,.12);outline:0;border-radius:10px;background:#071812;color:#fff;font-size:16px;padding:13px}
+.mi-card input{font-weight:900;color:#42ff8c}
+.mi-card textarea{min-height:96px;max-height:220px;resize:vertical;white-space:pre-wrap;line-height:22px}
+.mi-count{text-align:right;margin-top:7px;color:#94a3b8;font-size:13px;font-weight:800}
+.mi-send,.mi-confirm{width:100%;min-height:50px;border:0;border-radius:12px;color:#fff;font-size:17px;font-weight:1000;cursor:pointer;background:linear-gradient(180deg,#25d366,#009c5d);box-shadow:0 0 15px rgba(37,211,102,.35)}
+.mi-send{margin-top:12px}
+.mi-send:disabled,.mi-confirm:disabled{opacity:.65;cursor:not-allowed}
+.mi-confirm{display:block;width:min(760px,100%);margin:16px auto 0;background:linear-gradient(180deg,#16b85f,#077537);border:2px solid #a4ff00;box-shadow:0 0 18px rgba(164,255,0,.45)}
+.mi-server-response{min-height:110px;padding:14px;border-radius:12px;background:#071812;border:1px solid rgba(255,255,255,.12);color:#fff;font-size:16px;line-height:1.45;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere}
+.mi-server-response.success{border-color:#42ff8c;box-shadow:0 0 14px rgba(66,255,140,.18)}
+.mi-sent-preview{margin-top:12px;padding:10px;border-radius:10px;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.22);color:#e5fff2}
+.mi-sent-preview b{display:block;margin-bottom:5px;color:#42ff8c}
+.mi-sent-preview pre{margin:0;font-family:Arial,sans-serif;white-space:pre-wrap;word-break:break-word}
+@media(max-width:700px){.mi-page{padding:10px}.mi-top{height:auto;min-height:58px;padding:10px}.mi-brand{font-size:20px}.mi-profile{gap:6px;font-size:12px}.mi-profile .balance{padding:6px 8px}.mi-profile .user{max-width:82px}.mi-header h1{font-size:34px}.mi-card{padding:14px}.mi-confirm{margin-bottom:16px}}
