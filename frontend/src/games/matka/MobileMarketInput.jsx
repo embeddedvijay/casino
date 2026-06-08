@@ -227,7 +227,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
             <div className="mci-msg-row bot">
               <div className="mci-bot-icon">🤖</div>
               <div className="mci-bubble bot">
-                <p>✅ Market message confirmed successfully.</p>
+                <p>✅ Game Placed successfully.</p>
                 <small>{confirmTime}</small>
               </div>
             </div>

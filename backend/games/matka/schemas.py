@@ -16,3 +16,12 @@ class MarketMessageRequest(BaseModel):
     message:str
     market_name:str
     time_key:str
+
+class MarketConfirmRequest(BaseModel):
+    client_id:str="demo"
+    user_id:str="guest"
+    market_name:str=""
+    market:str=""
+    time_key:str=""
+    message:str
+    server_response:str=""
