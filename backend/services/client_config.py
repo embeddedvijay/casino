@@ -4,7 +4,7 @@ from datetime import datetime
 game_tasks=[]
 
 async def ensure_default_client(db):
-    await db["clients"].update_one(
+    db["clients"].update_one(
         {"client_id":"demo"},
         {"$set":{
             "client_id":"demo",
@@ -21,14 +21,14 @@ async def ensure_default_client(db):
     )
 
 async def get_client_config(db,client_id="demo"):
-    client=await db["clients"].find_one({"client_id":client_id,"status":"active"},{"_id":0})
+    client=db["clients"].find_one({"client_id":client_id,"status":"active"},{"_id":0})
     if not client or not client.get("setup_completed"):
         return None
 
-    settings=await db["casino_settings"].find_one({"client_id":client_id},{"_id":0})
-    markets=await db["matka_markets"].find({"client_id":client_id,"status":"Active"},{"_id":0}).to_list(None)
-    timings=await db["matka_timings"].find({"client_id":client_id},{"_id":0}).to_list(None)
-    star_lines=await db["star_lines"].find({"client_id":client_id,"status":"Active"},{"_id":0}).to_list(None)
+    settings=db["casino_settings"].find_one({"client_id":client_id},{"_id":0})
+    markets=list(db["matka_markets"].find({"client_id":client_id,"status":"Active"},{"_id":0}))
+    timings=list(db["matka_timings"].find({"client_id":client_id},{"_id":0}))
+    star_lines=list(db["star_lines"].find({"client_id":client_id,"status":"Active"},{"_id":0}))
 
     return {
         "client":client,
