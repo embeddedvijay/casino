@@ -3,7 +3,9 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pymongo import MongoClient
 from bson import ObjectId
 from . import manager
-from .schemas import MatkaBetRequest, MatkaClearRequest
+from .schemas import MatkaBetRequest, MatkaClearRequest, MarketMessageRequest
+from pydantic import BaseModel
+from hla_adv import adv_run as h
 
 router=APIRouter(prefix="/api/games/matka",tags=["Matka"])
 
@@ -66,3 +68,50 @@ async def matka_socket(websocket:WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+@router.post("/market-message")
+def handle_market_message(req:MarketMessageRequest):
+    user_input=req.message.strip()
+    time_key=req.time_key
+
+    try:
+        ACTION,RESULT_LIST,TOTAL,HLA_ANALYSIS,FLAG=h(user_input,time_key)
+
+        if not RESULT_LIST:
+            return {
+                "success":False,
+                "reply":"GAME KA FORMAT SAHI NAHI HAI",
+                "format":"ANK,ANK = AMOUNT | JODI = AMOUNT"
+            }
+
+        # mongo_client["casino"]["market_messages"].insert_one({
+        #     "client_id":req.client_id,
+        #     "user_id":req.user_id,
+        #     "market_name":req.market_name,
+        #     "time_key":time_key,
+        #     "message":user_input,
+        #     "action":ACTION,
+        #     "result":RESULT_LIST,
+        #     "total":TOTAL,
+        #     "analysis":HLA_ANALYSIS,
+        #     "flag":FLAG,
+        #     "status":"pending_confirm",
+        #     "created_at":datetime.datetime.utcnow()
+        # })
+
+        return {
+            "success":True,
+            "reply":"Confirm karna hai?",
+            "market_name":req.market_name,
+            "time_key":time_key,
+            "result":RESULT_LIST,
+            "total":TOTAL,
+            "analysis":HLA_ANALYSIS
+        }
+
+    except Exception as e:
+        return {
+            "success":False,
+            "reply":"HLA processing error",
+            "error":str(e)
+        }

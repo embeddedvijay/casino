@@ -1,4 +1,4 @@
-import React,{useState}from"react";
+import React,{useEffect,useRef,useState}from"react";
 import"./MobilematkaDashboardInput.css";
 
 const HOST=window.location.hostname;
@@ -21,9 +21,35 @@ export default function MatkaInput({marketName:marketFromApp=""}){
   const[msgTime,setMsgTime]=useState("");
   const[responseTime,setResponseTime]=useState("");
   const[confirmTime,setConfirmTime]=useState("");
+  const bodyRef=useRef(null);
+  const textareaRef=useRef(null);
+
+  useEffect(()=>{
+    if(bodyRef.current){
+      bodyRef.current.scrollTop=bodyRef.current.scrollHeight;
+    }
+  },[sentMessage,serverResponse,confirmed,loading]);
 
   const goBack=()=>{
     window.history.back();
+  };
+
+  const resizeTextarea=el=>{
+    if(!el)return;
+    el.style.height="auto";
+    el.style.height=Math.min(el.scrollHeight,150)+"px";
+  };
+
+  const changeMessage=e=>{
+    setMessage(e.target.value);
+    resizeTextarea(e.target);
+  };
+
+  const clearInput=()=>{
+    setMessage("");
+    if(textareaRef.current){
+      textareaRef.current.style.height="42px";
+    }
   };
 
   const sendMessage=async()=>{
@@ -44,20 +70,39 @@ export default function MatkaInput({marketName:marketFromApp=""}){
     setConfirmed(false);
     setSentMessage(cleanMessage);
     setMsgTime(nowTime());
+    clearInput();
 
     try{
       const res=await fetch(`${API}/api/games/matka/market-message`,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
-          market:marketName,
+          client_id:"demo",
+          user_id:localStorage.getItem("user_id")||"guest",
+          market_name:marketName,
+          time_key:marketName,
           message:cleanMessage
         })
       });
 
       const data=await res.json();
 
-      setServerResponse(data.message||data.response||data.table_type||JSON.stringify(data,null,2));
+      if(data.success){
+        const resultText=Array.isArray(data.result)
+          ? data.result.map(row=>{
+              const nums=row.slice(0,-1).join(", ");
+              const amount=row[row.length-1];
+              return `${nums} = ${amount}`;
+            }).join("\n")
+          : "";
+
+        setServerResponse(
+          `${data.time_key||marketName}\n\n${resultText}\n\nTOTAL = ${data.total}\n\nConfirm karna hai?`
+        );
+      }else{
+        setServerResponse(data.reply||data.message||"Invalid game format");
+      }
+
       setResponseTime(nowTime());
     }catch(e){
       setServerResponse("Backend error");
@@ -80,8 +125,11 @@ export default function MatkaInput({marketName:marketFromApp=""}){
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
+          client_id:"demo",
+          user_id:localStorage.getItem("user_id")||"guest",
+          market_name:marketName,
           market:marketName,
-          message:sentMessage||message.trim(),
+          message:sentMessage,
           server_response:serverResponse
         })
       });
@@ -117,7 +165,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
         </div>
       </header>
 
-      <main className="mci-chat-body">
+      <main className="mci-chat-body" ref={bodyRef}>
         <div className="mci-date-pill">
           Today
         </div>
@@ -126,7 +174,6 @@ export default function MatkaInput({marketName:marketFromApp=""}){
           <div className="mci-bot-icon">🤖</div>
           <div className="mci-bubble bot">
             <p>Welcome to <b>{marketName?.split("_").join(" ")}</b> market.</p>
-            <p>Type your Game message below and send. </p>
             <small>{nowTime()}</small>
           </div>
         </div>
@@ -136,6 +183,16 @@ export default function MatkaInput({marketName:marketFromApp=""}){
             <div className="mci-bubble user">
               <p>{sentMessage}</p>
               <small>{msgTime} ✓✓</small>
+            </div>
+          </div>
+        )}
+
+        {loading&&(
+          <div className="mci-msg-row bot">
+            <div className="mci-bot-icon">🤖</div>
+            <div className="mci-bubble bot">
+              <p>Checking...</p>
+              <small>{nowTime()}</small>
             </div>
           </div>
         )}
@@ -182,10 +239,17 @@ export default function MatkaInput({marketName:marketFromApp=""}){
         <div className="mci-input-box">
           <span>☺</span>
           <textarea
+            ref={textareaRef}
             value={message}
-            onChange={(e)=>setMessage(e.target.value)}
-            maxLength={160}
-            placeholder="Type your market message..."
+            onChange={changeMessage}
+            onKeyDown={(e)=>{
+              if(e.key==="Enter"&&e.ctrlKey){
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
+            maxLength={500}
+            placeholder="Pls send your game..."
             rows={1}
           />
         </div>
@@ -195,13 +259,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
         </button>
       </footer>
 
-      <div className="mci-encrypt-note">
-        <span>🔒</span>
-        <div>
-          <b>Your messages are secure</b>
-          <p>We do not share your data with any third party.</p>
-        </div>
-      </div>
+
     </div>
   );
 }
