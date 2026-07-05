@@ -234,7 +234,7 @@ return(
 function ResultStrip({history}){
 return(
 <section className="mlr-results">
-<b>RESULT</b>
+
 <div className="mlr-result-list">
 {history.length===0?(
 <span className="mlr-empty">No Result</span>

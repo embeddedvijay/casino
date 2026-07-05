@@ -11,7 +11,7 @@ const API=`http://${HOST}:8005`;
 const WS=`ws://${HOST}:8005/ws/dragon-tiger`;
 
 const USER_ID = "demo_user";
-const CHIP_VALUES = [10, 50, 100, 200, 500, 1000];
+const CHIP_VALUES = [50, 100, 200, 500, 1000];
 
 function formatMoney(n) {
   return Number(n || 0).toFixed(2);
@@ -219,7 +219,7 @@ export default function DragonTiger() {
     let ws;
     function connect() {
       ws = new WebSocket(WS);
-      ws.onopen = () => setNotice("Live Connected");
+      // ws.onopen = () => setNotice("Live Connected");
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         if (!msg.data) return;
