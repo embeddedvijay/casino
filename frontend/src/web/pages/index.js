@@ -1,0 +1,10 @@
+export {default as Deposit} from "./Deposit";
+export {default as Withdraw} from "./Withdraw";
+export {default as AccountStatement} from "./AccountStatement";
+export {default as BetHistory} from "./BetHistory";
+export {default as UnsettledAmount} from "./UnsettledAmount";
+export {default as ProfitLoss} from "./ProfitLoss";
+export {default as BonusReport} from "./BonusReport";
+export {default as WinningHistory} from "./WinningHistory";
+export {default as Notifications} from "./Notifications";
+export {default as Support} from "./Support";

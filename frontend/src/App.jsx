@@ -18,6 +18,9 @@ import MobileForgotPassword from "./pages/MobileForgotPassword.jsx";
 import MatkaInfo from "./games/matka/MatkaInfo.jsx";
 import MobileMatkaInfo from "./games/matka/MobileMatkaInfo.jsx";
 import CasinoAdmin from "./admin/CasinoAdmin.jsx";
+import {Deposit,Withdraw,AccountStatement,BetHistory,UnsettledAmount,ProfitLoss,BonusReport,WinningHistory,Notifications,Support} from "./web/pages";
+import {Deposit as MobileDeposit,Withdraw as MobileWithdraw,AccountStatement as MobileAccountStatement,BetHistory as MobileBetHistory,UnsettledAmount as MobileUnsettledAmount,ProfitLoss as MobileProfitLoss,BonusReport as MobileBonusReport,WinningHistory as MobileWinningHistory,Notifications as MobileNotifications,Support as MobileSupport} from "./mobile/pages";
+
 
 const lobbyGames=[
 {path:"/aviator",tag:"HOT",theme:"#ff0b58",image:"/casino-assets/aviator.png",name:"AVIATOR"},
@@ -89,6 +92,17 @@ if(path==="/create-account")return isMobile?<MobileCreateAccount/>:<CreateAccoun
 if(path==="/forgot-password")return isMobile?<MobileForgotPassword/>:<ForgotPassword/>;
 if(path==="/matka/info")return isMobile?<MobileMatkaInfo/>:<MatkaInfo/>;
 if(path==="/casino")return isMobile?<CasinoAdmin/>:<CasinoAdmin/>;
+
+if(path==="/deposit")return isMobile?<MobileDeposit/>:<Deposit/>;
+if(path==="/withdraw")return isMobile?<MobileWithdraw/>:<Withdraw/>;
+if(path==="/account-statement")return isMobile?<MobileAccountStatement/>:<AccountStatement/>;
+if(path==="/bet-history")return isMobile?<MobileBetHistory/>:<BetHistory/>;
+if(path==="/unsettled-amount")return isMobile?<MobileUnsettledAmount/>:<UnsettledAmount/>;
+if(path==="/profit-loss")return isMobile?<MobileProfitLoss/>:<ProfitLoss/>;
+if(path==="/bonus-report")return isMobile?<MobileBonusReport/>:<BonusReport/>;
+if(path==="/winning-history")return isMobile?<MobileWinningHistory/>:<WinningHistory/>;
+if(path==="/notifications")return isMobile?<MobileNotifications/>:<Notifications/>;
+if(path==="/support")return isMobile?<MobileSupport/>:<Support/>;
 
 
 if(path.startsWith("/matka/market-input/")){
