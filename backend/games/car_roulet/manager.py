@@ -53,30 +53,79 @@ state={
 }
 
 bets_by_round:Dict[str,List[dict]]={}
+players_by_round:Dict[str,List[dict]]={}
+board_total_by_round:Dict[str,dict]={}
+
+BOT_NAMES=["Raj Banna Saa","player_OW2","Raj Deepakvala","Manish Halpati","player_9RgLK","player_EHvX1","player_AK47","player_RK21","player_VIP9","player_WIN7"]
+AVATARS=["🧔","👑","👨","🧑","👨‍🦱","👩","🤖","🎭","🧑‍🚀","👨‍✈️"]
+BET_AMOUNTS=[100,200,500,1000,1500,2000,3500,5000,7500,10000,20000,42569]
+BOARD_TOTALS=[14640,20380,42100,41270,54880,45860,50220,65710]
+
 
 def make_round_id():
     return "LR-"+str(uuid.uuid4())[:8].upper()
 
+
+def generate_public_players():
+    total=random.randint(8,18)
+    rows=[]
+    used_names=[]
+    for _ in range(total):
+        name=random.choice(BOT_NAMES)
+        if name in used_names:
+            name=f"{name}_{random.randint(1,99)}"
+        used_names.append(name)
+        rows.append({
+            "id":f"player-{uuid.uuid4()}",
+            "name":name,
+            "balance":float(random.choice(BET_AMOUNTS)),
+            "avatar":random.choice(AVATARS),
+            "tag":""
+        })
+    rows.sort(key=lambda x:x["balance"],reverse=True)
+    if rows:
+        rows[0]["tag"]="WINNER"
+    if len(rows)>1:
+        rows[1]["tag"]="LUCKY"
+    return rows
+
+
+def get_round_players(round_id=None):
+    rid=round_id or state["round_id"]
+    if not rid:
+        return []
+    if rid not in players_by_round:
+        players_by_round[rid]=generate_public_players()
+    return players_by_round[rid]
+
+
+def get_round_board_totals(round_id=None):
+    rid=round_id or state["round_id"]
+    if not rid:
+        return {}
+    if rid not in board_total_by_round:
+        board_total_by_round[rid]={car["key"]:float(random.choice(BOARD_TOTALS)) for car in state["cars"]}
+    return board_total_by_round[rid]
+
+
 def public_players():
-    return [
-        {"name":"Raj Banna Saa","balance":42569,"avatar":"🧔","tag":"WINNER"},
-        {"name":"player_OW2","balance":10042,"avatar":"👑","tag":"LUCKY"},
-        {"name":"Raj Deepakvala","balance":6073,"avatar":"👨","tag":""},
-        {"name":"Manish Halpati","balance":8087,"avatar":"🧑","tag":""},
-        {"name":"player_9RgLK","balance":39319,"avatar":"👨‍🦱","tag":""},
-        {"name":"player_EHvX1","balance":3710,"avatar":"👩","tag":""}
-    ]
+    return get_round_players()
+
 
 def board_totals():
     round_id=state["round_id"]
+    static_totals=get_round_board_totals(round_id)
     totals={}
     for car in state["cars"]:
-        totals[car["key"]]={"my":0.0,"total":random.choice([14640,20380,42100,41270,54880,45860,50220,65710])}
+        key=car["key"]
+        totals[key]={"my":0.0,"total":float(static_totals.get(key,0.0))}
     for bet in bets_by_round.get(round_id,[]):
         key=bet["bet_type"]
         if key in totals:
             totals[key]["my"]+=float(bet["amount"])
+            totals[key]["total"]+=float(bet["amount"])
     return totals
+
 
 def public_data():
     round_id=state["round_id"]
@@ -92,8 +141,9 @@ def public_data():
         "history":state["history"][-20:],
         "my_bets":bets_by_round.get(round_id,[]),
         "board_totals":board_totals(),
-        "players":public_players()
+        "players":get_round_players(round_id)
     }
+
 
 async def broadcast(msg_type="state"):
     payload={"type":msg_type,"data":public_data()}
@@ -107,14 +157,17 @@ async def broadcast(msg_type="state"):
         if ws in clients:
             clients.remove(ws)
 
+
 async def connect(websocket:WebSocket):
     await websocket.accept()
     clients.append(websocket)
     await websocket.send_json({"type":"state","data":public_data()})
 
+
 def disconnect(websocket:WebSocket):
     if websocket in clients:
         clients.remove(websocket)
+
 
 async def place_bet(req):
     if state["phase"]!="betting":
@@ -131,6 +184,7 @@ async def place_bet(req):
     await broadcast("bet")
     return {"success":True,"message":"Bet placed"}
 
+
 async def clear_bets(req):
     if state["phase"]!="betting":
         return {"success":False,"message":"Cannot clear now"}
@@ -139,6 +193,7 @@ async def clear_bets(req):
     bets_by_round[round_id]=[bet for bet in old_bets if bet["user_id"]!=req.user_id]
     await broadcast("clear")
     return {"success":True,"message":"Bets cleared"}
+
 
 def settle_bets(winner):
     round_id=state["round_id"]
@@ -151,12 +206,23 @@ def settle_bets(winner):
             bet["status"]="lost"
             bet["payout"]=0.0
 
+
 def find_stop_index_for_winner(winner_key:str):
     track=state["track"]
     matching_indexes=[index for index,item in enumerate(track) if item.get("key")==winner_key]
     if not matching_indexes:
         return 0
     return random.choice(matching_indexes)
+
+
+def cleanup_old_rounds(keep=8):
+    active_rounds=[state["round_id"]]+[item.get("round_id") for item in state["history"][-keep:] if isinstance(item,dict)]
+    active_rounds=set([r for r in active_rounds if r])
+    for store in (bets_by_round,players_by_round,board_total_by_round):
+        for rid in list(store.keys()):
+            if rid not in active_rounds:
+                del store[rid]
+
 
 async def game_loop():
     while True:
@@ -168,6 +234,9 @@ async def game_loop():
         state["winner"]=None
         state["track_index"]=0
         bets_by_round[round_id]=[]
+        players_by_round[round_id]=generate_public_players()
+        board_total_by_round[round_id]={car["key"]:float(random.choice(BOARD_TOTALS)) for car in state["cars"]}
+        cleanup_old_rounds()
         await broadcast("new_round")
 
         for sec in range(WAITING_SECONDS,0,-1):
