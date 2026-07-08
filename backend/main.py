@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,7 +29,19 @@ from services.client_config import ensure_default_client,start_game_tasks
 
 from database import db
 from datetime import datetime
+from telegram_bot.bot import start_bot_background
 
+telegram_app=None
+
+@asynccontextmanager
+async def lifespan(app:FastAPI):
+    global telegram_app
+    telegram_app=await start_bot_background()
+    yield
+    if telegram_app:
+        await telegram_app.updater.stop()
+        await telegram_app.stop()
+        await telegram_app.shutdown()
 
 app = FastAPI(title="Casino Multi Game Server")
 
@@ -98,8 +111,12 @@ async def websocket_lucky_race(websocket: WebSocket):
 async def websocket_matka(websocket: WebSocket):
     await matka_socket(websocket)
 
+telegram_app = None
+
 @app.on_event("startup")
 async def startup_event():
+    global telegram_app
+
     await ensure_default_client(db)
 
     await start_game_tasks(
@@ -109,3 +126,8 @@ async def startup_event():
         lucky_race_game_loop,
         matka_game_loop
     )
+
+    telegram_app = await start_bot_background()
+
+    print("✅ Server Ready")
+
