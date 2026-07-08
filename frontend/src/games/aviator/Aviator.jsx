@@ -405,14 +405,11 @@ function App() {
           </div>
 
           <div className="bet-list">
-            {data.all_bets.map((b) => (
+            {data.all_bets.map((b)=>(
               <div className="row" key={b.id}>
-                <span className="u">
-                  <i>{b.avatar}</i>
-                  {b.user}
-                </span>
+                <span className="u"><i>{b.avatar}</i>{b.user}</span>
                 <span>{formatMoney(b.bet)}</span>
-                <span></span>
+                <span>{b.cashout_multiplier ? `${Number(b.cashout_multiplier).toFixed(2)}x` : "-"}</span>
                 <b>{formatMoney(b.cashout)}</b>
               </div>
             ))}
