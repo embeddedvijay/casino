@@ -1,5 +1,7 @@
 import os
 from telegram import Bot
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import ContextTypes
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, Application
 # from handlers.dm_handler import handle_deposit_buttons, admin_deposit_action, admin_withdraw_action
 # from handlers.reg_handler import start_update_account
@@ -56,10 +58,88 @@ async def admin(update,context):
     uid=update.effective_user.id
     if uid!=ADMIN_CHAT_ID:
         return await update.message.reply_text("❌ You are not authorized.")
-    await update.message.reply_text(
-        "👑 Admin Panel\n\nChoose action:",
-        reply_markup=None
-    )
+    await build_admin_box(update, context)
+
+
+async def build_admin_box(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    q=update.callback_query
+    msg=update.message
+
+    if q:
+        await q.answer()
+        uid=q.from_user.id
+        chat_id=q.message.chat_id
+        data=q.data or "ADMIN:MAIN"
+    elif msg:
+        uid=msg.from_user.id
+        chat_id=msg.chat_id
+        data="ADMIN:MAIN"
+    else:
+        return
+
+    if uid!=ADMIN_CHAT_ID:
+        return await context.bot.send_message(
+            chat_id=uid,
+            text="❌ *Access Denied*\n\n🚫 You are *not authorized* to access this panel.",
+            parse_mode="Markdown"
+        )
+
+    section=data.replace("ADMIN:","")
+
+    async def send_or_edit(text,keyboard):
+        markup=InlineKeyboardMarkup(keyboard)
+        if q:
+            return await q.edit_message_text(text=text,parse_mode="Markdown",reply_markup=markup)
+        return await context.bot.send_message(chat_id=chat_id,text=text,parse_mode="Markdown",reply_markup=markup)
+
+    if section in ["ADMIN_LOGIN","MAIN"]:
+        return await send_or_edit("🛠 *Admin Control Panel*",[
+            [InlineKeyboardButton("📅 Today's Offer",callback_data="ADMIN:TODAY_OFFER"),InlineKeyboardButton("👤 Balance",callback_data="ADMIN:BALANCE")],
+            [InlineKeyboardButton("🟢 User Details",callback_data="ADMIN:USER_DETAILS"),InlineKeyboardButton("💳 Update UPI",callback_data="ADMIN:UPDATE_UPI")],
+            [InlineKeyboardButton("📌 Market Control",callback_data="ADMIN:MARKET_CONTROL")]
+        ])
+
+    if section=="TODAY_OFFER":
+        return await send_or_edit("📅 *Today's Offer Panel*",[
+            [InlineKeyboardButton("📢 Msg To All Users",callback_data="TODAY_OFFER:MSG_ALL"),InlineKeyboardButton("📩 Msg To Inactive Users",callback_data="TODAY_OFFER:MSG_INACTIVE")],
+            [InlineKeyboardButton("🎁 Create Offer",callback_data="TODAY_OFFER:CREATE_OFFER"),InlineKeyboardButton("💰 Bonus Announce",callback_data="TODAY_OFFER:BONUS")],
+            [InlineKeyboardButton("🔙 Back",callback_data="ADMIN:MAIN")]
+        ])
+
+    if section=="BALANCE":
+        return await send_or_edit("👤 *Balance Panel*",[
+            [InlineKeyboardButton("💵 Today Deposit",callback_data="BALANCE:TODAY_DEP"),InlineKeyboardButton("💸 Today Withdrawal",callback_data="BALANCE:TODAY_WD")],
+            [InlineKeyboardButton("⏳ Pending Deposit",callback_data="BALANCE:PENDING_DEP"),InlineKeyboardButton("⏳ Pending Withdrawal",callback_data="BALANCE:PENDING_WD")],
+            [InlineKeyboardButton("📊 Today Summary",callback_data="BALANCE:TODAY_SUMMARY"),InlineKeyboardButton("🎮 Today Played",callback_data="BALANCE:TODAY_PLAY")],
+            [InlineKeyboardButton("🏆 Today Win",callback_data="BALANCE:TODAY_WIN")],
+            [InlineKeyboardButton("🔙 Back",callback_data="ADMIN:MAIN")]
+        ])
+
+    if section=="USER_DETAILS":
+        return await send_or_edit("👤 *User Details Panel*",[
+            [InlineKeyboardButton("🏆 Most Winner User",callback_data="USER_DETAILS:MOST_WINNER")],
+            [InlineKeyboardButton("💰 Most Deposit User",callback_data="USER_DETAILS:MOST_DEPOSIT")],
+            [InlineKeyboardButton("🎮 Most Played User",callback_data="USER_DETAILS:MOST_PLAYED")],
+            [InlineKeyboardButton("👥 All Users",callback_data="USER_DETAILS:ALL_USERS")],
+            [InlineKeyboardButton("🔙 Back",callback_data="ADMIN:MAIN")]
+        ])
+
+    if section=="MARKET_CONTROL":
+        return await send_or_edit("📌 *Market Control Panel*",[
+            [InlineKeyboardButton("🌙 KALYAN NIGHT OFF",callback_data="MARKET:OFF:KALYAN_NIGHT")],
+            [InlineKeyboardButton("🌙 KALYAN NIGHT ON",callback_data="MARKET:ON:KALYAN_NIGHT")],
+            [InlineKeyboardButton("📋 Show Disabled Markets",callback_data="MARKET:LIST")],
+            [InlineKeyboardButton("🔙 Back",callback_data="ADMIN:MAIN")]
+        ])
+
+    return await send_or_edit("🛠 *Admin Control Panel*",[
+        [InlineKeyboardButton("🔙 Back",callback_data="ADMIN:MAIN")]
+    ])
+    
+ 
+
+
+
 
 # async def start_bot_background():
 #     app=ApplicationBuilder().token(BOT_TOKEN).post_init(on_startup).build()
