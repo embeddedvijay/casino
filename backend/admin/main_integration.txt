@@ -1,0 +1,11 @@
+Add to backend/main.py:
+
+from routes.casino_admin import router as casino_admin_router
+from routes.casino_admin import ensure_admin_defaults
+
+app.include_router(casino_admin_router)
+
+Inside existing startup_event():
+    await ensure_admin_defaults()
+
+Do not create a second FastAPI() instance.
