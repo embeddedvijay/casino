@@ -17,7 +17,8 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 import MobileForgotPassword from "./pages/MobileForgotPassword.jsx";
 import MatkaInfo from "./games/matka/MatkaInfo.jsx";
 import MobileMatkaInfo from "./games/matka/MobileMatkaInfo.jsx";
-import CasinoAdmin from "./admin/CasinoAdmin.jsx";
+// import CasinoAdmin from "./admin/CasinoAdmin.jsx";
+import AdminRouter from "./admin/AdminRouter";
 import {Deposit,Withdraw,AccountStatement,BetHistory,UnsettledAmount,ProfitLoss,BonusReport,WinningHistory,Notifications,Support} from "./web/pages";
 import {Deposit as MobileDeposit,Withdraw as MobileWithdraw,AccountStatement as MobileAccountStatement,BetHistory as MobileBetHistory,UnsettledAmount as MobileUnsettledAmount,ProfitLoss as MobileProfitLoss,BonusReport as MobileBonusReport,WinningHistory as MobileWinningHistory,Notifications as MobileNotifications,Support as MobileSupport} from "./mobile/pages";
 
@@ -91,7 +92,7 @@ if(path==="/login")return isMobile?<MobileLoginPage/>:<LoginPage/>;
 if(path==="/create-account")return isMobile?<MobileCreateAccount/>:<CreateAccount/>;
 if(path==="/forgot-password")return isMobile?<MobileForgotPassword/>:<ForgotPassword/>;
 if(path==="/matka/info")return isMobile?<MobileMatkaInfo/>:<MatkaInfo/>;
-if(path==="/casino")return isMobile?<CasinoAdmin/>:<CasinoAdmin/>;
+// if(path==="/casino")return isMobile?<CasinoAdmin/>:<CasinoAdmin/>;
 
 if(path==="/deposit")return isMobile?<MobileDeposit/>:<Deposit/>;
 if(path==="/withdraw")return isMobile?<MobileWithdraw/>:<Withdraw/>;
@@ -115,8 +116,12 @@ if(path==="/matka/market-input"){
 const marketName=window.history.state?.marketName||"";
 return isMobile?<MobileMarketInput marketName={marketName}/>:<MarketInput marketName={marketName}/>;
 }
-
+// Casino Admin
+if(path.startsWith("/casino-admin")){
+  return <AdminRouter />;
+}
 return isMobile?<MobileLobby/>:<GameLobby/>;
+
 }
 
 const styles={
