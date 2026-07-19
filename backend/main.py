@@ -131,7 +131,7 @@ async def startup_event():
         matka_game_loop
     )
 
-    telegram_app = await start_bot_background()
+    # telegram_app = await start_bot_background()
 
     print("✅ Server Ready")
 
