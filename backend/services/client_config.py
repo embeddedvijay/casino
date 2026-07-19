@@ -1,22 +1,37 @@
 import asyncio
 from datetime import datetime
+from admin.services.auth_service import new_password_record
 
 game_tasks=[]
 
 async def ensure_default_client(db):
+    existing = db["clients"].find_one({"client_id": "demo"})
+
+    update_data = {
+        "$set": {
+            "client_id": "demo",
+            "client_name": "Demo Casino",
+            "company_name": "Gold 365",
+            "domain": "demo",
+            "status": "active",
+            "updated_at": datetime.utcnow()
+        },
+        "$setOnInsert": {
+            "admin_username": "demo",
+            "setup_completed": False,
+            "must_change_password": True,
+            "created_at": datetime.utcnow()
+        }
+    }
+
+    if not existing:
+        password_hash, password_salt = new_password_record("Demo@123")
+        update_data["$setOnInsert"]["password_hash"] = password_hash
+        update_data["$setOnInsert"]["password_salt"] = password_salt
+
     db["clients"].update_one(
-        {"client_id":"demo"},
-        {"$set":{
-            "client_id":"demo",
-            "client_name":"Demo Casino",
-            "company_name":"Gold 365",
-            "domain":"demo",
-            "status":"active",
-            "updated_at":datetime.utcnow()
-        },"$setOnInsert":{
-            "setup_completed":False,
-            "created_at":datetime.utcnow()
-        }},
+        {"client_id": "demo"},
+        update_data,
         upsert=True
     )
 

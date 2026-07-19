@@ -1,2 +1,30 @@
-import React,{useEffect,useState}from"react";import AdminLayout from"../components/AdminLayout";import{api}from"../api";
-export default function Management(){const[data,setData]=useState({users:0,deposits:0,withdrawals:0,pending_deposits:0,pending_withdrawals:0,active_games:0});useEffect(()=>{api("/api/admin/management/summary").then(setData).catch(()=>{})},[]);return <AdminLayout title="Management"><div className="ca-grid4">{Object.entries(data).map(([k,v])=><div className="ca-stat" key={k}><span>{k.replaceAll("_"," ")}</span><b>{typeof v==="number"?v:0}</b></div>)}</div></AdminLayout>}
+import React, { useEffect, useState } from "react";
+import AdminLayout from "../components/AdminLayout";
+import { api } from "../api";
+export default function Management() {
+  const [data, setData] = useState({
+    users: 0,
+    deposits: 0,
+    withdrawals: 0,
+    pending_deposits: 0,
+    pending_withdrawals: 0,
+    active_games: 0,
+  });
+  useEffect(() => {
+    api("/api/admin/management/summary")
+      .then(setData)
+      .catch(() => {});
+  }, []);
+  return (
+    <AdminLayout title="Management">
+      <div className="ca-grid4">
+        {Object.entries(data).map(([k, v]) => (
+          <div className="ca-stat" key={k}>
+            <span>{k.replaceAll("_", " ")}</span>
+            <b>{typeof v === "number" ? v : 0}</b>
+          </div>
+        ))}
+      </div>
+    </AdminLayout>
+  );
+}

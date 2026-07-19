@@ -31,6 +31,9 @@ from database import db
 from datetime import datetime
 from telegram_bot.bot import start_bot_background
 
+from admin.routes.router import router as casino_admin_router
+from admin.services.auth_service import ensure_default_admin
+
 telegram_app=None
 
 @asynccontextmanager
@@ -60,6 +63,7 @@ app.include_router(matka_router)
 app.include_router(users_router)
 app.include_router(auth_users_router)
 app.include_router(casino_setup_router)
+app.include_router(casino_admin_router)
 
 @app.get("/")
 def home():
