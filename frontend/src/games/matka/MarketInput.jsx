@@ -15,6 +15,8 @@ const getValue=(market,keys)=>{
 
 const hasResult=(value)=>value!==""&&value!=="*"&&value!=="**"&&value!=="-"&&value!=="--";
 
+const playLabel=(key,marketName)=>`${String(marketName||"").replaceAll("_"," ")} ${String(key||"").endsWith("_CL")?"CLOSE":"OPEN"}`;
+
 const getMarketResult=(data,marketName)=>{
   const results=data?.Result&&typeof data.Result==="object"?data.Result:data||{};
   const keys=[marketName,`${marketName}_OP`,marketName.replace("_DAY",""),marketName.replace("_NIGHT","")];
@@ -128,7 +130,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
         setSentMessage(cleanMessage);
         setMessage("");
         const resultText=formatResult(data.result,data.total);
-        setServerResponse(`${data.market_name||marketName}\n${acceptedTimeKey?`\n${acceptedTimeKey}`:""}\n\n${resultText}\n\nConfirm karna hai?`);
+        setServerResponse(`${playLabel(acceptedTimeKey,marketName)}\n\n${resultText}\n\nConfirm karna hai?`);
       }else{
         setServerResponse(data.reply||data.message||data.response||data.table_type||JSON.stringify(data,null,2)||"Invalid format");
       }
@@ -166,7 +168,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
       const data=await res.json();
       if(data.success){
         setConfirmed(true);
-        setServerResponse(`✅ BET CONFIRMED\n\nMarket : ${marketName}\nTime Key : ${data.time_key||timeKey||marketName}\nTotal : ${data.total||0}\n\n${data.message||"Market message confirmed successfully"}`);
+        setServerResponse(`✅ BET CONFIRMED\n\n${playLabel(data.time_key||timeKey||marketName,marketName)}\n\nConfirmed Message:\n${sentMessage}\n\nTotal : ${data.total||0}\n\n${data.message||"Market message confirmed successfully"}`);
       }else{
         alert(data.message||data.reply||"Confirm failed");
       }
