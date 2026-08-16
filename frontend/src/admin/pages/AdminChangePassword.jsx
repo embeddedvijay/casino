@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 const HOST = window.location.hostname;
-const API = `http://${HOST}:8085`;
+const API = `http://${HOST}:8005`;
 
 export default function AdminChangePassword() {
   const [currentPassword, setCurrentPassword] = useState("");

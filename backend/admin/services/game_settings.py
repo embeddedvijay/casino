@@ -6,3 +6,5 @@ async def get_numeric_setting(game_key:str,field:str,default):
  doc=await get_game_setting(game_key)
  try:return type(default)(doc.get(field,default))
  except:return default
+
+

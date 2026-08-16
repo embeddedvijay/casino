@@ -1,76 +1,69 @@
 from datetime import datetime, timezone
 
+from database import db
 
-DEFAULT_GAMES = [
-    {
-        "key": "aviator",
-        "name": "Aviator",
-        "enabled": True,
-        "min_bet": 10,
-        "max_bet": 10000,
-        "house_edge": 1,
-        "max_multiplier": 100,
-        "waiting_seconds": 10,
-        "result_seconds": 5,
-        "description": "Aviator multiplier game",
-    },
-    {
-        "key": "dragon-tiger",
-        "name": "Dragon Tiger",
-        "enabled": True,
-        "min_bet": 10,
-        "max_bet": 10000,
-        "house_edge": 1,
-        "max_multiplier": 2,
-        "waiting_seconds": 10,
-        "result_seconds": 5,
-        "description": "Dragon Tiger card game",
-    },
-    {
-        "key": "lucky-race",
-        "name": "Lucky Race",
-        "enabled": True,
-        "min_bet": 10,
-        "max_bet": 10000,
-        "house_edge": 1,
-        "max_multiplier": 10,
-        "waiting_seconds": 10,
-        "result_seconds": 5,
-        "description": "Lucky Race game",
-    },
-    {
-        "key": "matka",
-        "name": "Matka",
-        "enabled": True,
-        "min_bet": 10,
-        "max_bet": 10000,
-        "house_edge": 1,
-        "max_multiplier": 100,
-        "waiting_seconds": 10,
-        "result_seconds": 5,
-        "description": "Matka game",
-    },
+
+DEFAULT_MATKA_MARKETS = [
+    {"key": "SRIDEVI_DAY", "name": "SRIDEVI DAY"},
+    {"key": "SRIDEVI_NIGHT", "name": "SRIDEVI NIGHT"},
+    {"key": "TIME_BAZAR_DAY", "name": "TIME BAZAR DAY"},
+    {"key": "MAIN_BAZAR_NIGHT", "name": "MAIN BAZAR NIGHT"},
+    {"key": "MADHUR_DAY", "name": "MADHUR DAY"},
+    {"key": "MADHUR_NIGHT", "name": "MADHUR NIGHT"},
+    {"key": "MILAN_DAY", "name": "MILAN DAY"},
+    {"key": "MILAN_NIGHT", "name": "MILAN NIGHT"},
+    {"key": "RAJDHANI_DAY", "name": "RAJDHANI DAY"},
+    {"key": "RAJDHANI_NIGHT", "name": "RAJDHANI NIGHT"},
+    {"key": "SUPREME_DAY", "name": "SUPREME DAY"},
+    {"key": "SUPREME_NIGHT", "name": "SUPREME NIGHT"},
+    {"key": "KALYAN_DAY", "name": "KALYAN DAY"},
+    {"key": "KALYAN_NIGHT", "name": "KALYAN NIGHT"},
 ]
 
+ALLOWED_MARKET_KEYS = {market["key"] for market in DEFAULT_MATKA_MARKETS}
 
-def ensure_game_settings(database, client_id: str) -> None:
-    database.admin_game_settings.create_index(
+
+def utc_now():
+    return datetime.now(timezone.utc)
+
+
+def ensure_default_matka_markets(client_id: str) -> None:
+    db["matka_markets"].create_index(
+        [("client_id", 1), ("key", 1)],
+        unique=True,
+    )
+    db["matka_timings"].create_index(
         [("client_id", 1), ("key", 1)],
         unique=True,
     )
 
-    now = datetime.now(timezone.utc)
+    now = utc_now()
 
-    for game in DEFAULT_GAMES:
-        database.admin_game_settings.update_one(
-            {
-                "client_id": client_id,
-                "key": game["key"],
-            },
+    for market in DEFAULT_MATKA_MARKETS:
+        db["matka_markets"].update_one(
+            {"client_id": client_id, "key": market["key"]},
             {
                 "$setOnInsert": {
-                    **game,
                     "client_id": client_id,
+                    "key": market["key"],
+                    "name": market["name"],
+                    "enabled": True,
+                    "status": "Active",
+                    "days": 6,
+                    "created_at": now,
+                    "updated_at": now,
+                }
+            },
+            upsert=True,
+        )
+        db["matka_timings"].update_one(
+            {"client_id": client_id, "key": market["key"]},
+            {
+                "$setOnInsert": {
+                    "client_id": client_id,
+                    "key": market["key"],
+                    "open_time": "09:00",
+                    "close_time": "23:00",
                     "created_at": now,
                     "updated_at": now,
                 }
@@ -79,52 +72,146 @@ def ensure_game_settings(database, client_id: str) -> None:
         )
 
 
-def clean_game(game: dict | None) -> dict | None:
-    if not game:
-        return None
+async def get_matka_markets(client_id: str) -> list[dict]:
+    ensure_default_matka_markets(client_id)
 
-    game.pop("_id", None)
-    game.pop("client_id", None)
-    game.pop("created_at", None)
-    game.pop("updated_at", None)
-    return game
+    market_documents = {
+        market["key"]: market
+        for market in db["matka_markets"].find(
+            {"client_id": client_id},
+            {"_id": 0},
+        )
+    }
+    timing_documents = {
+        timing["key"]: timing
+        for timing in db["matka_timings"].find(
+            {"client_id": client_id},
+            {"_id": 0},
+        )
+    }
+
+    result = []
+
+    for default_market in DEFAULT_MATKA_MARKETS:
+        market = market_documents.get(default_market["key"], {})
+        timing = timing_documents.get(default_market["key"], {})
+
+        try:
+            days = int(market.get("days", 6))
+        except (TypeError, ValueError):
+            days = 6
+
+        result.append(
+            {
+                "key": default_market["key"],
+                "name": market.get("name", default_market["name"]),
+                "enabled": market.get(
+                    "enabled",
+                    market.get("status", "Active") == "Active",
+                ),
+                "open_time": timing.get("open_time", "09:00"),
+                "close_time": timing.get("close_time", "23:00"),
+                "days": min(6, max(0, days)),
+            }
+        )
+
+    return result
 
 
-def list_games(database, client_id: str) -> list[dict]:
-    ensure_game_settings(database, client_id)
-    games = database.admin_game_settings.find({"client_id": client_id}).sort("name", 1)
-    return [clean_game(game) for game in games]
+async def save_matka_markets(client_id: str, markets: list[dict]) -> list[dict]:
+    ensure_default_matka_markets(client_id)
+    now = utc_now()
+
+    for market in markets:
+        market_key = market["key"].upper()
+
+        if market_key not in ALLOWED_MARKET_KEYS:
+            raise ValueError(f"Invalid Matka market: {market_key}")
+
+        enabled = bool(market.get("enabled", True))
+        days = int(market.get("days", 6))
+
+        if not 0 <= days <= 6:
+            raise ValueError(f"{market['name']}: days must be between 0 and 6.")
+
+        db["matka_markets"].update_one(
+            {"client_id": client_id, "key": market_key},
+            {
+                "$set": {
+                    "name": market["name"],
+                    "enabled": enabled,
+                    "status": "Active" if enabled else "Inactive",
+                    "days": days,
+                    "updated_at": now,
+                },
+                "$setOnInsert": {
+                    "client_id": client_id,
+                    "key": market_key,
+                    "created_at": now,
+                },
+            },
+            upsert=True,
+        )
+        db["matka_timings"].update_one(
+            {"client_id": client_id, "key": market_key},
+            {
+                "$set": {
+                    "open_time": market["open_time"],
+                    "close_time": market["close_time"],
+                    "updated_at": now,
+                },
+                "$setOnInsert": {
+                    "client_id": client_id,
+                    "key": market_key,
+                    "created_at": now,
+                },
+            },
+            upsert=True,
+        )
+
+    return await get_matka_markets(client_id)
 
 
-def get_game(database, client_id: str, game_key: str) -> dict | None:
-    ensure_game_settings(database, client_id)
-    game = database.admin_game_settings.find_one(
+async def get_casino_settings(client_id: str) -> dict:
+    client = db["clients"].find_one(
+        {"client_id": client_id},
         {
-            "client_id": client_id,
-            "key": game_key,
-        }
-    )
-    return clean_game(game)
-
-
-def update_game(
-    database,
-    client_id: str,
-    game_key: str,
-    values: dict,
-) -> dict | None:
-    ensure_game_settings(database, client_id)
-    values["updated_at"] = datetime.now(timezone.utc)
-
-    result = database.admin_game_settings.update_one(
-        {
-            "client_id": client_id,
-            "key": game_key,
+            "_id": 0,
+            "casino_name": 1,
+            "client_name": 1,
+            "casino_short_name": 1,
+            "telegram_admin_id": 1,
+            "maintenance_mode": 1,
+            "casino_win_ratio": 1,
         },
+    ) or {}
+
+    return {
+        "casino_name": client.get("casino_name") or client.get("client_name", ""),
+        "casino_short_name": client.get("casino_short_name", ""),
+        "telegram_admin_id": str(client.get("telegram_admin_id", "")),
+        "maintenance_mode": bool(client.get("maintenance_mode", False)),
+        "casino_win_ratio": float(client.get("casino_win_ratio", 50)),
+    }
+
+
+async def save_casino_win_ratio(client_id: str, win_ratio: float) -> dict:
+    db["clients"].update_one(
+        {"client_id": client_id},
+        {
+            "$set": {
+                "casino_win_ratio": float(win_ratio),
+                "updated_at": utc_now(),
+            }
+        },
+    )
+    return await get_casino_settings(client_id)
+
+
+async def save_casino_settings(client_id: str, values: dict) -> dict:
+    values["updated_at"] = utc_now()
+    db["clients"].update_one(
+        {"client_id": client_id},
         {"$set": values},
     )
-
-    if result.matched_count == 0:
-        return None
-
-    return get_game(database, client_id, game_key)
+    return await get_casino_settings(client_id)

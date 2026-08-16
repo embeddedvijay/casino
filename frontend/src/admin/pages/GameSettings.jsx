@@ -3,105 +3,23 @@ import AdminLayout from "../components/AdminLayout";
 import { api } from "../api";
 
 const DEFAULT_MARKETS = [
-  {
-    key: "SRIDEVI_DAY",
-    name: "SRIDEVI DAY",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "SRIDEVI_NIGHT",
-    name: "SRIDEVI NIGHT",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "TIME_BAZAR_DAY",
-    name: "TIME BAZAR DAY",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "MAIN_BAZAR_NIGHT",
-    name: "MAIN BAZAR NIGHT",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "MADHUR_DAY",
-    name: "MADHUR DAY",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "MADHUR_NIGHT",
-    name: "MADHUR NIGHT",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "MILAN_DAY",
-    name: "MILAN DAY",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "MILAN_NIGHT",
-    name: "MILAN NIGHT",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "RAJDHANI_DAY",
-    name: "RAJDHANI DAY",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "RAJDHANI_NIGHT",
-    name: "RAJDHANI NIGHT",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "SUPREME_DAY",
-    name: "SUPREME DAY",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "SUPREME_NIGHT",
-    name: "SUPREME NIGHT",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "KALYAN_DAY",
-    name: "KALYAN DAY",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
-  {
-    key: "KALYAN_NIGHT",
-    name: "KALYAN NIGHT",
-    enabled: true,
-    open_time: "09:00",
-    close_time: "23:00",
-  },
+  { key: "SRIDEVI_DAY", name: "SRIDEVI DAY", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "SRIDEVI_NIGHT", name: "SRIDEVI NIGHT", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "TIME_BAZAR_DAY", name: "TIME BAZAR DAY", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "MAIN_BAZAR_NIGHT", name: "MAIN BAZAR NIGHT", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "MADHUR_DAY", name: "MADHUR DAY", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "MADHUR_NIGHT", name: "MADHUR NIGHT", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "MILAN_DAY", name: "MILAN DAY", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "MILAN_NIGHT", name: "MILAN NIGHT", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "RAJDHANI_DAY", name: "RAJDHANI DAY", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "RAJDHANI_NIGHT", name: "RAJDHANI NIGHT", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "SUPREME_DAY", name: "SUPREME DAY", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "SUPREME_NIGHT", name: "SUPREME NIGHT", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "KALYAN_DAY", name: "KALYAN DAY", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
+  { key: "KALYAN_NIGHT", name: "KALYAN NIGHT", enabled: true, open_time: "09:00", close_time: "23:00", days: [0, 1, 2, 3, 4, 5, 6] },
 ];
+
+const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function GameSettings() {
   const [settingType, setSettingType] = useState("");
@@ -120,6 +38,21 @@ export default function GameSettings() {
       loadCasinoWinRatio();
     }
   }, [settingType]);
+
+  const toggleMarketDay = (marketKey, day) => {
+  setMarkets((current) =>
+    current.map((market) =>
+      market.key === marketKey
+        ? {
+            ...market,
+            days: market.days.includes(day)
+              ? market.days.filter((value) => value !== day)
+              : [...market.days, day].sort((a, b) => a - b),
+          }
+        : market,
+    ),
+  );  
+  };
 
   const loadMatkaSettings = async () => {
     setLoading(true);
@@ -237,40 +170,40 @@ export default function GameSettings() {
     setMessage("");
   };
 
-  return (
-    <AdminLayout title="Game Settings">
-      {!settingType && (
-        <SettingTypePage
-          onMatka={() => setSettingType("matka")}
-          onCasino={() => setSettingType("casino")}
-        />
-      )}
+return (
+  <AdminLayout title="Game Settings">
+    {!settingType && (
+      <SettingTypePage
+        onMatka={() => setSettingType("matka")}
+        onCasino={() => setSettingType("casino")}
+      />
+    )}
 
-      {settingType === "matka" && (
-        <MatkaSettingsPage
-          markets={markets}
-          loading={loading}
-          saving={saving}
-          message={message}
-          updateMarket={updateMarket}
-          saveSettings={saveSettings}
-          goBack={goBack}
-        />
-      )}
+    {settingType === "matka" && (
+      <MatkaSettingsPage
+        markets={markets}
+        loading={loading}
+        saving={saving}
+        message={message}
+        updateMarket={updateMarket}
+        saveSettings={saveSettings}
+        goBack={goBack}
+      />
+    )}
 
-      {settingType === "casino" && (
-        <CasinoWinRatioPage
-          winRatio={winRatio}
-          setWinRatio={setWinRatio}
-          loading={loading}
-          saving={saving}
-          message={message}
-          saveSettings={saveSettings}
-          goBack={goBack}
-        />
-      )}
-    </AdminLayout>
-  );
+    {settingType === "casino" && (
+      <CasinoWinRatioPage
+        winRatio={winRatio}
+        setWinRatio={setWinRatio}
+        loading={loading}
+        saving={saving}
+        message={message}
+        saveSettings={saveSettings}
+        goBack={goBack}
+      />
+    )}
+  </AdminLayout>
+);
 }
 
 function SettingTypePage({ onMatka, onCasino }) {
@@ -364,6 +297,7 @@ function MatkaSettingsPage({
                 <tr>
                   <th>Market Name</th>
                   <th>Enable / Disable</th>
+                  <th>Days</th>
                   <th>OP Time</th>
                   <th>CL Time</th>
                 </tr>
@@ -396,6 +330,22 @@ function MatkaSettingsPage({
                       </label>
                     </td>
 
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        max="6"
+                        value={market.days ?? 6}
+                        onChange={(e) =>
+                          updateMarket(
+                            market.key,
+                            "days",
+                            Math.min(6, Math.max(0, Number(e.target.value))),
+                          )
+                        }
+                      />
+                    </td>
+                    
                     <td>
                       <input
                         type="time"
