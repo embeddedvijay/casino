@@ -21,6 +21,9 @@ DEFAULT_MATKA_MARKETS = [
 ]
 
 ALLOWED_MARKET_KEYS = {market["key"] for market in DEFAULT_MATKA_MARKETS}
+DAYS_MIN = 0
+DAYS_MAX = 6
+DEFAULT_DAYS = 6
 
 
 def utc_now():
@@ -49,7 +52,7 @@ def ensure_default_matka_markets(client_id: str) -> None:
                     "name": market["name"],
                     "enabled": True,
                     "status": "Active",
-                    "days": 6,
+                    "days": DEFAULT_DAYS,
                     "created_at": now,
                     "updated_at": now,
                 }
@@ -97,9 +100,9 @@ async def get_matka_markets(client_id: str) -> list[dict]:
         timing = timing_documents.get(default_market["key"], {})
 
         try:
-            days = int(market.get("days", 6))
+            days = int(market.get("days", DEFAULT_DAYS))
         except (TypeError, ValueError):
-            days = 6
+            days = DEFAULT_DAYS
 
         result.append(
             {
@@ -111,7 +114,7 @@ async def get_matka_markets(client_id: str) -> list[dict]:
                 ),
                 "open_time": timing.get("open_time", "09:00"),
                 "close_time": timing.get("close_time", "23:00"),
-                "days": min(6, max(0, days)),
+                "days": min(DAYS_MAX, max(DAYS_MIN, days)),
             }
         )
 
@@ -129,9 +132,14 @@ async def save_matka_markets(client_id: str, markets: list[dict]) -> list[dict]:
             raise ValueError(f"Invalid Matka market: {market_key}")
 
         enabled = bool(market.get("enabled", True))
-        days = int(market.get("days", 6))
+        try:
+            days = int(market.get("days", DEFAULT_DAYS))
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                f"{market['name']}: days must be a number between 0 and 6."
+            ) from error
 
-        if not 0 <= days <= 6:
+        if not DAYS_MIN <= days <= DAYS_MAX:
             raise ValueError(f"{market['name']}: days must be between 0 and 6.")
 
         db["matka_markets"].update_one(

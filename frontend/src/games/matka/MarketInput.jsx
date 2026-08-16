@@ -5,6 +5,52 @@ import{fetchCurrentUser}from"../../shared/userSession";
 
 const API="http://localhost:8005";
 
+const getValue=(market,keys)=>{
+  if(!market||typeof market!=="object")return"";
+  for(const key of keys){
+    if(market[key]!==undefined&&market[key]!==null&&String(market[key]).trim()!=="")return String(market[key]).trim();
+  }
+  return"";
+};
+
+const hasResult=(value)=>value!==""&&value!=="*"&&value!=="**"&&value!=="-"&&value!=="--";
+
+const getMarketResult=(data,marketName)=>{
+  const results=data?.Result&&typeof data.Result==="object"?data.Result:data||{};
+  const keys=[marketName,`${marketName}_OP`,marketName.replace("_DAY",""),marketName.replace("_NIGHT","")];
+  for(const key of keys){
+    if(results[key])return results[key];
+  }
+  return null;
+};
+
+const resolvePlayTimeKey=async(marketName)=>{
+  let configured=false;
+  try{
+    const configRes=await fetch(`${API}/api/games/matka/markets`);
+    if(!configRes.ok)return marketName;
+    const configData=await configRes.json();
+    const markets=Array.isArray(configData)?configData:Array.isArray(configData?.markets)?configData.markets:[];
+    const config=markets.find((item)=>String(item.key||"").toUpperCase()===marketName);
+    if(!config?.open_time||!/^(\d{1,2}):(\d{2})$/.test(config.open_time))return marketName;
+    configured=true;
+
+    const[,hour,minute]=config.open_time.match(/^(\d{1,2}):(\d{2})$/);
+    const now=new Date();
+    const currentMinutes=now.getHours()*60+now.getMinutes();
+    const openMinutes=Number(hour)*60+Number(minute);
+    if(currentMinutes<openMinutes)return`${marketName}_OP`;
+
+    const resultRes=await fetch(`${API}/api/games/matka/results/latest`,{cache:"no-store"});
+    if(!resultRes.ok)return null;
+    const market=getMarketResult(await resultRes.json(),marketName);
+    const open=getValue(market,["OPEN","open"]);
+    return hasResult(open)?`${marketName}_CL`:null;
+  }catch(e){
+    return configured?null:marketName;
+  }
+};
+
 export default function MatkaInput({marketName:marketFromApp=""}){
   const marketName=(marketFromApp||decodeURIComponent(window.location.pathname.split("/matka/market-input/")[1]||"")).toUpperCase();
   const[message,setMessage]=useState("");
@@ -49,11 +95,19 @@ export default function MatkaInput({marketName:marketFromApp=""}){
       return;
     }
     const cleanMessage=message.trim();
+    const nextTimeKey=await resolvePlayTimeKey(marketName);
+    if(!nextTimeKey){
+      setSentMessage(cleanMessage);
+      setTimeKey("");
+      setConfirmed(false);
+      setServerResponse("Wait for open result");
+      return;
+    }
     setLoading(true);
     setServerResponse("");
     setConfirmed(false);
     setSentMessage("");
-    setTimeKey("");
+    setTimeKey(nextTimeKey);
     try{
       const res=await fetch(`${API}/api/games/matka/market-message`,{
         method:"POST",
@@ -63,18 +117,18 @@ export default function MatkaInput({marketName:marketFromApp=""}){
           user_id:getUserId(),
           market_name:marketName,
           market:marketName,
-          time_key:marketName,
+          time_key:nextTimeKey,
           message:cleanMessage
         })
       });
       const data=await res.json();
       if(data.success){
-        const nextTimeKey=data.time_key||marketName;
-        setTimeKey(nextTimeKey);
+        const acceptedTimeKey=data.time_key||nextTimeKey;
+        setTimeKey(acceptedTimeKey);
         setSentMessage(cleanMessage);
         setMessage("");
         const resultText=formatResult(data.result,data.total);
-        setServerResponse(`${data.market_name||marketName}\n${nextTimeKey?`\n${nextTimeKey}`:""}\n\n${resultText}\n\nConfirm karna hai?`);
+        setServerResponse(`${data.market_name||marketName}\n${acceptedTimeKey?`\n${acceptedTimeKey}`:""}\n\n${resultText}\n\nConfirm karna hai?`);
       }else{
         setServerResponse(data.reply||data.message||data.response||data.table_type||JSON.stringify(data,null,2)||"Invalid format");
       }
@@ -85,6 +139,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
   };
 
   const confirmMessage=async()=>{
+    if(serverResponse==="Wait for open result")return;
     if(!serverResponse){
       alert("Pehle send karo");
       return;
@@ -159,7 +214,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
         <div className={confirmed?"mi-server-response success":"mi-server-response"}>{serverResponse||"No response yet"}</div>
       </div>
 
-      <button className="mi-confirm" onClick={confirmMessage} disabled={confirming||!serverResponse||!sentMessage||confirmed}>{confirming?"CONFIRMING...":confirmed?"CONFIRMED":"CONFIRM"}</button>
+      <button className="mi-confirm" onClick={confirmMessage} disabled={confirming||!serverResponse||!sentMessage||confirmed||serverResponse==="Wait for open result"}>{confirming?"CONFIRMING...":confirmed?"CONFIRMED":"CONFIRM"}</button>
     </div>
   );
 }
