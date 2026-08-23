@@ -15,6 +15,7 @@ BET_COLLECTIONS = (
     ("matka_bets", "matka"),
     ("teen_patti_bets", "teen-patti"),
     ("andar_bahar_bets", "andar-bahar"),
+    ("plinko_bets", "plinko"),
     ("bets", None),
 )
 
