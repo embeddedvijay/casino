@@ -20,6 +20,7 @@ from games.matka.router import router as matka_router
 from games.matka.router import matka_socket
 from games.matka.manager import game_loop as matka_game_loop
 from games.plinko.router import router as plinko_router
+from games.chicken_road.router import router as chicken_road_router
 
 from routes.auth_users import router as auth_users_router
 from routes.users import router as users_router
@@ -32,6 +33,7 @@ from database import db
 from admin.routes.router import router as casino_admin_router
 
 telegram_app = None
+
 
 
 app = FastAPI(title="Casino Multi Game Server")
@@ -49,6 +51,7 @@ app.include_router(dragon_tiger_router)
 app.include_router(lucky_race_router)
 app.include_router(matka_router)
 app.include_router(plinko_router)
+app.include_router(chicken_road_router)
 app.include_router(users_router)
 app.include_router(auth_users_router)
 app.include_router(casino_setup_router)
