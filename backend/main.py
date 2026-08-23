@@ -20,31 +20,19 @@ from games.matka.router import router as matka_router
 from games.matka.router import matka_socket
 from games.matka.manager import game_loop as matka_game_loop
 
-from fastapi.middleware.cors import CORSMiddleware
 from routes.auth_users import router as auth_users_router
 from routes.users import router as users_router
-
 from routes.casino_setup import router as casino_setup_router
-from services.client_config import ensure_default_client,start_game_tasks
+from routes.portal import router as portal_router
 
+from services.client_config import ensure_default_client, start_game_tasks
 from database import db
-from datetime import datetime
-from telegram_bot.bot import start_bot_background
 
 from admin.routes.router import router as casino_admin_router
-from admin.services.auth_service import ensure_default_admin
 
-telegram_app=None
+telegram_app = None
 
-@asynccontextmanager
-async def lifespan(app:FastAPI):
-    global telegram_app
-    telegram_app=await start_bot_background()
-    yield
-    if telegram_app:
-        await telegram_app.updater.stop()
-        await telegram_app.stop()
-        await telegram_app.shutdown()
+
 
 app = FastAPI(title="Casino Multi Game Server")
 
@@ -63,32 +51,20 @@ app.include_router(matka_router)
 app.include_router(users_router)
 app.include_router(auth_users_router)
 app.include_router(casino_setup_router)
+app.include_router(portal_router)
 app.include_router(casino_admin_router)
+
 
 @app.get("/")
 def home():
     return {
         "message": "Casino server running",
         "games": [
-            {
-                "name": "Aviator",
-                "api": "/api/games/aviator/state",
-                "ws": "/ws/aviator",
-                "page": "/aviator",
-            },
-            {
-                "name": "Dragon Tiger",
-                "api": "/api/games/dragon-tiger/state",
-                "ws": "/ws/dragon-tiger",
-                "page": "/dragon-tiger",
-            },
-            {
-                "name": "Lucky Race",
-                "api": "/api/games/lucky-race/state",
-                "ws": "/ws/lucky-race",
-                "page": "/lucky-race",
-            },
+            {"name": "Aviator", "api": "/api/games/aviator/state", "ws": "/ws/aviator", "page": "/aviator"},
+            {"name": "Dragon Tiger", "api": "/api/games/dragon-tiger/state", "ws": "/ws/dragon-tiger", "page": "/dragon-tiger"},
+            {"name": "Lucky Race", "api": "/api/games/lucky-race/state", "ws": "/ws/lucky-race", "page": "/lucky-race"},
         ],
+        "portal_api": "/api/portal",
     }
 
 
@@ -111,27 +87,20 @@ async def websocket_dragon_tiger(websocket: WebSocket):
 async def websocket_lucky_race(websocket: WebSocket):
     await lucky_race_socket(websocket)
 
+
 @app.websocket("/ws/matka")
 async def websocket_matka(websocket: WebSocket):
     await matka_socket(websocket)
 
-telegram_app = None
 
 @app.on_event("startup")
 async def startup_event():
-    global telegram_app
-
     await ensure_default_client(db)
-
     await start_game_tasks(
         db,
         aviator_game_loop,
         dragon_tiger_game_loop,
         lucky_race_game_loop,
-        matka_game_loop
+        matka_game_loop,
     )
-
-    # telegram_app = await start_bot_background()
-
     print("✅ Server Ready")
-
