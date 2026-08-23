@@ -35,6 +35,15 @@ TRACK_SEQUENCE_20 = [
 
 WAITING_SECONDS = 10
 RESULT_SECONDS = 5
+STOPPING_SECONDS = 0.9
+SPIN_LAPS = 3
+FINAL_STOP_DELAYS = (
+    0.700,
+    0.900,
+    1.100,
+    1.400,
+    1.800,
+)
 
 clients: List[WebSocket] = []
 
@@ -48,6 +57,10 @@ state = {
     "track": TRACK_SEQUENCE_20,
     "winner": None,
     "track_index": 0,
+    "spin_progress": 0.0,
+    "spin_delay_ms": 0,
+    "spin_step": 0,
+    "spin_total_steps": 0,
     "history": [],
 }
 
@@ -220,6 +233,10 @@ def public_data():
         "track": state["track"],
         "winner": state["winner"],
         "track_index": state["track_index"],
+        "spin_progress": state["spin_progress"],
+        "spin_delay_ms": state["spin_delay_ms"],
+        "spin_step": state["spin_step"],
+        "spin_total_steps": state["spin_total_steps"],
         "history": state["history"][-20:],
         "my_bets": bets_by_round.get(round_id, []),
         "board_totals": board_totals(),
@@ -392,6 +409,34 @@ def cleanup_old_rounds(keep=8):
                 del store[round_id]
 
 
+def spin_delay(progress: float) -> float:
+    """Slow pickup, steady middle, gradual slowdown and a clear final stop."""
+    progress = max(0.0, min(1.0, progress))
+
+    # Start visibly and accelerate; Android WebView must render every index.
+    if progress < 0.12:
+        section = progress / 0.12
+        return 0.180 - (section * 0.080)
+
+    # Stable middle speed; never faster than 100 ms per position.
+    if progress < 0.64:
+        return 0.100
+
+    # First slowdown stage.
+    if progress < 0.84:
+        section = (progress - 0.64) / 0.20
+        return 0.100 + (section * 0.100)
+
+    # Clearly visible slow movement near the result.
+    if progress < 0.94:
+        section = (progress - 0.84) / 0.10
+        return 0.200 + (section * 0.180)
+
+    # Last positions are deliberately very slow, with no sudden 1-second gap.
+    section = (progress - 0.94) / 0.06
+    return 0.380 + (section * 0.270)
+
+
 async def game_loop():
     while True:
         round_id = make_round_id()
@@ -401,7 +446,10 @@ async def game_loop():
         state["countdown"] = WAITING_SECONDS
         state["waiting_seconds"] = WAITING_SECONDS
         state["winner"] = None
-        state["track_index"] = 0
+        state["spin_progress"] = 0.0
+        state["spin_delay_ms"] = 0
+        state["spin_step"] = 0
+        state["spin_total_steps"] = 0
 
         bets_by_round[round_id] = []
         players_by_round[round_id] = generate_public_players()
@@ -413,8 +461,6 @@ async def game_loop():
 
         cleanup_old_rounds()
 
-        await broadcast("new_round")
-
         for sec in range(
             WAITING_SECONDS,
             0,
@@ -423,7 +469,11 @@ async def game_loop():
             state["phase"] = "betting"
             state["countdown"] = sec
 
-            await broadcast("countdown")
+            await broadcast(
+                "new_round"
+                if sec == WAITING_SECONDS
+                else "countdown"
+            )
             await asyncio.sleep(1)
 
         winner = pick_winner()
@@ -434,61 +484,57 @@ async def game_loop():
         state["phase"] = "spinning"
         state["countdown"] = 0
         state["winner"] = None
+        state["spin_progress"] = 0.0
+        state["spin_delay_ms"] = 120
+        state["spin_step"] = 0
 
         await broadcast("spinning")
+        await asyncio.sleep(0.12)
 
         track_len = len(state["track"])
         start_index = state["track_index"]
-        total_steps = (track_len * 3) + stop_index
+        distance_to_winner = (
+            stop_index - start_index
+        ) % track_len
+        total_steps = (
+            track_len * SPIN_LAPS
+        ) + distance_to_winner
+        state["spin_total_steps"] = total_steps
 
-        for step in range(total_steps + 1):
+        for step in range(1, total_steps + 1):
             state["track_index"] = (
                 start_index + step
             ) % track_len
-
-            await broadcast("spin_tick")
-
             progress = step / max(
                 total_steps,
                 1,
             )
+            delay = spin_delay(progress)
+            remaining_steps = total_steps - step
 
-            delay = 0.045 + (progress**2) * 0.16
-
-            if progress > 0.82:
-                slow_progress = (
-                    progress - 0.82
-                ) / 0.18
-
-                delay = (
-                    0.22
-                    + slow_progress * 0.18
+            if remaining_steps < len(FINAL_STOP_DELAYS):
+                delay_index = (
+                    len(FINAL_STOP_DELAYS)
+                    - 1
+                    - remaining_steps
                 )
+                delay = FINAL_STOP_DELAYS[delay_index]
 
-            if progress > 0.91:
-                extra_slow_progress = (
-                    progress - 0.91
-                ) / 0.09
+            state["spin_progress"] = round(progress, 4)
+            state["spin_delay_ms"] = round(delay * 1000)
+            state["spin_step"] = step
 
-                delay = (
-                    0.40
-                    + extra_slow_progress * 0.30
-                )
-
-            if progress > 0.95:
-                delay = 0.85
-
-            if progress > 0.98:
-                delay = 0.95
-
+            await broadcast("spin_tick")
             await asyncio.sleep(delay)
 
         state["track_index"] = stop_index
         state["winner"] = winner
         state["phase"] = "stopping"
+        state["spin_progress"] = 1.0
+        state["spin_delay_ms"] = 0
 
         await broadcast("stop_effect")
-        await asyncio.sleep(1.2)
+        await asyncio.sleep(STOPPING_SECONDS)
 
         state["phase"] = "result"
 
