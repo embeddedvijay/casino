@@ -10,9 +10,10 @@ from database import db
 
 RNG = SystemRandom()
 LEVELS = {
-    "easy": {"safe_probability": 0.91, "multipliers": [1.10, 1.25, 1.50, 1.85, 2.30, 3.00, 4.10, 5.70, 8.00, 12.00]},
-    "medium": {"safe_probability": 0.84, "multipliers": [1.15, 1.40, 1.80, 2.40, 3.30, 4.70, 7.00, 10.50, 16.00, 25.00]},
-    "hard": {"safe_probability": 0.72, "multipliers": [1.25, 1.70, 2.50, 3.80, 6.00, 10.00, 17.00, 30.00, 55.00, 100.00]},
+    "easy": {"safe_probability": 0.94, "multipliers": [1.06, 1.14, 1.23, 1.34, 1.47, 1.62, 1.80, 2.03, 2.31, 2.68, 3.15, 3.78]},
+    "medium": {"safe_probability": 0.87, "multipliers": [1.12, 1.28, 1.47, 1.70, 1.98, 2.33, 2.76, 3.32, 4.03, 4.96, 6.20, 6.91]},
+    "hard": {"safe_probability": 0.78, "multipliers": [1.22, 1.52, 1.91, 2.43, 3.13, 4.10, 5.48, 7.50, 10.55, 15.35, 23.25, 37.20]},
+    "hardcore": {"safe_probability": 0.65, "multipliers": [1.46, 2.12, 3.16, 4.86, 7.75, 12.90, 22.60, 42.30, 85.00, 185.00, 440.00, 1177.00]},
 }
 
 
@@ -46,7 +47,7 @@ def ensure_demo(value):
 def config():
     return {
         "success": True,
-        "min_bet": 10,
+        "min_bet": 2,
         "max_bet": 10000,
         "levels": {key: value["multipliers"] for key, value in LEVELS.items()},
     }
@@ -55,10 +56,10 @@ def config():
 def start(user_id, amount, difficulty):
     difficulty = str(difficulty).lower()
     if difficulty not in LEVELS:
-        raise HTTPException(400, "Difficulty must be easy, medium or hard")
+        raise HTTPException(400, "Difficulty must be easy, medium, hard or hardcore")
     amount = round(float(amount), 2)
-    if amount < 10 or amount > 10000:
-        raise HTTPException(400, "Bet must be between 10 and 10000")
+    if amount < 2 or amount > 10000:
+        raise HTTPException(400, "Bet must be between 2 and 10000")
     ensure_demo(user_id)
     query = user_filter(user_id)
     user = db.users.find_one_and_update(
