@@ -1,3 +1,9 @@
+
+
+# GOLD365_DEMO_NO_BALANCE_V2
+def _gold365_is_demo(user_id):
+    return str(user_id or "").strip().lower() in {"demo", "demo123"}
+
 from datetime import datetime, timezone
 from secrets import SystemRandom
 
@@ -62,11 +68,22 @@ def start(user_id, amount, difficulty):
         raise HTTPException(400, "Bet must be between 2 and 10000")
     ensure_demo(user_id)
     query = user_filter(user_id)
-    user = db.users.find_one_and_update(
-        {"$and": [query, {"balance": {"$gte": amount}}, {"status": {"$nin": ["blocked", "inactive"]}}]},
-        {"$inc": {"balance": -amount}, "$set": {"updated_at": now()}},
-        return_document=ReturnDocument.AFTER,
-    )
+    if _gold365_is_demo(user_id):
+        # Demo rounds never check or debit money. Also close any stale active round.
+        db.chicken_road_bets.update_many(
+            {"user_id": str(user_id), "status": "active"},
+            {"$set": {"status": "cancelled", "settled_at": now(), "updated_at": now()}},
+        )
+        user = db.users.find_one_and_update(
+            query, {"$set": {"updated_at": now(), "is_demo": True}},
+            return_document=ReturnDocument.AFTER,
+        )
+    else:
+        user = db.users.find_one_and_update(
+            {"$and": [query, {"balance": {"$gte": amount}}, {"status": {"$nin": ["blocked", "inactive"]}}]},
+            {"$inc": {"balance": -amount}, "$set": {"updated_at": now()}},
+            return_document=ReturnDocument.AFTER,
+        )
     if not user:
         if not db.users.find_one(query):
             raise HTTPException(404, "User not found")
