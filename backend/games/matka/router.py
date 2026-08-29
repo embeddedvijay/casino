@@ -1,8 +1,9 @@
 import datetime
 import os
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from pymongo import MongoClient
+from pymongo import MongoClient, ReturnDocument
 from bson import ObjectId
+from database import db as casino_db
 from . import manager
 from .schemas import MatkaBetRequest, MatkaClearRequest, MarketMessageRequest, MarketConfirmRequest
 from pydantic import BaseModel
@@ -114,11 +115,42 @@ def confirm_market_message(req:MarketConfirmRequest):
     market_name=req.market_name or req.market
     time_key=req.time_key or market_name
 
+    debited_user_id=None
+    debit_amount=0.0
+    raw_casino_db=getattr(casino_db,"_raw",casino_db)
     try:
         ACTION,RESULT_LIST,TOTAL,HLA_ANALYSIS,FLAG=h(user_input,time_key)
 
         if not RESULT_LIST:
             return {"success":False,"message":"Invalid bet data"}
+
+        debit_amount=round(float(TOTAL or 0),2)
+        if debit_amount<=0:
+            return {"success":False,"message":"Invalid bet amount"}
+
+        user_options=[
+            {"user_id":req.user_id},
+            {"username":req.user_id},
+            {"mobile":req.user_id},
+        ]
+        if ObjectId.is_valid(req.user_id):
+            user_options.append({"_id":ObjectId(req.user_id)})
+        user_query={"client_id":req.client_id,"$or":user_options}
+        existing_user=raw_casino_db.users.find_one(user_query,{"_id":1,"balance":1,"status":1})
+        if not existing_user:
+            return {"success":False,"message":"User account not found. Login again."}
+        if existing_user.get("status","active")!="active":
+            return {"success":False,"message":"User account is not active"}
+
+        updated_user=raw_casino_db.users.find_one_and_update(
+            {"_id":existing_user["_id"],"balance":{"$gte":debit_amount}},
+            {"$inc":{"balance":-debit_amount},"$set":{"updated_at":datetime.datetime.utcnow()}},
+            return_document=ReturnDocument.AFTER,
+        )
+        if not updated_user:
+            available=round(float(existing_user.get("balance",0) or 0),2)
+            return {"success":False,"message":f"Insufficient balance. Available ₹{available:.2f}, required ₹{debit_amount:.2f}"}
+        debited_user_id=existing_user["_id"]
 
         user_play_data={
             "Client":req.client_id,
@@ -138,9 +170,32 @@ def confirm_market_message(req:MarketConfirmRequest):
         saved=add_data(user_play_data)
 
         if not saved:
+            raw_casino_db.users.update_one({"_id":debited_user_id},{"$inc":{"balance":debit_amount}})
+            debited_user_id=None
             return {"success":False,"message":"DB save failed"}
 
-        return {"success":True,"message":"Market message confirmed successfully","total":TOTAL,"result":RESULT_LIST}
+        # The play is now durable, so never refund it because of an auxiliary
+        # ledger write failure (that would create a free bet).
+        debited_user_id=None
+        try:
+            raw_casino_db.wallet_transactions.insert_one({
+                "client_id":req.client_id,
+                "user_id":str(existing_user["_id"]),
+                "user_ref":existing_user["_id"],
+                "type":"matka_bet",
+                "amount":-debit_amount,
+                "market":time_key,
+                "message":user_input,
+                "status":"completed",
+                "balance":round(float(updated_user.get("balance",0) or 0),2),
+                "created_at":datetime.datetime.utcnow(),
+            })
+        except Exception:
+            pass
+
+        return {"success":True,"message":"Market message confirmed successfully","total":TOTAL,"result":RESULT_LIST,"balance":round(float(updated_user.get("balance",0) or 0),2)}
 
     except Exception as e:
+        if debited_user_id is not None and debit_amount>0:
+            raw_casino_db.users.update_one({"_id":debited_user_id},{"$inc":{"balance":debit_amount}})
         return {"success":False,"message":"Confirm failed","error":str(e)}
