@@ -52,6 +52,11 @@ class UpiSettings(BaseModel):
     instructions: str = Field(default="", max_length=500)
 
 
+class DepositRequestAction(BaseModel):
+    action: str = Field(pattern="^(approve|reject)$")
+    remarks: str = Field(default="", max_length=500)
+
+
 class OfferSend(BaseModel):
     title: str = Field(min_length=3, max_length=100)
     message: str = Field(min_length=3, max_length=500)
@@ -156,6 +161,138 @@ def save_upi(body: UpiSettings, admin: dict = Depends(current_admin)):
     db.payment_settings.update_one({"client_id": admin["client_id"], "type": "upi"}, {"$set": values}, upsert=True)
     db.audit_logs.insert_one({"client_id": admin["client_id"], "admin": admin["username"], "action": "upi_settings_updated", "created_at": now()})
     return {"success": True, "settings": serialize(values)}
+
+
+@router.get("/deposit-requests")
+def deposit_requests(
+    request_status: str = Query("pending", alias="status", pattern="^(pending|approved|rejected|all)$"),
+    limit: int = Query(100, ge=1, le=500),
+    admin: dict = Depends(current_admin),
+):
+    query = {"client_id": admin["client_id"], "type": "deposit", "method": "upi_qr"}
+    if request_status != "all":
+        query["status"] = request_status
+    rows = list(db.wallet_transactions.find(query).sort([("created_at", -1), ("_id", -1)]).limit(limit))
+    return {"requests": serialize(rows), "count": len(rows)}
+
+
+@router.post("/deposit-requests/{request_id}/action")
+def deposit_request_action(request_id: str, body: DepositRequestAction, admin: dict = Depends(current_admin)):
+    id_options = [{"transaction_id": request_id}, {"qr_reference": request_id}]
+    if ObjectId.is_valid(request_id):
+        id_options.append({"_id": ObjectId(request_id)})
+    base_query = {
+        "client_id": admin["client_id"],
+        "type": "deposit",
+        "method": "upi_qr",
+        "$or": id_options,
+    }
+    transaction = db.wallet_transactions.find_one(base_query)
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Deposit request not found")
+    current_status = str(transaction.get("status") or "pending").lower()
+    if current_status in {"approved", "rejected"}:
+        if current_status == ("approved" if body.action == "approve" else "rejected"):
+            return {"success": True, "already_processed": True, "request": serialize(transaction)}
+        raise HTTPException(status_code=409, detail=f"Deposit request is already {current_status}")
+
+    current_time = now()
+    notification_title = "Deposit rejected"
+    notification_text = f"Your deposit request of ₹{float(transaction.get('amount', 0)):,.2f} was rejected."
+    user = None
+    if body.action == "approve":
+        claimed = db.wallet_transactions.find_one_and_update(
+            {**base_query, "status": {"$in": ["pending", "processing"]}},
+            {"$set": {"status": "processing", "processing_by": admin["username"], "updated_at": current_time}},
+            return_document=ReturnDocument.AFTER,
+        )
+        if not claimed:
+            raise HTTPException(status_code=409, detail="Deposit request is being processed")
+        transaction = claimed
+        credit_key = str(transaction["_id"])
+        user_ref = transaction.get("user_ref")
+        user_filter = {"client_id": admin["client_id"], "credited_deposit_ids": {"$ne": credit_key}}
+        if isinstance(user_ref, ObjectId):
+            user_filter["_id"] = user_ref
+        else:
+            user_filter.update(user_id_query(str(transaction.get("user_id") or ""), admin["client_id"]))
+        user = db.users.find_one_and_update(
+            user_filter,
+            {
+                "$inc": {"balance": round(float(transaction["amount"]), 2)},
+                "$addToSet": {"credited_deposit_ids": credit_key},
+                "$set": {"updated_at": current_time},
+            },
+            return_document=ReturnDocument.AFTER,
+        )
+        if not user:
+            fallback_query = {"client_id": admin["client_id"]}
+            if isinstance(user_ref, ObjectId):
+                fallback_query["_id"] = user_ref
+            else:
+                fallback_query.update(user_id_query(str(transaction.get("user_id") or ""), admin["client_id"]))
+            user = db.users.find_one(fallback_query)
+        if not user:
+            db.wallet_transactions.update_one(
+                {"_id": transaction["_id"], "status": "processing"},
+                {"$set": {"status": "pending", "updated_at": now()}, "$unset": {"processing_by": ""}},
+            )
+            raise HTTPException(status_code=404, detail="Deposit user not found")
+        new_status = "approved"
+        notification_title = "Deposit approved"
+        notification_text = f"Your deposit of ₹{float(transaction['amount']):,.2f} was approved and added to your wallet."
+        update_values = {
+            "status": new_status,
+            "approved_at": current_time,
+            "approved_by": admin["username"],
+            "remarks": body.remarks,
+            "balance_after": round(float(user.get("balance", 0) or 0), 2),
+            "updated_at": current_time,
+        }
+    else:
+        rejected = db.wallet_transactions.find_one_and_update(
+            {**base_query, "status": "pending"},
+            {"$set": {
+                "status": "rejected",
+                "rejected_at": current_time,
+                "rejected_by": admin["username"],
+                "remarks": body.remarks,
+                "updated_at": current_time,
+            }},
+            return_document=ReturnDocument.AFTER,
+        )
+        if not rejected:
+            raise HTTPException(status_code=409, detail="Only a pending deposit can be rejected")
+        transaction = rejected
+        new_status = "rejected"
+        update_values = None
+
+    if update_values:
+        db.wallet_transactions.update_one({"_id": transaction["_id"]}, {"$set": update_values, "$unset": {"processing_by": ""}})
+        transaction = db.wallet_transactions.find_one({"_id": transaction["_id"]})
+
+    canonical_user_id = str(transaction.get("user_id") or transaction.get("user_ref") or "")
+    db.notifications.insert_one({
+        "client_id": admin["client_id"],
+        "user_id": canonical_user_id,
+        "title": notification_title,
+        "text": notification_text,
+        "type": "deposit",
+        "read": False,
+        "created_at": current_time,
+    })
+    db.audit_logs.insert_one({
+        "client_id": admin["client_id"],
+        "admin": admin["username"],
+        "action": f"deposit_{new_status}",
+        "deposit_request_id": str(transaction["_id"]),
+        "user_id": canonical_user_id,
+        "amount": float(transaction.get("amount", 0)),
+        "reference": transaction.get("qr_reference") or transaction.get("reference"),
+        "remarks": body.remarks,
+        "created_at": current_time,
+    })
+    return {"success": True, "request": serialize(transaction), "user": serialize(user) if user else None}
 
 
 @router.post("/offers/send")

@@ -20,6 +20,8 @@ from services.portal_service import (
     update_user,
     wallet_summary,
     create_wallet_request,
+    create_deposit_qr,
+    submit_deposit_qr,
     mark_notifications_read,
 )
 
@@ -45,6 +47,14 @@ class WalletRequestCreate(BaseModel):
     amount: float = Field(gt=0, le=10_000_000)
     method: Literal["upi", "bank", "qr", "usdt"]
     reference: str | None = Field(default=None, max_length=120)
+
+
+class DepositQrCreate(BaseModel):
+    amount: float = Field(ge=500, le=10_000_000)
+
+
+class DepositQrDone(BaseModel):
+    reference: str = Field(min_length=8, max_length=80)
 
 
 def resolve_user_id(
@@ -113,6 +123,28 @@ def deposit_create(payload: WalletRequestCreate, user_id: str = Depends(require_
         raise HTTPException(status_code=422, detail="Valid transaction reference required")
     transaction = create_wallet_request(db, user_id, "deposit", payload.amount, payload.method, payload.reference)
     return {"success": True, "message": "Deposit submitted for review", "transaction": transaction}
+
+
+@router.post("/wallet/deposits/qr")
+def deposit_qr_create(payload: DepositQrCreate, user_id: str = Depends(require_user)):
+    try:
+        payment = create_deposit_qr(db, user_id, payload.amount)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return {"success": True, "payment": payment}
+
+
+@router.post("/wallet/deposits/qr/done", status_code=201)
+def deposit_qr_done(payload: DepositQrDone, user_id: str = Depends(require_user)):
+    try:
+        transaction = submit_deposit_qr(db, user_id, payload.reference)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return {
+        "success": True,
+        "message": "Deposit request submitted. Admin will update it in a few minutes.",
+        "transaction": transaction,
+    }
 
 
 @router.post("/wallet/withdrawals", status_code=201)

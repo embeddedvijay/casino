@@ -18,7 +18,11 @@ from games.car_roulet.router import lucky_race_socket
 from games.car_roulet.manager import game_loop as lucky_race_game_loop
 
 from games.matka.router import router as matka_router
-from games.matka.router import matka_socket
+from games.matka.router import (
+    ensure_matka_notification_indexes,
+    matka_result_notification_loop,
+    matka_socket,
+)
 from games.matka.manager import game_loop as matka_game_loop
 from games.plinko.router import router as plinko_router
 from games.chicken_road.router import router as chicken_road_router
@@ -38,6 +42,7 @@ from admin.routes.mobile_operations import router as mobile_operations_router
 from admin.services.auth_service import ensure_default_admin
 
 telegram_app = None
+matka_notification_task = None
 
 
 
@@ -120,7 +125,9 @@ async def websocket_matka(websocket: WebSocket):
 
 @app.on_event("startup")
 async def startup_event():
+    global matka_notification_task
     ensure_casino_indexes()
+    ensure_matka_notification_indexes()
     ensure_default_admin(db)
     recovery=recover_interrupted_games()
     await ensure_default_client(db)
@@ -131,9 +138,18 @@ async def startup_event():
         lucky_race_game_loop,
         matka_game_loop,
     )
+    matka_notification_task=asyncio.create_task(matka_result_notification_loop())
     print(f"✅ Server Ready | recovery={recovery}")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
+    global matka_notification_task
+    if matka_notification_task is not None:
+        matka_notification_task.cancel()
+        try:
+            await matka_notification_task
+        except asyncio.CancelledError:
+            pass
+        matka_notification_task=None
     await stop_game_tasks()

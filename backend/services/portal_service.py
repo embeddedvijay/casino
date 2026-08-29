@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import base64
+from datetime import datetime, timedelta, timezone
+from io import BytesIO
+import re
 from typing import Any
+from urllib.parse import urlencode
 
 from bson import ObjectId
-from pymongo import DESCENDING
+from pymongo import DESCENDING, ReturnDocument
+import qrcode
 
 
 BET_COLLECTIONS = (
@@ -91,6 +96,11 @@ def wallet_summary(db, user_id: str) -> dict | None:
         {"$group": {"_id": "$type", "amount": {"$sum": {"$ifNull": ["$amount", 0]}}}},
     ]
     totals = {str(item["_id"]): float(item["amount"] or 0) for item in db.wallet_transactions.aggregate(pipeline)}
+    approved_deposit = list(db.wallet_transactions.aggregate([
+        {"$match": {"$and": [query, {"type": "deposit"}, {"status": {"$in": ["approved", "completed", "success"]}}]}},
+        {"$group": {"_id": None, "amount": {"$sum": {"$ifNull": ["$amount", 0]}}}},
+    ]))
+    totals["deposit"] = float(approved_deposit[0]["amount"] or 0) if approved_deposit else 0
     return {
         "user_id": user.get("user_id", user_id),
         "balance": balance_for(user),
@@ -196,6 +206,153 @@ def create_wallet_request(
         "title": f"{request_type.title()} submitted",
         "text": f"Your {request_type} request of ₹{amount:,.2f} is under review.",
         "type": request_type,
+        "read": False,
+        "created_at": now,
+    })
+    return serialize(transaction)
+
+
+def create_deposit_qr(db, user_id: str, amount: float) -> dict:
+    amount = round(float(amount), 2)
+    if amount < 500:
+        raise ValueError("Minimum deposit amount is ₹500")
+    user = db.users.find_one(user_query(user_id), {"password": 0, "password_hash": 0, "salt": 0, "otp": 0})
+    if not user:
+        raise ValueError("User not found")
+    client_id = str(user.get("client_id") or "demo")
+    settings = db.payment_settings.find_one({"client_id": client_id, "type": "upi", "enabled": True})
+    if not settings or not str(settings.get("upi_id") or "").strip():
+        raise ValueError("UPI payment is temporarily unavailable")
+
+    now = utcnow()
+    mobile = str(user.get("mobile") or user.get("username") or user.get("user_id") or "")
+    digits = re.sub(r"\D", "", mobile)
+    last_four = (digits[-4:] if len(digits) >= 4 else str(user["_id"])[-4:]).upper()
+    reference = f"{last_four}{now.strftime('%H%M%S')}{now.microsecond // 1000:03d}"
+    payee_name = str(settings.get("payee_name") or "GOLD365").strip()
+    upi_id = str(settings["upi_id"]).strip()
+    upi_uri = "upi://pay?" + urlencode({
+        "pa": upi_id,
+        "pn": payee_name,
+        "am": f"{amount:.2f}",
+        "cu": "INR",
+        "tr": reference,
+        "tn": f"GOLD365 deposit {reference}",
+    })
+    qr = qrcode.QRCode(version=None, error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=10, border=3)
+    qr.add_data(upi_uri)
+    qr.make(fit=True)
+    image = qr.make_image(fill_color="#020519", back_color="white")
+    output = BytesIO()
+    image.save(output, format="PNG")
+    expires_at = now + timedelta(minutes=30)
+    canonical_user_id = str(user["_id"])
+    session = {
+        "reference": reference,
+        "client_id": client_id,
+        "user_id": canonical_user_id,
+        "requested_user_id": str(user_id),
+        "user_ref": user["_id"],
+        "username": user.get("username") or user.get("user_name") or "",
+        "mobile": user.get("mobile") or "",
+        "full_name": user.get("full_name") or user.get("name") or "",
+        "amount": amount,
+        "currency": "INR",
+        "upi_id": upi_id,
+        "payee_name": payee_name,
+        "upi_uri": upi_uri,
+        "status": "created",
+        "created_at": now,
+        "expires_at": expires_at,
+        "updated_at": now,
+    }
+    db.deposit_payment_sessions.insert_one(session)
+    return serialize({
+        "reference": reference,
+        "amount": amount,
+        "upi_id": upi_id,
+        "payee_name": payee_name,
+        "upi_uri": upi_uri,
+        "qr_image": "data:image/png;base64," + base64.b64encode(output.getvalue()).decode("ascii"),
+        "instructions": settings.get("instructions") or "Pay the exact amount, then tap DONE.",
+        "expires_at": expires_at,
+    })
+
+
+def submit_deposit_qr(db, user_id: str, reference: str) -> dict:
+    user = db.users.find_one(user_query(user_id), {"_id": 1})
+    if not user:
+        raise ValueError("User not found")
+    canonical_user_id = str(user["_id"])
+    clean_reference = str(reference or "").strip().upper()
+    existing = db.wallet_transactions.find_one({
+        "type": "deposit",
+        "qr_reference": clean_reference,
+        "user_id": canonical_user_id,
+    })
+    if existing:
+        return serialize(existing)
+
+    now = utcnow()
+    session = db.deposit_payment_sessions.find_one_and_update(
+        {
+            "reference": clean_reference,
+            "user_id": canonical_user_id,
+            "status": "created",
+            "expires_at": {"$gt": now},
+        },
+        {"$set": {"status": "submitting", "updated_at": now}},
+        return_document=ReturnDocument.AFTER,
+    )
+    if not session:
+        row = db.deposit_payment_sessions.find_one({"reference": clean_reference, "user_id": canonical_user_id})
+        if row and row.get("status") == "submitted":
+            existing = db.wallet_transactions.find_one({"qr_reference": clean_reference, "user_id": canonical_user_id})
+            if existing:
+                return serialize(existing)
+        if row and row.get("expires_at") and row["expires_at"] <= now:
+            raise ValueError("Payment QR expired. Generate a new QR.")
+        raise ValueError("Invalid or already submitted payment request")
+
+    transaction = {
+        "transaction_id": f"DPS{int(now.timestamp() * 1000)}",
+        "client_id": session["client_id"],
+        "user_id": canonical_user_id,
+        "user_ref": user["_id"],
+        "username": session.get("username", ""),
+        "mobile": session.get("mobile", ""),
+        "full_name": session.get("full_name", ""),
+        "type": "deposit",
+        "amount": float(session["amount"]),
+        "method": "upi_qr",
+        "reference": clean_reference,
+        "qr_reference": clean_reference,
+        "upi_id": session.get("upi_id", ""),
+        "status": "pending",
+        "currency": "INR",
+        "created_at": now,
+        "updated_at": now,
+    }
+    try:
+        result = db.wallet_transactions.insert_one(transaction)
+        transaction["_id"] = result.inserted_id
+        db.deposit_payment_sessions.update_one(
+            {"_id": session["_id"], "status": "submitting"},
+            {"$set": {"status": "submitted", "transaction_ref": result.inserted_id, "submitted_at": now, "updated_at": now}},
+        )
+    except Exception:
+        db.deposit_payment_sessions.update_one(
+            {"_id": session["_id"], "status": "submitting"},
+            {"$set": {"status": "created", "updated_at": utcnow()}},
+        )
+        raise
+
+    db.notifications.insert_one({
+        "client_id": session["client_id"],
+        "user_id": canonical_user_id,
+        "title": "Deposit request submitted",
+        "text": "Deposit request submitted. Admin will update it in a few minutes.",
+        "type": "deposit",
         "read": False,
         "created_at": now,
     })
