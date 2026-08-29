@@ -1,4 +1,5 @@
 import asyncio
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket
@@ -21,27 +22,33 @@ from games.matka.router import matka_socket
 from games.matka.manager import game_loop as matka_game_loop
 from games.plinko.router import router as plinko_router
 from games.chicken_road.router import router as chicken_road_router
+from core.router import router as casino_core_router
+from core.casino import ensure_casino_indexes, recover_interrupted_games
 
 from routes.auth_users import router as auth_users_router
 from routes.users import router as users_router
 from routes.casino_setup import router as casino_setup_router
 from routes.portal import router as portal_router
 
-from services.client_config import ensure_default_client, start_game_tasks
+from services.client_config import ensure_default_client, start_game_tasks, stop_game_tasks
 from database import db
 
 from admin.routes.router import router as casino_admin_router
+from admin.routes.mobile_operations import router as mobile_operations_router
+from admin.services.auth_service import ensure_default_admin
 
 telegram_app = None
 
 
 
-app = FastAPI(title="Casino Multi Game Server")
+app = FastAPI(title="Gold365 Casino API",version="2.0.0",docs_url="/docs",redoc_url="/redoc")
+
+allowed_origins=[item.strip() for item in os.getenv("CORS_ORIGINS","*").split(",") if item.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_credentials="*" not in allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -52,11 +59,13 @@ app.include_router(lucky_race_router)
 app.include_router(matka_router)
 app.include_router(plinko_router)
 app.include_router(chicken_road_router)
+app.include_router(casino_core_router)
 app.include_router(users_router)
 app.include_router(auth_users_router)
 app.include_router(casino_setup_router)
 app.include_router(portal_router)
 app.include_router(casino_admin_router)
+app.include_router(mobile_operations_router)
 
 
 @app.get("/")
@@ -69,7 +78,19 @@ def home():
             {"name": "Lucky Race", "api": "/api/games/lucky-race/state", "ws": "/ws/lucky-race", "page": "/lucky-race"},
         ],
         "portal_api": "/api/portal",
+        "version":"2.0.0",
     }
+
+
+@app.get("/health")
+def health():
+    try:
+        raw=getattr(db,"_raw",db)
+        raw.command("ping")
+        database_status="up"
+    except Exception:
+        database_status="down"
+    return {"status":"ok" if database_status=="up" else "degraded","database":database_status,"loops":{"aviator":"enabled","dragon_tiger":"enabled","lucky_race":"enabled","matka":"enabled"}}
 
 
 @app.websocket("/ws/aviator")
@@ -99,6 +120,9 @@ async def websocket_matka(websocket: WebSocket):
 
 @app.on_event("startup")
 async def startup_event():
+    ensure_casino_indexes()
+    ensure_default_admin(db)
+    recovery=recover_interrupted_games()
     await ensure_default_client(db)
     await start_game_tasks(
         db,
@@ -107,4 +131,9 @@ async def startup_event():
         lucky_race_game_loop,
         matka_game_loop,
     )
-    print("✅ Server Ready")
+    print(f"✅ Server Ready | recovery={recovery}")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await stop_game_tasks()

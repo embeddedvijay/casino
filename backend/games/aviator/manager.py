@@ -5,6 +5,7 @@ import uuid
 from typing import Dict, List
 from fastapi import WebSocket
 from .engine import calculate_cashout, calculate_multiplier, generate_crash_point
+from core.casino import CasinoError, close_round, open_round, place_bet as persist_bet, settle_bet
 
 WAITING_SECONDS = 10
 clients: List[WebSocket] = []
@@ -74,10 +75,14 @@ async def place_bet(req):
     old=next((bet for bet in round_bets if bet["user_id"]==req.user_id and bet["seat"]==req.seat),None)
     if old:
         return {"success":False,"message":"Bet already placed"}
-    bet={"id":f"user-{uuid.uuid4()}","user_id":req.user_id,"seat":req.seat,"round_id":round_id,"amount":float(req.amount),"status":"active","cashout_multiplier":None,"cashout_amount":0.0,"cashout_time":None}
+    try:
+        saved=persist_bet(game="aviator",round_id=round_id,user_id=req.user_id,amount=req.amount,position_key=f"seat:{req.seat}",metadata={"seat":req.seat})
+    except CasinoError as exc:
+        return {"success":False,"message":str(exc),"code":exc.code}
+    bet={"id":saved["id"],"user_id":req.user_id,"seat":req.seat,"round_id":round_id,"amount":float(req.amount),"status":"active","cashout_multiplier":None,"cashout_amount":0.0,"cashout_time":None,"balance":saved["balance"]}
     round_bets.append(bet)
     await broadcast("bet")
-    return {"success":True,"message":"Bet accepted"}
+    return {"success":True,"message":"Bet accepted","bet_id":bet["id"],"balance":saved["balance"]}
 
 async def cashout(req):
     if state["phase"]!="flying":
@@ -93,13 +98,14 @@ async def cashout(req):
     bet["cashout_multiplier"]=multiplier
     bet["cashout_amount"]=win_amount
     bet["cashout_time"]=now_time()
+    settled=settle_bet(bet["id"],win_amount,{"multiplier":multiplier})
     for row in bot_bets_by_round.get(round_id,[]):
         if random.random()<0.12 and row["cashout"]==0:
             row["cashout_multiplier"]=multiplier
             row["cashout"]=round(row["bet"]*multiplier,2)
             row["cashout_time"]=now_time()
     await broadcast("cashout")
-    return {"success":True,"message":f"Cashout {multiplier}x","cashout_multiplier":multiplier,"cashout_amount":win_amount,"cashout_time":bet["cashout_time"]}
+    return {"success":True,"message":f"Cashout {multiplier}x","cashout_multiplier":multiplier,"cashout_amount":win_amount,"cashout_time":bet["cashout_time"],"balance":settled.get("balance") if settled else None}
 
 async def game_loop():
     while True:
@@ -112,6 +118,7 @@ async def game_loop():
         state["crashed_at"]=None
         bets_by_round[round_id]=[]
         bot_bets_by_round[round_id]=generate_bot_bets()
+        open_round("aviator",round_id,{"phase":"betting"})
         await broadcast("new_round")
         for sec in range(WAITING_SECONDS,0,-1):
             state["phase"]="betting"
@@ -149,5 +156,7 @@ async def game_loop():
         for bet in bets_by_round.get(round_id,[]):
             if bet["status"]=="active":
                 bet["status"]="lost"
+                settle_bet(bet["id"],0.0,{"crashed_at":crash_point})
+        close_round("aviator",round_id,{"crashed_at":crash_point})
         await broadcast("crashed")
         await asyncio.sleep(5)

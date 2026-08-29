@@ -1,6 +1,8 @@
-from fastapi import APIRouter,Depends,HTTPException,status
+from fastapi import APIRouter,Depends,HTTPException,Query,status
 from fastapi.security import HTTPAuthorizationCredentials,HTTPBearer
 from pydantic import BaseModel,Field
+from datetime import datetime
+from bson import ObjectId
 
 from database import db
 from admin.services.auth_service import (
@@ -18,6 +20,7 @@ from admin.services.game_service import (
     save_casino_win_ratio,
     save_matka_markets,
 )
+from core.casino import DEFAULT_GAME_SETTINGS, game_settings
 
 router=APIRouter(tags=["Casino Admin"])
 security=HTTPBearer(auto_error=False)
@@ -55,6 +58,22 @@ class CasinoSettingsUpdate(BaseModel):
     casino_short_name:str=Field(min_length=2,max_length=30)
     telegram_admin_id:str=Field(default="",max_length=50)
     maintenance_mode:bool=False
+
+
+class GameSettingsUpdate(BaseModel):
+    enabled:bool|None=None
+    min_bet:float|None=Field(default=None,gt=0)
+    max_bet:float|None=Field(default=None,gt=0)
+    win_ratio:float|None=Field(default=None,ge=0,le=100)
+    round_seconds:int|None=Field(default=None,ge=3,le=300)
+
+
+def _serialize(value):
+    if isinstance(value,ObjectId):return str(value)
+    if isinstance(value,datetime):return value.isoformat()
+    if isinstance(value,dict):return {key:_serialize(item) for key,item in value.items()}
+    if isinstance(value,list):return [_serialize(item) for item in value]
+    return value
 
 
 def current_session(credentials:HTTPAuthorizationCredentials|None=Depends(security)):
@@ -127,3 +146,53 @@ async def update_casino_settings(payload:CasinoSettingsUpdate,session:dict=Depen
 @router.patch("/api/admin/casino-settings/win-ratio")
 async def update_casino_win_ratio(payload:CasinoWinRatioUpdate,session:dict=Depends(current_session)):
     return await save_casino_win_ratio(session["client_id"],payload.casino_win_ratio)
+
+
+@router.get("/api/admin/games")
+def read_all_games(session:dict=Depends(current_session)):
+    return {"games":[{"game":game,**game_settings(game,session["client_id"])} for game in DEFAULT_GAME_SETTINGS]}
+
+
+@router.get("/api/admin/games/{game_key}")
+def read_game(game_key:str,session:dict=Depends(current_session)):
+    if game_key not in DEFAULT_GAME_SETTINGS:
+        raise HTTPException(status_code=404,detail="Game not found")
+    return {"game":game_key,**game_settings(game_key,session["client_id"])}
+
+
+@router.patch("/api/admin/games/{game_key}")
+def update_game(game_key:str,payload:GameSettingsUpdate,session:dict=Depends(current_session)):
+    if game_key not in DEFAULT_GAME_SETTINGS:
+        raise HTTPException(status_code=404,detail="Game not found")
+    values={key:value for key,value in payload.model_dump().items() if value is not None}
+    current=game_settings(game_key,session["client_id"])
+    minimum=float(values.get("min_bet",current["min_bet"]))
+    maximum=float(values.get("max_bet",current["max_bet"]))
+    if minimum>maximum:
+        raise HTTPException(status_code=400,detail="Minimum bet cannot exceed maximum bet")
+    values["updated_at"]=datetime.utcnow()
+    db.game_settings.update_one({"client_id":session["client_id"],"game":game_key},{"$set":values,"$setOnInsert":{"created_at":datetime.utcnow()}},upsert=True)
+    db.audit_logs.insert_one({"client_id":session["client_id"],"admin":session["username"],"action":"game_settings_updated","game":game_key,"changes":values,"created_at":datetime.utcnow()})
+    return {"game":game_key,**game_settings(game_key,session["client_id"])}
+
+
+@router.get("/api/admin/operations/summary")
+def operations_summary(session:dict=Depends(current_session)):
+    query={"client_id":session["client_id"]}
+    pipeline=[{"$match":query},{"$group":{"_id":"$status","count":{"$sum":1},"amount":{"$sum":"$amount"},"payout":{"$sum":"$payout"}}}]
+    return {"users":db.users.count_documents(query),"active_rounds":db.casino_rounds.count_documents({"status":"open"}),"bets_by_status":list(db.casino_bets.aggregate(pipeline))}
+
+
+@router.get("/api/admin/bets")
+def read_bets(game:str|None=None,status_filter:str|None=None,limit:int=Query(100,ge=1,le=500),session:dict=Depends(current_session)):
+    query={"client_id":session["client_id"]}
+    if game:query["game"]=game
+    if status_filter:query["status"]=status_filter
+    return {"bets":[_serialize(row) for row in db.casino_bets.find(query).sort("created_at",-1).limit(limit)]}
+
+
+@router.get("/api/admin/rounds")
+def read_rounds(game:str|None=None,limit:int=Query(50,ge=1,le=200),session:dict=Depends(current_session)):
+    query={}
+    if game:query["game"]=game
+    return {"rounds":[_serialize(row) for row in db.casino_rounds.find(query).sort("created_at",-1).limit(limit)]}

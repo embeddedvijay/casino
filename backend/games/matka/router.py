@@ -1,4 +1,5 @@
 import datetime
+import os
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pymongo import MongoClient
 from bson import ObjectId
@@ -10,9 +11,21 @@ from .db_ops import add_data
 
 router=APIRouter(prefix="/api/games/matka",tags=["Matka"])
 
-MONGO_URL="mongodb://localhost:27017"
-mongo_client=MongoClient(MONGO_URL)
-market_db=mongo_client["Market"]
+# Casino users/wallet continue using the main cloud MONGO_URI. Matka results
+# are maintained by the existing local result service in the Market database,
+# so this router uses a dedicated connection only for result reads.
+MATKA_RESULT_MONGO_URI=os.getenv(
+    "MATKA_RESULT_MONGO_URI",
+    "mongodb://127.0.0.1:27017",
+)
+MATKA_RESULT_DB_NAME=os.getenv("MATKA_RESULT_DB_NAME","Market")
+result_mongo_client=MongoClient(
+    MATKA_RESULT_MONGO_URI,
+    serverSelectionTimeoutMS=5000,
+    connectTimeoutMS=5000,
+    appname="gold365-matka-results",
+)
+market_db=result_mongo_client[MATKA_RESULT_DB_NAME]
 
 BOARD_RESET_TIME=datetime.time(1,0,0)
 

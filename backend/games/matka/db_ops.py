@@ -17,13 +17,11 @@ try:
 except Exception:
     pass
 
-MONGO_URL="mongodb+srv://vijay:vijay@vijtel.cd9zvfq.mongodb.net/"
-CASINO_DB_NAME="CASINO"
-# MONGO_URL=os.getenv("MONGO_URL") or os.getenv("MONGO_LOCAL_URL") or "mongodb://localhost:27017/"
-# CASINO_DB_NAME=os.getenv("CASINO_DB_NAME","casino")
+MONGO_URL=os.getenv("MATKA_MONGO_URI") or os.getenv("MONGO_URI") or os.getenv("MONGO_LOCAL_URL") or "mongodb://localhost:27017/"
+CASINO_DB_NAME=os.getenv("CASINO_DB_NAME",os.getenv("DB_NAME","casino"))
 DEFAULT_CLIENT_ID=os.getenv("DEFAULT_CLIENT_ID","demo")
 
-myclient=pymongo.MongoClient(MONGO_URL,maxPoolSize=int(os.getenv("MONGO_MAX_POOL_SIZE","20")))
+myclient=pymongo.MongoClient(MONGO_URL,maxPoolSize=int(os.getenv("MONGO_MAX_POOL_SIZE","20")),serverSelectionTimeoutMS=5000,appname="gold365-matka")
 casino_db=myclient[CASINO_DB_NAME]
 
 def get_game_date():

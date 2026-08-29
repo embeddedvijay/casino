@@ -1,11 +1,11 @@
 from datetime import datetime, timezone
 from math import comb, exp
 from secrets import SystemRandom
+import uuid
 
 from fastapi import HTTPException
-from pymongo import ReturnDocument
-
 from database import db
+from core.casino import CasinoError, cancel_user_bets, game_settings, place_bet, settle_bet
 
 
 RNG = SystemRandom()
@@ -50,12 +50,14 @@ def multiplier_table(rows: int, risk: str):
 
 
 def game_config():
+    settings=game_settings("plinko")
     return {
         "success": True,
         "rows": list(ALLOWED_ROWS),
         "risks": list(ALLOWED_RISKS),
-        "min_bet": 10,
-        "max_bet": 10000,
+        "min_bet": settings["min_bet"],
+        "max_bet": settings["max_bet"],
+        "enabled": settings["enabled"],
         "rtp": HOUSE_RTP,
         "multipliers": {
             risk: {str(rows): multiplier_table(rows, risk) for rows in ALLOWED_ROWS}
@@ -71,42 +73,17 @@ def play(user_id: str, amount: float, risk: str, rows: int):
     if risk not in ALLOWED_RISKS:
         raise HTTPException(status_code=400, detail="Risk must be low, medium or high")
     amount = round(float(amount), 2)
-    if amount < 10 or amount > 10000:
-        raise HTTPException(status_code=400, detail="Bet must be between 10 and 10000")
-
-    query = user_query(user_id)
-    now = utcnow()
-    debit_query = {
-        "$and": [
-            query,
-            {"balance": {"$gte": amount}},
-            {"status": {"$nin": ["blocked", "inactive"]}},
-        ]
-    }
-    user = db.users.find_one_and_update(
-        debit_query,
-        {"$inc": {"balance": -amount}, "$set": {"updated_at": now}},
-        return_document=ReturnDocument.AFTER,
-    )
-    if not user:
-        existing = db.users.find_one(query)
-        if not existing:
-            raise HTTPException(status_code=404, detail="User not found")
-        raise HTTPException(status_code=400, detail="Insufficient balance or account blocked")
-
+    round_id="PL-"+uuid.uuid4().hex
+    saved=None
     try:
+        saved=place_bet(game="plinko",round_id=round_id,user_id=user_id,amount=amount,position_key="drop",metadata={"risk":risk,"rows":rows})
         path = [RNG.randrange(2) for _ in range(rows)]
         slot = sum(path)
         multipliers = multiplier_table(rows, risk)
         multiplier = multipliers[slot]
         payout = round(amount * multiplier, 2)
-        final_user = user
-        if payout:
-            final_user = db.users.find_one_and_update(
-                {"_id": user["_id"]},
-                {"$inc": {"balance": payout}, "$set": {"updated_at": now}},
-                return_document=ReturnDocument.AFTER,
-            )
+        settled=settle_bet(saved["id"],payout,{"path":path,"slot":slot,"multiplier":multiplier})
+        now=utcnow()
 
         bet = {
             "user_id": str(user_id),
@@ -121,21 +98,11 @@ def play(user_id: str, amount: float, risk: str, rows: int):
             "payout": payout,
             "profit": round(payout - amount, 2),
             "result": "won" if payout > amount else "lost",
-            "status": "settled",
+            "status": "settled", "casino_bet_id":saved["id"], "round_id":round_id,
             "created_at": now,
             "settled_at": now,
         }
         inserted = db.plinko_bets.insert_one(bet)
-        db.wallet_transactions.insert_many([
-            {
-                "user_id": str(user_id), "type": "game_bet", "game": "plinko",
-                "amount": -amount, "reference_id": str(inserted.inserted_id), "created_at": now,
-            },
-            {
-                "user_id": str(user_id), "type": "game_win", "game": "plinko",
-                "amount": payout, "reference_id": str(inserted.inserted_id), "created_at": now,
-            },
-        ])
         return {
             "success": True,
             "bet_id": str(inserted.inserted_id),
@@ -145,12 +112,15 @@ def play(user_id: str, amount: float, risk: str, rows: int):
             "multiplier": multiplier,
             "payout": payout,
             "profit": round(payout - amount, 2),
-            "balance": round(float(final_user.get("balance", 0)), 2),
+            "balance": settled.get("balance",saved["balance"]) if settled else saved["balance"],
         }
+    except CasinoError as exc:
+        raise HTTPException(status_code=400,detail=str(exc)) from exc
     except HTTPException:
         raise
     except Exception as exc:
-        db.users.update_one({"_id": user["_id"]}, {"$inc": {"balance": amount}})
+        if saved:
+            cancel_user_bets("plinko",round_id,user_id)
         raise HTTPException(status_code=500, detail="Plinko bet could not be completed") from exc
 
 

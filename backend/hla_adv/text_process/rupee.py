@@ -11,7 +11,7 @@ class R:
             risk += f" multiple R in tax Line:{idx}, raw:{raw} , Line:{raw_msg} \n" 
             num_list.insert(-1,'R')
             price = True
-            continue
+            return
         if(len(t) == 2):
             if(t[0].isnumeric()):
                 num_list.insert(0,'R')

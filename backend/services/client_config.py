@@ -37,7 +37,6 @@ async def ensure_default_client(db):
 
 async def get_client_config(db,client_id="demo"):
     client=db["clients"].find_one({"client_id":client_id,"status":"active"},{"_id":0})
-    print(client)
     if not client or not client.get("setup_completed"):
         return None
 
@@ -55,6 +54,11 @@ async def get_client_config(db,client_id="demo"):
     }
 
 async def start_game_tasks(db,aviator_game_loop,dragon_tiger_game_loop,lucky_race_game_loop,matka_game_loop):
+    global game_tasks
+    game_tasks=[task for task in game_tasks if not task.done()]
+    if game_tasks:
+        print("Game loops already running.")
+        return
     config=await get_client_config(db,"demo")
     if not config:
         print("Casino setup not completed. Game loops not started.")
@@ -66,3 +70,12 @@ async def start_game_tasks(db,aviator_game_loop,dragon_tiger_game_loop,lucky_rac
     game_tasks.append(asyncio.create_task(matka_game_loop()))
 
     print("Casino setup completed. Game loops started.")
+
+
+async def stop_game_tasks():
+    global game_tasks
+    for task in game_tasks:
+        task.cancel()
+    if game_tasks:
+        await asyncio.gather(*game_tasks,return_exceptions=True)
+    game_tasks=[]

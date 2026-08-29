@@ -6,12 +6,14 @@ def _gold365_is_demo(user_id):
 
 from datetime import datetime, timezone
 from secrets import SystemRandom
+import uuid
 
 from bson import ObjectId
 from fastapi import HTTPException
 from pymongo import ReturnDocument
 
 from database import db
+from core.casino import CasinoError, cancel_user_bets, game_settings, place_bet, settle_bet
 
 
 RNG = SystemRandom()
@@ -51,10 +53,12 @@ def ensure_demo(value):
 
 
 def config():
+    settings=game_settings("chicken-road")
     return {
         "success": True,
-        "min_bet": 2,
-        "max_bet": 10000,
+        "min_bet": settings["min_bet"],
+        "max_bet": settings["max_bet"],
+        "enabled": settings["enabled"],
         "levels": {key: value["multipliers"] for key, value in LEVELS.items()},
     }
 
@@ -64,40 +68,30 @@ def start(user_id, amount, difficulty):
     if difficulty not in LEVELS:
         raise HTTPException(400, "Difficulty must be easy, medium, hard or hardcore")
     amount = round(float(amount), 2)
-    if amount < 2 or amount > 10000:
-        raise HTTPException(400, "Bet must be between 2 and 10000")
     ensure_demo(user_id)
-    query = user_filter(user_id)
-    if _gold365_is_demo(user_id):
-        # Demo rounds never check or debit money. Also close any stale active round.
-        db.chicken_road_bets.update_many(
-            {"user_id": str(user_id), "status": "active"},
-            {"$set": {"status": "cancelled", "settled_at": now(), "updated_at": now()}},
-        )
-        user = db.users.find_one_and_update(
-            query, {"$set": {"updated_at": now(), "is_demo": True}},
-            return_document=ReturnDocument.AFTER,
-        )
-    else:
-        user = db.users.find_one_and_update(
-            {"$and": [query, {"balance": {"$gte": amount}}, {"status": {"$nin": ["blocked", "inactive"]}}]},
-            {"$inc": {"balance": -amount}, "$set": {"updated_at": now()}},
-            return_document=ReturnDocument.AFTER,
-        )
-    if not user:
-        if not db.users.find_one(query):
-            raise HTTPException(404, "User not found")
-        raise HTTPException(400, "Insufficient balance or account blocked")
+    for old in db.chicken_road_bets.find({"user_id":str(user_id),"status":"active"}):
+        cancel_user_bets("chicken-road",old.get("casino_round_id",str(old["_id"])),str(user_id))
+    db.chicken_road_bets.update_many({"user_id":str(user_id),"status":"active"},{"$set":{"status":"cancelled","settled_at":now(),"updated_at":now()}})
+    casino_round_id="CR-"+uuid.uuid4().hex
+    try:
+        saved=place_bet(game="chicken-road",round_id=casino_round_id,user_id=user_id,amount=amount,position_key="road",metadata={"difficulty":difficulty})
+    except CasinoError as exc:
+        raise HTTPException(400,str(exc)) from exc
     document = {
-        "user_id": str(user_id), "user_ref": user["_id"], "game": "chicken-road",
+        "_id": ObjectId(saved["id"]), "casino_round_id":casino_round_id,
+        "user_id": str(user_id), "game": "chicken-road",
         "amount": amount, "bet": amount, "difficulty": difficulty, "step": 0,
         "multiplier": 1.0, "payout": 0.0, "profit": -amount, "status": "active",
         "created_at": now(), "updated_at": now(),
     }
-    result = db.chicken_road_bets.insert_one(document)
+    try:
+        result = db.chicken_road_bets.insert_one(document)
+    except Exception:
+        cancel_user_bets("chicken-road",casino_round_id,str(user_id))
+        raise
     return {
         "success": True, "round_id": str(result.inserted_id), "status": "active",
-        "step": 0, "multiplier": 1.0, "balance": round(float(user.get("balance", 0)), 2),
+        "step": 0, "multiplier": 1.0, "balance": saved["balance"],
         "multipliers": LEVELS[difficulty]["multipliers"],
     }
 
@@ -135,6 +129,7 @@ def advance(round_id):
     )
     if not updated:
         raise HTTPException(409, "Round already updated")
+    settle_bet(str(item["_id"]),0.0,{"step":next_step,"collision":True})
     return {"success": True, "safe": False, "status": "lost", "step": next_step, "multiplier": 0.0, "payout": 0.0}
 
 
@@ -150,11 +145,10 @@ def cash_out(round_id):
     )
     if not settled:
         raise HTTPException(409, "Round already settled")
-    user = db.users.find_one_and_update(
-        {"_id": item["user_ref"]}, {"$inc": {"balance": payout}, "$set": {"updated_at": now()}},
-        return_document=ReturnDocument.AFTER,
-    )
-    return {"success": True, "status": "won", "step": item["step"], "multiplier": item["multiplier"], "payout": payout, "profit": round(payout - item["amount"], 2), "balance": round(float(user.get("balance", 0)), 2)}
+    casino_bet=settle_bet(str(item["_id"]),payout,{"step":item["step"],"multiplier":item["multiplier"]})
+    if not casino_bet:
+        raise HTTPException(409,"Round already settled")
+    return {"success": True, "status": "won", "step": item["step"], "multiplier": item["multiplier"], "payout": payout, "profit": round(payout - item["amount"], 2), "balance": casino_bet["balance"]}
 
 
 def history(user_id, limit=20):
