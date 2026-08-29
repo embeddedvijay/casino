@@ -4,6 +4,7 @@ import uuid
 from typing import Dict, List
 
 from fastapi import WebSocket
+from core.casino import CasinoError, cancel_user_bets, close_round, open_round, place_bet as persist_bet, settle_bet
 
 from .engine import calculate_payout, get_cars, pick_winner
 
@@ -307,8 +308,15 @@ async def place_bet(req):
     round_id = state["round_id"]
     round_bets = bets_by_round.setdefault(round_id, [])
 
+    try:
+        # Allow repeated bets on the same car while betting is open. Each tap
+        # gets its own unique ledger key and is still settled independently.
+        bet_key=f"{req.bet_type}:{uuid.uuid4()}"
+        saved=persist_bet(game="lucky-race",round_id=round_id,user_id=req.user_id,amount=req.amount,position_key=bet_key,metadata={"bet_type":req.bet_type})
+    except CasinoError as exc:
+        return {"success":False,"message":str(exc),"code":exc.code}
     bet = {
-        "id": "lr-bet-" + str(uuid.uuid4()),
+        "id": saved["id"],
         "user_id": req.user_id,
         "round_id": round_id,
         "bet_type": req.bet_type,
@@ -324,6 +332,8 @@ async def place_bet(req):
     return {
         "success": True,
         "message": "Bet placed",
+        "bet_id": bet["id"],
+        "balance": saved["balance"],
     }
 
 
@@ -336,6 +346,7 @@ async def clear_bets(req):
 
     round_id = state["round_id"]
     old_bets = bets_by_round.get(round_id, [])
+    cancel_user_bets("lucky-race",round_id,req.user_id)
 
     bets_by_round[round_id] = [
         bet
@@ -367,6 +378,7 @@ def settle_bets(winner):
         else:
             bet["status"] = "lost"
             bet["payout"] = 0.0
+        settle_bet(bet["id"],bet["payout"],winner)
 
 
 def find_stop_index_for_winner(winner_key: str):
@@ -458,6 +470,7 @@ async def game_loop():
             car["key"]: float(random.choice(BOARD_TOTALS))
             for car in state["cars"]
         }
+        open_round("lucky-race",round_id,{"phase":"betting"})
 
         cleanup_old_rounds()
 
@@ -539,6 +552,7 @@ async def game_loop():
         state["phase"] = "result"
 
         settle_bets(winner)
+        close_round("lucky-race",round_id,winner)
 
         state["history"].append(
             {
