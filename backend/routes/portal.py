@@ -49,6 +49,12 @@ class WalletRequestCreate(BaseModel):
     reference: str | None = Field(default=None, max_length=120)
 
 
+class WithdrawalRequestCreate(BaseModel):
+    amount: float = Field(ge=500, le=50_000)
+    method: Literal["upi", "bank"]
+    reference: str = Field(min_length=3, max_length=120)
+
+
 class DepositQrCreate(BaseModel):
     amount: float = Field(ge=500, le=10_000_000)
 
@@ -148,12 +154,16 @@ def deposit_qr_done(payload: DepositQrDone, user_id: str = Depends(require_user)
 
 
 @router.post("/wallet/withdrawals", status_code=201)
-def withdrawal_create(payload: WalletRequestCreate, user_id: str = Depends(require_user)):
+def withdrawal_create(payload: WithdrawalRequestCreate, user_id: str = Depends(require_user)):
     try:
         transaction = create_wallet_request(db, user_id, "withdrawal", payload.amount, payload.method, payload.reference)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-    return {"success": True, "message": "Withdrawal submitted for review", "transaction": transaction}
+    return {
+        "success": True,
+        "message": "Withdrawal request submitted. Amount is locked until admin review.",
+        "transaction": transaction,
+    }
 
 
 @router.get("/bets/history")

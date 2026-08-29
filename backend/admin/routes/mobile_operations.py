@@ -57,6 +57,11 @@ class DepositRequestAction(BaseModel):
     remarks: str = Field(default="", max_length=500)
 
 
+class WithdrawalRequestAction(BaseModel):
+    action: str = Field(pattern="^(approve|reject)$")
+    remarks: str = Field(default="", max_length=500)
+
+
 class OfferSend(BaseModel):
     title: str = Field(min_length=3, max_length=100)
     message: str = Field(min_length=3, max_length=500)
@@ -289,6 +294,166 @@ def deposit_request_action(request_id: str, body: DepositRequestAction, admin: d
         "user_id": canonical_user_id,
         "amount": float(transaction.get("amount", 0)),
         "reference": transaction.get("qr_reference") or transaction.get("reference"),
+        "remarks": body.remarks,
+        "created_at": current_time,
+    })
+    return {"success": True, "request": serialize(transaction), "user": serialize(user) if user else None}
+
+
+@router.get("/withdrawal-requests")
+def withdrawal_requests(
+    request_status: str = Query("pending", alias="status", pattern="^(pending|processing|approved|rejected|all)$"),
+    limit: int = Query(100, ge=1, le=500),
+    admin: dict = Depends(current_admin),
+):
+    query = {"client_id": admin["client_id"], "type": "withdrawal"}
+    if request_status == "pending":
+        query["status"] = {"$in": ["pending", "processing"]}
+    elif request_status != "all":
+        query["status"] = request_status
+    rows = list(db.wallet_transactions.find(query).sort([("created_at", -1), ("_id", -1)]).limit(limit))
+    return {"requests": serialize(rows), "count": len(rows)}
+
+
+@router.post("/withdrawal-requests/{request_id}/action")
+def withdrawal_request_action(
+    request_id: str,
+    body: WithdrawalRequestAction,
+    admin: dict = Depends(current_admin),
+):
+    id_options = [{"transaction_id": request_id}]
+    if ObjectId.is_valid(request_id):
+        id_options.append({"_id": ObjectId(request_id)})
+    base_query = {
+        "client_id": admin["client_id"],
+        "type": "withdrawal",
+        "$or": id_options,
+    }
+    transaction = db.wallet_transactions.find_one(base_query)
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Withdrawal request not found")
+    current_status = str(transaction.get("status") or "pending").lower()
+    requested_status = "approved" if body.action == "approve" else "rejected"
+    if current_status in {"approved", "rejected"}:
+        if current_status == requested_status:
+            return {"success": True, "already_processed": True, "request": serialize(transaction)}
+        raise HTTPException(status_code=409, detail=f"Withdrawal request is already {current_status}")
+
+    current_time = now()
+    claimed = db.wallet_transactions.find_one_and_update(
+        {**base_query, "status": {"$in": ["pending", "processing"]}},
+        {"$set": {"status": "processing", "processing_by": admin["username"], "updated_at": current_time}},
+        return_document=ReturnDocument.AFTER,
+    )
+    if not claimed:
+        raise HTTPException(status_code=409, detail="Withdrawal request is being processed")
+    transaction = claimed
+    amount = round(float(transaction.get("amount", 0) or 0), 2)
+    reservation_token = str(transaction.get("reservation_token") or "")
+    user_ref = transaction.get("user_ref")
+    user_filter = {"client_id": admin["client_id"]}
+    if isinstance(user_ref, ObjectId):
+        user_filter["_id"] = user_ref
+    else:
+        user_filter.update(user_id_query(str(transaction.get("user_id") or ""), admin["client_id"]))
+
+    if body.action == "approve":
+        balance_was_reserved = bool(transaction.get("balance_reserved"))
+        token_filter = dict(user_filter)
+        if balance_was_reserved and reservation_token:
+            token_filter["withdrawal_pending_token"] = reservation_token
+        if balance_was_reserved:
+            user = db.users.find_one_and_update(
+                token_filter,
+                {"$unset": {"withdrawal_pending_token": ""}, "$set": {"updated_at": current_time}},
+                return_document=ReturnDocument.AFTER,
+            )
+        else:
+            # Compatibility for requests created before balance reservation was added.
+            token_filter["balance"] = {"$gte": amount}
+            user = db.users.find_one_and_update(
+                token_filter,
+                {"$inc": {"balance": -amount}, "$set": {"updated_at": current_time}},
+                return_document=ReturnDocument.AFTER,
+            )
+        if not user:
+            db.wallet_transactions.update_one(
+                {"_id": transaction["_id"], "status": "processing"},
+                {"$set": {"status": "pending", "updated_at": now()}, "$unset": {"processing_by": ""}},
+            )
+            raise HTTPException(status_code=409, detail="User balance or withdrawal reservation has changed")
+        new_status = "approved"
+        notification_title = "Withdrawal approved"
+        notification_text = f"Your withdrawal of ₹{amount:,.2f} was approved."
+        action_fields = {"approved_at": current_time, "approved_by": admin["username"]}
+    else:
+        refund_key = str(transaction["_id"])
+        balance_was_reserved = bool(transaction.get("balance_reserved"))
+        if balance_was_reserved:
+            refund_filter = {**user_filter, "refunded_withdrawal_ids": {"$ne": refund_key}}
+            if reservation_token:
+                refund_filter["withdrawal_pending_token"] = reservation_token
+            user = db.users.find_one_and_update(
+                refund_filter,
+                {
+                    "$inc": {"balance": amount},
+                    "$addToSet": {"refunded_withdrawal_ids": refund_key},
+                    "$unset": {"withdrawal_pending_token": ""},
+                    "$set": {"updated_at": current_time},
+                },
+                return_document=ReturnDocument.AFTER,
+            )
+            if not user:
+                already_refunded = db.users.find_one({**user_filter, "refunded_withdrawal_ids": refund_key})
+                if already_refunded:
+                    user = already_refunded
+                else:
+                    db.wallet_transactions.update_one(
+                        {"_id": transaction["_id"], "status": "processing"},
+                        {"$set": {"status": "pending", "updated_at": now()}, "$unset": {"processing_by": ""}},
+                    )
+                    raise HTTPException(status_code=409, detail="Withdrawal refund could not be completed")
+        else:
+            # Old requests did not reserve balance, therefore rejection must not credit money.
+            user = db.users.find_one(user_filter)
+            if not user:
+                raise HTTPException(status_code=404, detail="Withdrawal user not found")
+        new_status = "rejected"
+        notification_title = "Withdrawal rejected"
+        notification_text = f"Your withdrawal of ₹{amount:,.2f} was rejected and returned to your wallet."
+        action_fields = {
+            "rejected_at": current_time,
+            "rejected_by": admin["username"],
+            "refunded": balance_was_reserved,
+        }
+
+    db.wallet_transactions.update_one(
+        {"_id": transaction["_id"], "status": "processing"},
+        {"$set": {
+            "status": new_status,
+            **action_fields,
+            "remarks": body.remarks,
+            "updated_at": current_time,
+        }, "$unset": {"processing_by": ""}},
+    )
+    transaction = db.wallet_transactions.find_one({"_id": transaction["_id"]})
+    canonical_user_id = str(transaction.get("user_id") or transaction.get("user_ref") or "")
+    db.notifications.insert_one({
+        "client_id": admin["client_id"],
+        "user_id": canonical_user_id,
+        "title": notification_title,
+        "text": notification_text,
+        "type": "withdrawal",
+        "read": False,
+        "created_at": current_time,
+    })
+    db.audit_logs.insert_one({
+        "client_id": admin["client_id"],
+        "admin": admin["username"],
+        "action": f"withdrawal_{new_status}",
+        "withdrawal_request_id": str(transaction["_id"]),
+        "user_id": canonical_user_id,
+        "amount": amount,
         "remarks": body.remarks,
         "created_at": current_time,
     })

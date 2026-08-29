@@ -6,6 +6,7 @@ from io import BytesIO
 import re
 from typing import Any
 from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
 from bson import ObjectId
 from pymongo import DESCENDING, ReturnDocument
@@ -24,6 +25,12 @@ BET_COLLECTIONS = (
     ("chicken_road_bets", "chicken-road"),
     ("bets", None),
 )
+
+WITHDRAWAL_MIN = 500.0
+WITHDRAWAL_MAX = 50_000.0
+WITHDRAWAL_DAILY_LIMIT = 5
+WITHDRAWAL_TIMEZONE = ZoneInfo("Asia/Kolkata")
+FINAL_BET_STATUSES = ["settled", "won", "lost", "completed", "complete", "success"]
 
 
 def utcnow() -> datetime:
@@ -76,6 +83,120 @@ def transaction_query(user_id: str) -> dict:
     return {"$or": [{"user_id": user_id}, {"username": user_id}, {"user_name": user_id}]}
 
 
+def canonical_user_values(user: dict, requested_user_id: str) -> list[str]:
+    values = {
+        str(requested_user_id),
+        str(user.get("_id") or ""),
+        str(user.get("user_id") or ""),
+        str(user.get("username") or ""),
+        str(user.get("user_name") or ""),
+        str(user.get("mobile") or ""),
+    }
+    return [value for value in values if value]
+
+
+def owner_query(values: list[str]) -> dict:
+    return {"$or": [
+        {"user_id": {"$in": values}},
+        {"username": {"$in": values}},
+        {"user_name": {"$in": values}},
+        {"player_id": {"$in": values}},
+        {"Contact": {"$in": values}},
+    ]}
+
+
+def india_day_bounds(now: datetime) -> tuple[str, datetime, datetime]:
+    local_now = now.astimezone(WITHDRAWAL_TIMEZONE)
+    local_start = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    local_end = local_start + timedelta(days=1)
+    return local_start.date().isoformat(), local_start.astimezone(timezone.utc), local_end.astimezone(timezone.utc)
+
+
+def withdrawal_eligibility(db, user_id: str) -> dict:
+    raw_user = db.users.find_one(user_query(user_id), {"password": 0, "password_hash": 0, "salt": 0, "otp": 0})
+    if not raw_user:
+        raise ValueError("User not found")
+    now = utcnow()
+    values = canonical_user_values(raw_user, user_id)
+    wallet_owner = {"$or": [{"user_id": {"$in": values}}, {"username": {"$in": values}}, {"user_name": {"$in": values}}]}
+
+    last_withdrawal = db.wallet_transactions.find_one(
+        {"$and": [wallet_owner, {"type": "withdrawal"}, {"status": {"$in": ["approved", "completed", "success"]}}]},
+        sort=[("approved_at", DESCENDING), ("updated_at", DESCENDING), ("created_at", DESCENDING)],
+    )
+    turnover_from = (
+        last_withdrawal.get("approved_at")
+        or last_withdrawal.get("updated_at")
+        or last_withdrawal.get("created_at")
+        if last_withdrawal else datetime(1970, 1, 1, tzinfo=timezone.utc)
+    )
+    deposit_rows = list(db.wallet_transactions.aggregate([
+        {"$match": {"$and": [
+            wallet_owner,
+            {"type": "deposit"},
+            {"status": {"$in": ["approved", "completed", "success"]}},
+            {"created_at": {"$gt": turnover_from}},
+        ]}},
+        {"$group": {"_id": None, "total": {"$sum": {"$abs": {"$ifNull": ["$amount", 0]}}}}},
+    ]))
+    required_turnover = round(float(deposit_rows[0]["total"] if deposit_rows else 0), 2)
+
+    valid_play = 0.0
+    if "casino_bets" in db.list_collection_names():
+        bet_rows = list(db.casino_bets.aggregate([
+            {"$match": {"$and": [
+                owner_query(values),
+                {"created_at": {"$gt": turnover_from}},
+                {"$or": [
+                    {"settled": True},
+                    {"status": {"$in": FINAL_BET_STATUSES}},
+                ]},
+            ]}},
+            {"$group": {"_id": None, "total": {"$sum": {"$abs": {"$ifNull": ["$amount", 0]}}}}},
+        ]))
+        valid_play += float(bet_rows[0]["total"] if bet_rows else 0)
+
+    # Matka currently writes its debit to wallet_transactions rather than casino_bets.
+    matka_rows = list(db.wallet_transactions.aggregate([
+        {"$match": {"$and": [
+            wallet_owner,
+            {"type": "matka_bet"},
+            {"status": {"$in": ["completed", "settled", "success"]}},
+            {"created_at": {"$gt": turnover_from}},
+        ]}},
+        {"$group": {"_id": None, "total": {"$sum": {"$abs": {"$ifNull": ["$amount", 0]}}}}},
+    ]))
+    valid_play = round(valid_play + float(matka_rows[0]["total"] if matka_rows else 0), 2)
+
+    day_key, day_start, day_end = india_day_bounds(now)
+    used_today = db.wallet_transactions.count_documents({"$and": [
+        wallet_owner,
+        {"type": "withdrawal"},
+        {"created_at": {"$gte": day_start, "$lt": day_end}},
+        {"status": {"$nin": ["failed", "cancelled"]}},
+    ]})
+    pending = db.wallet_transactions.find_one({"$and": [
+        wallet_owner,
+        {"type": "withdrawal"},
+        {"status": {"$in": ["pending", "processing"]}},
+    ]}, {"_id": 1, "transaction_id": 1})
+    remaining_turnover = round(max(0.0, required_turnover - valid_play), 2)
+    return {
+        "eligible": not pending and used_today < WITHDRAWAL_DAILY_LIMIT and remaining_turnover <= 0,
+        "balance": balance_for(raw_user),
+        "minimum": WITHDRAWAL_MIN,
+        "maximum": WITHDRAWAL_MAX,
+        "daily_limit": WITHDRAWAL_DAILY_LIMIT,
+        "used_today": used_today,
+        "remaining_today": max(0, WITHDRAWAL_DAILY_LIMIT - used_today),
+        "pending": bool(pending),
+        "required_turnover": required_turnover,
+        "valid_play": valid_play,
+        "remaining_turnover": remaining_turnover,
+        "day": day_key,
+    }
+
+
 def list_transactions(db, user_id: str, page: int, limit: int, kind: str | None = None) -> dict:
     query = transaction_query(user_id)
     if kind and kind != "all":
@@ -101,7 +222,12 @@ def wallet_summary(db, user_id: str) -> dict | None:
         {"$group": {"_id": None, "amount": {"$sum": {"$ifNull": ["$amount", 0]}}}},
     ]))
     totals["deposit"] = float(approved_deposit[0]["amount"] or 0) if approved_deposit else 0
-    return {
+    approved_withdrawal = list(db.wallet_transactions.aggregate([
+        {"$match": {"$and": [query, {"type": "withdrawal"}, {"status": {"$in": ["approved", "completed", "success"]}}]}},
+        {"$group": {"_id": None, "amount": {"$sum": {"$abs": {"$ifNull": ["$amount", 0]}}}}},
+    ]))
+    totals["withdrawal"] = float(approved_withdrawal[0]["amount"] or 0) if approved_withdrawal else 0
+    summary = {
         "user_id": user.get("user_id", user_id),
         "balance": balance_for(user),
         "currency": user.get("currency", "INR"),
@@ -109,6 +235,8 @@ def wallet_summary(db, user_id: str) -> dict | None:
         "total_withdrawal": totals.get("withdrawal", 0),
         "total_winnings": totals.get("win", totals.get("winning", 0)),
     }
+    summary["withdrawal"] = withdrawal_eligibility(db, user_id)
+    return summary
 
 
 def bet_owner_query(user_id: str) -> dict:
@@ -180,13 +308,65 @@ def create_wallet_request(
     method: str,
     reference: str | None = None,
 ) -> dict:
-    user = get_user(db, user_id)
-    if not user:
+    raw_user = db.users.find_one(user_query(user_id), {"password": 0, "password_hash": 0, "salt": 0, "otp": 0})
+    if not raw_user:
         raise ValueError("User not found")
-    if request_type == "withdrawal" and amount > balance_for(user):
-        raise ValueError("Insufficient wallet balance")
+    user = serialize(raw_user)
+    amount = round(float(amount), 2)
     now = utcnow()
     prefix = "DPS" if request_type == "deposit" else "WDR"
+    reservation_token = None
+    if request_type == "withdrawal":
+        if amount < WITHDRAWAL_MIN:
+            raise ValueError(f"Minimum withdrawal is ₹{WITHDRAWAL_MIN:,.0f}")
+        if amount > WITHDRAWAL_MAX:
+            raise ValueError(f"Maximum withdrawal is ₹{WITHDRAWAL_MAX:,.0f} per request")
+        eligibility = withdrawal_eligibility(db, user_id)
+        if eligibility["pending"]:
+            raise ValueError("One withdrawal is already pending. Please wait for the admin decision.")
+        if eligibility["used_today"] >= WITHDRAWAL_DAILY_LIMIT:
+            raise ValueError("Daily withdrawal limit reached. Maximum 5 withdrawals are allowed per day.")
+        if eligibility["remaining_turnover"] > 0:
+            raise ValueError(f"Play ₹{eligibility['remaining_turnover']:,.2f} more before withdrawal (1x deposit play required).")
+        if amount > eligibility["balance"]:
+            raise ValueError(f"Insufficient wallet balance. Available ₹{eligibility['balance']:,.2f}")
+
+        reservation_token = f"WDR-{ObjectId()}"
+        day_key, _, _ = india_day_bounds(now)
+        update_query = {
+            "_id": raw_user["_id"],
+            "balance": {"$gte": amount},
+            "$or": [
+                {"withdrawal_pending_token": {"$exists": False}},
+                {"withdrawal_pending_token": None},
+                {"withdrawal_pending_token": ""},
+            ],
+            "$and": [{"$or": [
+                {"withdrawal_day": {"$ne": day_key}},
+                {"withdrawal_daily_count": {"$lt": WITHDRAWAL_DAILY_LIMIT}},
+                {"withdrawal_daily_count": {"$exists": False}},
+            ]}],
+        }
+        reserved = db.users.find_one_and_update(
+            update_query,
+            [{"$set": {
+                "balance": {"$subtract": [{"$ifNull": ["$balance", 0]}, amount]},
+                "withdrawal_pending_token": reservation_token,
+                "withdrawal_day": day_key,
+                "withdrawal_daily_count": {
+                    "$cond": [
+                        {"$eq": ["$withdrawal_day", day_key]},
+                        {"$add": [{"$ifNull": ["$withdrawal_daily_count", 0]}, 1]},
+                        1,
+                    ]
+                },
+                "updated_at": now,
+            }}],
+            return_document=ReturnDocument.AFTER,
+        )
+        if not reserved:
+            raise ValueError("Withdrawal could not be reserved. Check balance, pending request, or daily limit and try again.")
+        user = serialize(reserved)
     transaction = {
         "transaction_id": f"{prefix}{int(now.timestamp() * 1000)}",
         "user_id": user_id,
@@ -199,7 +379,25 @@ def create_wallet_request(
         "created_at": now,
         "updated_at": now,
     }
-    result = db.wallet_transactions.insert_one(transaction)
+    if reservation_token:
+        transaction.update({
+            "client_id": raw_user.get("client_id"),
+            "user_ref": raw_user["_id"],
+            "reservation_token": reservation_token,
+            "balance_reserved": True,
+            "balance_before": round(balance_for(raw_user), 2),
+            "balance_after": round(balance_for(user), 2),
+            "turnover_snapshot": eligibility,
+        })
+    try:
+        result = db.wallet_transactions.insert_one(transaction)
+    except Exception:
+        if reservation_token:
+            db.users.update_one(
+                {"_id": raw_user["_id"], "withdrawal_pending_token": reservation_token},
+                {"$inc": {"balance": amount, "withdrawal_daily_count": -1}, "$unset": {"withdrawal_pending_token": ""}},
+            )
+        raise
     transaction["_id"] = result.inserted_id
     db.notifications.insert_one({
         "user_id": user_id,
