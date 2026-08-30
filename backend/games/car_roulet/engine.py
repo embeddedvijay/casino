@@ -1,14 +1,14 @@
 import random
 
 CARS = [
-    {"key": "bmw", "label": "BMW", "payout": 6},
-    {"key": "ferrari", "label": "FERRARI", "payout": 6},
-    {"key": "jaguar", "label": "JAGUAR", "payout": 6},
-    {"key": "lamborghini", "label": "LAMBORGHINI", "payout": 6},
-    {"key": "land_rover", "label": "LAND ROVER", "payout": 6},
-    {"key": "maserati", "label": "MASERATI", "payout": 6},
-    {"key": "mercedes", "label": "MERCEDES", "payout": 6},
-    {"key": "porsche", "label": "PORSCHE", "payout": 6},
+    {"key": "bmw", "label": "BMW", "payout": 5},
+    {"key": "ferrari", "label": "FERRARI", "payout": 8},
+    {"key": "jaguar", "label": "JAGUAR", "payout": 5},
+    {"key": "lamborghini", "label": "LAMBORGHINI", "payout": 8},
+    {"key": "land_rover", "label": "LAND ROVER", "payout": 5},
+    {"key": "maserati", "label": "MASERATI", "payout": 8},
+    {"key": "mercedes", "label": "MERCEDES", "payout": 5},
+    {"key": "porsche", "label": "PORSCHE", "payout": 8},
 ]
 
 TRACK_SEQUENCE_KEYS = [
