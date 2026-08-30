@@ -26,6 +26,8 @@ from games.matka.router import (
 from games.matka.manager import game_loop as matka_game_loop
 from games.plinko.router import router as plinko_router
 from games.chicken_road.router import router as chicken_road_router
+from games.teen_patti.router import router as teen_patti_router
+from games.andar_bahar.router import router as andar_bahar_router
 from core.router import router as casino_core_router
 from core.casino import ensure_casino_indexes, recover_interrupted_games
 
@@ -64,6 +66,8 @@ app.include_router(lucky_race_router)
 app.include_router(matka_router)
 app.include_router(plinko_router)
 app.include_router(chicken_road_router)
+app.include_router(teen_patti_router)
+app.include_router(andar_bahar_router)
 app.include_router(casino_core_router)
 app.include_router(users_router)
 app.include_router(auth_users_router)
@@ -81,6 +85,8 @@ def home():
             {"name": "Aviator", "api": "/api/games/aviator/state", "ws": "/ws/aviator", "page": "/aviator"},
             {"name": "Dragon Tiger", "api": "/api/games/dragon-tiger/state", "ws": "/ws/dragon-tiger", "page": "/dragon-tiger"},
             {"name": "Lucky Race", "api": "/api/games/lucky-race/state", "ws": "/ws/lucky-race", "page": "/lucky-race"},
+            {"name": "Teen Patti", "api": "/api/games/teen-patti/session", "page": "/teen-patti-practice"},
+            {"name": "Andar Bahar", "api": "/api/games/andar-bahar/play", "page": "/andar-bahar-practice"},
         ],
         "portal_api": "/api/portal",
         "version":"2.0.0",
