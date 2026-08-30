@@ -14,6 +14,7 @@ import qrcode
 
 
 BET_COLLECTIONS = (
+    ("casino_bets", None),
     ("aviator_bets", "aviator"),
     ("dragon_tiger_bets", "dragon-tiger"),
     ("lucky_race_bets", "lucky-race"),
@@ -239,24 +240,48 @@ def wallet_summary(db, user_id: str) -> dict | None:
     return summary
 
 
-def bet_owner_query(user_id: str) -> dict:
-    return {"$or": [{"user_id": user_id}, {"username": user_id}, {"user_name": user_id}, {"player_id": user_id}]}
+def bet_owner_query(values: list[str]) -> dict:
+    object_ids = [ObjectId(value) for value in values if ObjectId.is_valid(value)]
+    choices: list[dict] = [
+        {"user_id": {"$in": values}},
+        {"username": {"$in": values}},
+        {"user_name": {"$in": values}},
+        {"player_id": {"$in": values}},
+        {"Contact": {"$in": values}},
+    ]
+    if object_ids:
+        choices.extend([
+            {"user_ref": {"$in": object_ids}},
+            {"user_id": {"$in": object_ids}},
+        ])
+    return {"$or": choices}
 
 
 def list_bets(db, user_id: str, page: int, limit: int, game: str | None = None, status: str | None = None) -> dict:
+    raw_user = db.users.find_one(user_query(user_id), {
+        "_id": 1, "user_id": 1, "username": 1, "user_name": 1, "mobile": 1,
+    })
+    if not raw_user:
+        return {"items": [], "page": page, "limit": limit, "total": 0, "has_more": False}
+    values = canonical_user_values(raw_user, user_id)
     rows: list[dict] = []
+    seen: set[tuple[str, str]] = set()
     for collection_name, default_game in BET_COLLECTIONS:
         if collection_name not in db.list_collection_names():
             continue
         if game and game != "all" and default_game and default_game != game:
             continue
-        query: dict = bet_owner_query(user_id)
+        query: dict = bet_owner_query(values)
         if status and status != "all":
             query = {"$and": [query, {"status": {"$regex": f"^{status}$", "$options": "i"}}]}
         for row in db[collection_name].find(query).sort([("created_at", DESCENDING), ("_id", DESCENDING)]).limit(500):
             item = serialize(row)
             item.setdefault("game", default_game or item.get("game", "unknown"))
             item["collection"] = collection_name
+            identity = (collection_name, str(item.get("_id") or item.get("bet_id") or item.get("round_id") or ""))
+            if identity in seen:
+                continue
+            seen.add(identity)
             rows.append(item)
     rows.sort(key=lambda item: str(item.get("created_at", item.get("placed_at", ""))), reverse=True)
     total = len(rows)
