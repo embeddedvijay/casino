@@ -312,11 +312,12 @@ async def place_bet(req):
         # Allow repeated bets on the same car while betting is open. Each tap
         # gets its own unique ledger key and is still settled independently.
         bet_key=f"{req.bet_type}:{uuid.uuid4()}"
-        saved=persist_bet(game="lucky-race",round_id=round_id,user_id=req.user_id,amount=req.amount,position_key=bet_key,metadata={"bet_type":req.bet_type})
+        saved=persist_bet(game="lucky-race",round_id=round_id,user_id=req.user_id,amount=req.amount,position_key=bet_key,metadata={"bet_type":req.bet_type},client_id=req.client_id)
     except CasinoError as exc:
         return {"success":False,"message":str(exc),"code":exc.code}
     bet = {
         "id": saved["id"],
+        "client_id": req.client_id,
         "user_id": req.user_id,
         "round_id": round_id,
         "bet_type": req.bet_type,
@@ -346,12 +347,12 @@ async def clear_bets(req):
 
     round_id = state["round_id"]
     old_bets = bets_by_round.get(round_id, [])
-    cancel_user_bets("lucky-race",round_id,req.user_id)
+    cancel_user_bets("lucky-race",round_id,req.user_id,req.client_id)
 
     bets_by_round[round_id] = [
         bet
         for bet in old_bets
-        if bet["user_id"] != req.user_id
+        if not (bet.get("client_id","demo") == req.client_id and bet["user_id"] == req.user_id)
     ]
 
     await broadcast("clear")

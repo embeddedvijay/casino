@@ -16,9 +16,11 @@ from admin.services.auth_service import (
 from admin.services.game_service import (
     get_casino_settings,
     get_matka_markets,
+    get_matka_win_rates,
     save_casino_settings,
     save_casino_win_ratio,
     save_matka_markets,
+    save_matka_win_rates,
 )
 from core.casino import DEFAULT_GAME_SETTINGS, game_settings
 
@@ -47,6 +49,16 @@ class MatkaMarketInput(BaseModel):
 
 class MatkaMarketsUpdate(BaseModel):
     markets:list[MatkaMarketInput]=Field(min_length=1,max_length=50)
+
+
+class MatkaWinRatesUpdate(BaseModel):
+    ank:int=Field(gt=0,le=1000000)
+    jodi:int=Field(gt=0,le=1000000)
+    sp:int=Field(gt=0,le=1000000)
+    dp:int=Field(gt=0,le=1000000)
+    tp:int=Field(gt=0,le=1000000)
+    half_sangam:int=Field(gt=0,le=1000000)
+    full_sangam:int=Field(gt=0,le=1000000)
 
 
 class CasinoWinRatioUpdate(BaseModel):
@@ -131,6 +143,19 @@ async def update_matka_markets(payload:MatkaMarketsUpdate,session:dict=Depends(c
         return await save_matka_markets(session["client_id"],[market.model_dump() for market in payload.markets])
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail=str(exc)) from exc
+
+
+@router.get("/api/admin/games/matka/win-rates")
+async def read_matka_win_rates(session:dict=Depends(current_session)):
+    return {"success":True,"win_rates":await get_matka_win_rates(session["client_id"])}
+
+
+@router.put("/api/admin/games/matka/win-rates")
+async def update_matka_win_rates(payload:MatkaWinRatesUpdate,session:dict=Depends(current_session)):
+    values=payload.model_dump()
+    rates=await save_matka_win_rates(session["client_id"],values)
+    db.audit_logs.insert_one({"client_id":session["client_id"],"admin":session["username"],"action":"matka_win_rates_updated","changes":rates,"created_at":datetime.utcnow()})
+    return {"success":True,"message":"Matka win rates updated","win_rates":rates}
 
 
 @router.get("/api/admin/casino-settings")

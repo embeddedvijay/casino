@@ -2,12 +2,14 @@ from pydantic import BaseModel
 
 
 class MatkaBetRequest(BaseModel):
+    client_id: str = "demo"
     user_id: str
     bet_type: str
     amount: float
 
 
 class MatkaClearRequest(BaseModel):
+    client_id: str = "demo"
     user_id: str
 
 class MarketMessageRequest(BaseModel):

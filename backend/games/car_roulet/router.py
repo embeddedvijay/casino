@@ -1,4 +1,5 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from core.tenant import bind_request_identity,user_security
 
 from . import manager
 from .schemas import LuckyRaceBetRequest, LuckyRaceClearRequest
@@ -16,12 +17,14 @@ def get_state():
 
 
 @router.post("/bet")
-async def place_bet(req: LuckyRaceBetRequest):
+async def place_bet(req: LuckyRaceBetRequest,credentials=Depends(user_security)):
+    bind_request_identity(req,credentials)
     return await manager.place_bet(req)
 
 
 @router.post("/clear")
-async def clear_bets(req: LuckyRaceClearRequest):
+async def clear_bets(req: LuckyRaceClearRequest,credentials=Depends(user_security)):
+    bind_request_identity(req,credentials)
     return await manager.clear_bets(req)
 
 

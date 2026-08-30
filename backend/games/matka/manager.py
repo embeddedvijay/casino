@@ -125,11 +125,12 @@ async def place_bet(req):
     round_bets = bets_by_round.setdefault(round_id, [])
 
     try:
-        saved=persist_bet(game="matka",round_id=round_id,user_id=req.user_id,amount=req.amount,position_key=str(req.bet_type),metadata={"bet_type":req.bet_type})
+        saved=persist_bet(game="matka",round_id=round_id,user_id=req.user_id,amount=req.amount,position_key=str(req.bet_type),metadata={"bet_type":req.bet_type},client_id=req.client_id)
     except CasinoError as exc:
         return {"success":False,"message":str(exc),"code":exc.code}
     bet = {
         "id": saved["id"],
+        "client_id": req.client_id,
         "user_id": req.user_id,
         "round_id": round_id,
         "bet_type": req.bet_type,
@@ -151,10 +152,10 @@ async def clear_bets(req):
 
     round_id = state["round_id"]
     old_bets = bets_by_round.get(round_id, [])
-    cancel_user_bets("matka",round_id,req.user_id)
+    cancel_user_bets("matka",round_id,req.user_id,req.client_id)
 
     bets_by_round[round_id] = [
-        bet for bet in old_bets if bet["user_id"] != req.user_id
+        bet for bet in old_bets if not (bet.get("client_id","demo") == req.client_id and bet["user_id"] == req.user_id)
     ]
 
     await broadcast("clear")

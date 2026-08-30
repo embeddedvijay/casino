@@ -20,6 +20,14 @@ DEFAULT_GAME_SETTINGS = {
     "chicken-road": {"enabled": True, "min_bet": 50.0, "max_bet": 1000.0},
 }
 
+GAME_BET_COLLECTIONS = {
+    "aviator": "aviator_bets",
+    "dragon-tiger": "dragon_tiger_bets",
+    "lucky-race": "lucky_race_bets",
+    "teen-patti": "teen_patti_bets",
+    "andar-bahar": "andar_bahar_bets",
+}
+
 
 class CasinoError(ValueError):
     def __init__(self, message: str, code: str = "casino_error"):
@@ -35,17 +43,47 @@ def _plain_db():
     return getattr(db, "_raw", db)
 
 
+def _game_bet_collection(raw, game: str):
+    name = GAME_BET_COLLECTIONS.get(game)
+    return raw[name] if name else None
+
+
 def ensure_casino_indexes() -> None:
     raw = _plain_db()
+    raw.users.create_index(
+        [("client_id", ASCENDING), ("username", ASCENDING)],
+        unique=True,
+        sparse=True,
+        name="unique_client_username",
+    )
+    raw.users.create_index(
+        [("client_id", ASCENDING), ("mobile", ASCENDING)],
+        unique=True,
+        sparse=True,
+        name="unique_client_mobile",
+    )
     raw.casino_bets.create_index(
         [("game", ASCENDING), ("round_id", ASCENDING), ("user_id", ASCENDING), ("position_key", ASCENDING)],
         unique=True,
         name="unique_game_round_user_position",
     )
     raw.casino_bets.create_index([("user_id", ASCENDING), ("created_at", -1)])
+    raw.casino_bets.create_index(
+        [("client_id", ASCENDING), ("user_id", ASCENDING), ("created_at", -1)],
+        name="client_user_bets_latest",
+    )
     raw.casino_rounds.create_index([("game", ASCENDING), ("round_id", ASCENDING)], unique=True)
     raw.wallet_transactions.create_index([("user_id", ASCENDING), ("created_at", -1)])
+    raw.wallet_transactions.create_index(
+        [("client_id", ASCENDING), ("user_id", ASCENDING), ("created_at", -1)],
+        name="client_user_wallet_latest",
+    )
     raw.game_settings.create_index([("client_id", ASCENDING), ("game", ASCENDING)], unique=True)
+    for collection_name in GAME_BET_COLLECTIONS.values():
+        raw[collection_name].create_index(
+            [("client_id", ASCENDING), ("user_id", ASCENDING), ("created_at", -1)],
+            name="client_user_bets_latest",
+        )
 
 
 def recover_interrupted_games() -> dict:
@@ -70,7 +108,7 @@ def recover_interrupted_games() -> dict:
     return {"cancelled_bets":cancelled,"refunded_bets":refunded,"aborted_rounds":rounds}
 
 
-def user_query(user_id: str) -> dict:
+def user_query(user_id: str, client_id: str | None = None) -> dict:
     value = str(user_id or "").strip()
     if not value:
         raise CasinoError("User ID required", "user_required")
@@ -80,11 +118,14 @@ def user_query(user_id: str) -> dict:
     ]
     if ObjectId.is_valid(value):
         options.append({"_id": ObjectId(value)})
-    return {"$or": options}
+    query: dict = {"$or": options}
+    if client_id:
+        query = {"client_id": str(client_id), "$or": options}
+    return query
 
 
-def resolve_user(user_id: str) -> dict:
-    user = _plain_db().users.find_one(user_query(user_id))
+def resolve_user(user_id: str, client_id: str | None = None) -> dict:
+    user = _plain_db().users.find_one(user_query(user_id, client_id))
     if not user:
         raise CasinoError("User not found", "user_not_found")
     if user.get("status", "active") in {"blocked", "inactive", "suspended"}:
@@ -135,14 +176,16 @@ def wallet_balance(user: dict) -> float:
     return round(float(user.get("balance", 0) or 0), 2)
 
 
-def place_bet(*, game: str, round_id: str, user_id: str, amount: float, position_key: str, metadata: dict | None = None) -> dict:
+def place_bet(*, game: str, round_id: str, user_id: str, amount: float, position_key: str, metadata: dict | None = None, client_id: str | None = None) -> dict:
     raw = _plain_db()
-    user = resolve_user(user_id)
+    user = resolve_user(user_id, client_id)
+    tenant_id = str(user.get("client_id") or client_id or "demo")
+    canonical_user_id = str(user["_id"])
     amount = validate_bet(game, amount, user)
     now = utcnow()
     document = {
-        "game": game, "round_id": str(round_id), "user_id": str(user_id),
-        "user_ref": user["_id"], "client_id": user.get("client_id", "demo"),
+        "game": game, "round_id": str(round_id), "user_id": canonical_user_id,
+        "requested_user_id": str(user_id), "user_ref": user["_id"], "client_id": tenant_id,
         "position_key": str(position_key), "amount": amount, "bet": amount,
         "status": "pending", "payout": 0.0, "profit": -amount,
         "is_demo": is_demo_user(user), "metadata": metadata or {},
@@ -152,24 +195,35 @@ def place_bet(*, game: str, round_id: str, user_id: str, amount: float, position
         inserted = raw.casino_bets.insert_one(document)
     except DuplicateKeyError as exc:
         raise CasinoError("Bet already placed", "duplicate_bet") from exc
+    detail_collection = _game_bet_collection(raw, game)
+    if detail_collection is not None:
+        detail_collection.replace_one(
+            {"_id": inserted.inserted_id},
+            {"_id": inserted.inserted_id, "casino_bet_id": str(inserted.inserted_id), **document},
+            upsert=True,
+        )
 
     if not document["is_demo"]:
         updated = raw.users.find_one_and_update(
-            {"_id": user["_id"], "balance": {"$gte": amount}, "status": {"$nin": ["blocked", "inactive", "suspended"]}},
+            {"_id": user["_id"], "client_id": tenant_id, "balance": {"$gte": amount}, "status": {"$nin": ["blocked", "inactive", "suspended"]}},
             {"$inc": {"balance": -amount}, "$set": {"updated_at": now}},
             return_document=ReturnDocument.AFTER,
         )
         if not updated:
             raw.casino_bets.delete_one({"_id": inserted.inserted_id, "status": "pending"})
+            if detail_collection is not None:
+                detail_collection.delete_one({"_id": inserted.inserted_id, "status": "pending"})
             raise CasinoError("Insufficient balance", "insufficient_balance")
         user = updated
         raw.wallet_transactions.insert_one({
-            "user_id": str(user_id), "user_ref": user["_id"], "client_id": user.get("client_id", "demo"),
+            "user_id": canonical_user_id, "user_ref": user["_id"], "client_id": tenant_id,
             "type": "game_bet", "game": game, "amount": -amount,
             "reference_id": str(inserted.inserted_id), "round_id": str(round_id), "created_at": now,
         })
 
     raw.casino_bets.update_one({"_id": inserted.inserted_id, "status": "pending"}, {"$set": {"status": "active", "updated_at": now}})
+    if detail_collection is not None:
+        detail_collection.update_one({"_id": inserted.inserted_id, "status": "pending"}, {"$set": {"status": "active", "updated_at": now}})
     return {"id": str(inserted.inserted_id), **document, "status": "active", "balance": wallet_balance(user)}
 
 
@@ -192,9 +246,15 @@ def settle_bet(bet_id: str, payout: float, result: Any = None) -> dict | None:
         return None
     bet["profit"] = round(payout - float(bet["amount"]), 2)
     raw.casino_bets.update_one({"_id": bet["_id"]}, {"$set": {"profit": bet["profit"]}})
+    detail_collection = _game_bet_collection(raw, bet["game"])
+    if detail_collection is not None:
+        detail_collection.update_one({"_id": bet["_id"]}, {"$set": {
+            "status": bet["status"], "payout": payout, "profit": bet["profit"],
+            "result": result, "settled_at": now, "updated_at": now,
+        }})
     if payout and not bet.get("is_demo"):
         user = raw.users.find_one_and_update(
-            {"_id": bet["user_ref"]}, {"$inc": {"balance": payout}, "$set": {"updated_at": now}},
+            {"_id": bet["user_ref"], "client_id": bet.get("client_id", "demo")}, {"$inc": {"balance": payout}, "$set": {"updated_at": now}},
             return_document=ReturnDocument.AFTER,
         )
         raw.wallet_transactions.insert_one({
@@ -204,14 +264,16 @@ def settle_bet(bet_id: str, payout: float, result: Any = None) -> dict | None:
         })
         bet["balance"] = wallet_balance(user or {})
     else:
-        user = raw.users.find_one({"_id": bet["user_ref"]}) or {}
+        user = raw.users.find_one({"_id": bet["user_ref"], "client_id": bet.get("client_id", "demo")}) or {}
         bet["balance"] = wallet_balance(user)
     return bet
 
 
-def cancel_user_bets(game: str, round_id: str, user_id: str) -> int:
+def cancel_user_bets(game: str, round_id: str, user_id: str, client_id: str | None = None) -> int:
     raw = _plain_db()
-    bets = list(raw.casino_bets.find({"game": game, "round_id": str(round_id), "user_id": str(user_id), "status": "active"}))
+    user = resolve_user(user_id, client_id)
+    tenant_id = str(user.get("client_id") or client_id or "demo")
+    bets = list(raw.casino_bets.find({"client_id": tenant_id, "game": game, "round_id": str(round_id), "user_ref": user["_id"], "status": "active"}))
     cancelled = 0
     for bet in bets:
         now = utcnow()
@@ -219,8 +281,11 @@ def cancel_user_bets(game: str, round_id: str, user_id: str) -> int:
         if not changed.modified_count:
             continue
         cancelled += 1
+        detail_collection = _game_bet_collection(raw, game)
+        if detail_collection is not None:
+            detail_collection.update_one({"_id": bet["_id"]}, {"$set": {"status": "cancelled", "cancelled_at": now, "updated_at": now}})
         if not bet.get("is_demo"):
-            raw.users.update_one({"_id": bet["user_ref"]}, {"$inc": {"balance": bet["amount"]}, "$set": {"updated_at": now}})
+            raw.users.update_one({"_id": bet["user_ref"], "client_id": tenant_id}, {"$inc": {"balance": bet["amount"]}, "$set": {"updated_at": now}})
             raw.wallet_transactions.insert_one({
                 "user_id": bet["user_id"], "user_ref": bet["user_ref"], "client_id": bet.get("client_id", "demo"),
                 "type": "game_refund", "game": game, "amount": bet["amount"],
@@ -245,8 +310,9 @@ def close_round(game: str, round_id: str, result: Any) -> None:
     )
 
 
-def bet_history(user_id: str, game: str | None = None, limit: int = 50) -> list[dict]:
-    query = {"user_id": str(user_id)}
+def bet_history(user_id: str, game: str | None = None, limit: int = 50, client_id: str | None = None) -> list[dict]:
+    user = resolve_user(user_id, client_id)
+    query = {"client_id": str(user.get("client_id") or client_id or "demo"), "user_ref": user["_id"]}
     if game:
         query["game"] = game
     records = []

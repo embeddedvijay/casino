@@ -1,7 +1,8 @@
 from fastapi import APIRouter,HTTPException,Query
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime,timedelta,timezone
+import secrets
 from bson import ObjectId
 from database import db
 
@@ -10,6 +11,29 @@ router=APIRouter(prefix="/auth",tags=["Auth Users"])
 users_collection=db["users"]
 clients_collection=db["clients"]
 password_reset_collection=db["password_reset_requests"]
+sessions_collection=db["user_sessions"]
+
+def create_session(user):
+    token=secrets.token_urlsafe(48)
+    now=datetime.now(timezone.utc)
+    sessions_collection.create_index("token",unique=True,name="unique_user_session_token")
+    sessions_collection.create_index("expires_at",expireAfterSeconds=0,name="expire_user_sessions")
+    sessions_collection.insert_one({
+        "token":token,
+        "access_token":token,
+        "client_id":str(user["client_id"]),
+        "user_id":str(user["_id"]),
+        "user_ref":user["_id"],
+        "role":"user",
+        "status":"active",
+        "created_at":now,
+        "expires_at":now+timedelta(days=30),
+    })
+    return token
+
+def login_response(message,user):
+    token=create_session(user)
+    return {"message":message,"access_token":token,"token_type":"bearer","client_id":user["client_id"],"user":serialize_user(user)}
 
 class CreateAccount(BaseModel):
     client_id:str
@@ -83,7 +107,7 @@ def create_account(data:CreateAccount):
     }
     result=users_collection.insert_one(user)
     new_user=users_collection.find_one({"_id":result.inserted_id})
-    return {"message":"Account created successfully","user":serialize_user(new_user)}
+    return login_response("Account created successfully",new_user)
 
 @router.post("/login")
 def login(data:LoginUser):
@@ -94,7 +118,7 @@ def login(data:LoginUser):
     if user.get("status")!="active":
         raise HTTPException(status_code=403,detail="User account inactive")
     users_collection.update_one({"_id":user["_id"]},{"$set":{"last_login":datetime.utcnow()}})
-    return {"message":"Login successful","user":serialize_user(user)}
+    return login_response("Login successful",user)
 
 @router.post("/demo-login")
 def demo_login(client_id:str=Query(...)):
@@ -116,7 +140,7 @@ def demo_login(client_id:str=Query(...)):
         }
         result=users_collection.insert_one(demo)
         user=users_collection.find_one({"_id":result.inserted_id})
-    return {"message":"Demo login successful","user":serialize_user(user)}
+    return login_response("Demo login successful",user)
 
 @router.post("/forgot-password")
 def forgot_password(data:ForgotPassword):

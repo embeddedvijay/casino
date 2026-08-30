@@ -19,6 +19,7 @@ except Exception:
 
 MONGO_URL=os.getenv("MATKA_MONGO_URI") or os.getenv("MONGO_URI") or os.getenv("MONGO_LOCAL_URL") or "mongodb://localhost:27017/"
 CASINO_DB_NAME=os.getenv("CASINO_DB_NAME",os.getenv("DB_NAME","casino"))
+MATKA_BETS_DB_NAME=os.getenv("MATKA_BETS_DB_NAME","matka_bets")
 DEFAULT_CLIENT_ID=os.getenv("DEFAULT_CLIENT_ID","demo")
 
 myclient=pymongo.MongoClient(MONGO_URL,maxPoolSize=int(os.getenv("MONGO_MAX_POOL_SIZE","20")),serverSelectionTimeoutMS=5000,appname="gold365-matka")
@@ -38,13 +39,31 @@ def get_matka_db(client_id=None):
     return myclient[get_client_db_name(client_id)]
 
 def get_play_collection(client_id=None):
-    return get_matka_db(client_id)[get_game_date()]
+    # One shared Matka database with date-wise collections. Multi-tenant
+    # ownership remains in each document's Client/client_id fields.
+    return myclient[MATKA_BETS_DB_NAME][get_game_date()]
+
+def get_play_collection_by_date(date_key):
+    return myclient[MATKA_BETS_DB_NAME][str(date_key)]
 
 def get_users_collection(client_id=None):
     return casino_db["users"]
 
 def get_clients_collection():
     return casino_db["clients"]
+
+def get_win_rates(client_id=None):
+    client_id=str(client_id or DEFAULT_CLIENT_ID)
+    saved=casino_db["matka_win_rates"].find_one({"client_id":client_id},{"_id":0}) or {}
+    return {
+        "ANK":int(saved.get("ank",round(WIN_RATES["ANK"]))),
+        "Jodi":int(saved.get("jodi",WIN_RATES["Jodi"])),
+        "SP":int(saved.get("sp",WIN_RATES["SP"])),
+        "DP":int(saved.get("dp",WIN_RATES["DP"])),
+        "TP":int(saved.get("tp",WIN_RATES["TP"])),
+        "HS":int(saved.get("half_sangam",WIN_RATES["HS"])),
+        "FS":int(saved.get("full_sangam",WIN_RATES["FS"])),
+    }
 
 current_date_time=datetime.datetime.now()
 date=get_game_date()
@@ -578,6 +597,7 @@ def update_plays(res_doc:dict):
     try:
         for client in ["tele_admin"]:
             client = client.lower()
+            rates=get_win_rates(client)
             plays_cur = get_play_collection(client).find({
                 "Date":date,
                 "Client":client,
@@ -628,11 +648,11 @@ def update_plays(res_doc:dict):
 
                     match len(list(set([x for x in OP_Panal]))):
                         case 1:
-                            Panal_price = WIN_RATES['TP']
+                            Panal_price = rates['TP']
                         case 2:
-                            Panal_price = WIN_RATES['DP']
+                            Panal_price = rates['DP']
                         case _:
-                            Panal_price = WIN_RATES['SP']
+                            Panal_price = rates['SP']
 
                     for play in plays:
                         win = {
@@ -660,7 +680,7 @@ def update_plays(res_doc:dict):
                                 if HSB and HSB.strip() in res_ls[:-1]:
                                     win["HSB"] += int(res_ls[-1] )
                                 
-                            win_amt = int(win[OP_Ank] *WIN_RATES['ANK']) + int(win[OP_Panal]*Panal_price )+ int(win["Jodi"]*WIN_RATES['Jodi']) + int(win["FS"]*WIN_RATES['FS']) + int(win["HSA"]*WIN_RATES['HS']) + + int(win["HSB"]*WIN_RATES['HS']) 
+                            win_amt = int(win[OP_Ank]*rates['ANK'])+int(win[OP_Panal]*Panal_price)+int(win["Jodi"]*rates['Jodi'])+int(win["FS"]*rates['FS'])+int(win["HSA"]*rates['HS'])+int(win["HSB"]*rates['HS'])
                             get_play_collection(client).find_one_and_update(
                                 {
                                     "inserted_id" : play["inserted_id"],
@@ -675,11 +695,11 @@ def update_plays(res_doc:dict):
 
                     match len(list(set([x for x in CL_Panal]))):
                         case 1:
-                            Panal_price = 600
+                            Panal_price = rates['TP']
                         case 2:
-                            Panal_price = 300
+                            Panal_price = rates['DP']
                         case _:
-                            Panal_price = 150
+                            Panal_price = rates['SP']
                             
                     for play in plays:
                         win = {
@@ -694,7 +714,7 @@ def update_plays(res_doc:dict):
                                 if CL_Panal in res_ls[:-1]:
                                     win[CL_Panal] += int(res_ls[-1])
                                 
-                            win_amt = int(win[CL_Ank]*9.5) +int( win[CL_Panal]*Panal_price)
+                            win_amt = int(win[CL_Ank]*rates['ANK'])+int(win[CL_Panal]*Panal_price)
                             get_play_collection(client).find_one_and_update(
                                 {
                                     "inserted_id" : play["inserted_id"],

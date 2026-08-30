@@ -29,12 +29,28 @@ router = APIRouter(prefix="/api/portal", tags=["User Portal"])
 security = HTTPBearer(auto_error=False)
 
 
+class BankDetails(BaseModel):
+    account_holder_name: str | None = Field(default=None, max_length=100)
+    bank_name: str | None = Field(default=None, max_length=100)
+    account_number: str | None = Field(default=None, max_length=34)
+    ifsc_code: str | None = Field(default=None, max_length=20)
+    branch_name: str | None = Field(default=None, max_length=100)
+
+
+class UpiDetails(BaseModel):
+    upi_id: str | None = Field(default=None, max_length=100)
+    upi_mobile: str | None = Field(default=None, max_length=15)
+
+
 class ProfileUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=80)
+    full_name: str | None = Field(default=None, min_length=2, max_length=80)
     email: str | None = Field(default=None, max_length=160)
     mobile: str | None = Field(default=None, min_length=8, max_length=20)
     avatar: str | None = Field(default=None, max_length=500)
     language: str | None = Field(default=None, max_length=20)
+    bank_details: BankDetails | None = None
+    upi_details: UpiDetails | None = None
 
 
 class TicketCreate(BaseModel):
@@ -179,7 +195,7 @@ def bet_history(
 
 @router.get("/promotions")
 def promotions(_: str = Depends(require_user)):
-    return {"success": True, "items": list_promotions(db)}
+    return {"success": True, "items": list_promotions(db,_)}
 
 
 @router.post("/support/tickets", status_code=201)

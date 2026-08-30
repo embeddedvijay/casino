@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
+from core.tenant import query_identity,user_security
 
 from core.casino import DEFAULT_GAME_SETTINGS, bet_history, game_settings
 
@@ -19,7 +20,10 @@ def game_catalog(client_id: str = "demo"):
 @router.get("/bets/history")
 def user_bet_history(
     user_id: str = Query(..., min_length=1),
+    client_id: str = Query("demo"),
     game: str | None = None,
     limit: int = Query(50, ge=1, le=200),
+    credentials=Depends(user_security),
 ):
-    return {"success": True, "history": bet_history(user_id, game, limit)}
+    user_id,client_id=query_identity(user_id,client_id,credentials)
+    return {"success": True, "history": bet_history(user_id, game, limit,client_id)}

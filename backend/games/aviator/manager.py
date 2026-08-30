@@ -72,14 +72,14 @@ async def place_bet(req):
         return {"success":False,"message":"Invalid seat"}
     round_id=state["round_id"]
     round_bets=bets_by_round.setdefault(round_id,[])
-    old=next((bet for bet in round_bets if bet["user_id"]==req.user_id and bet["seat"]==req.seat),None)
+    old=next((bet for bet in round_bets if bet.get("client_id","demo")==req.client_id and bet["user_id"]==req.user_id and bet["seat"]==req.seat),None)
     if old:
         return {"success":False,"message":"Bet already placed"}
     try:
-        saved=persist_bet(game="aviator",round_id=round_id,user_id=req.user_id,amount=req.amount,position_key=f"seat:{req.seat}",metadata={"seat":req.seat})
+        saved=persist_bet(game="aviator",round_id=round_id,user_id=req.user_id,amount=req.amount,position_key=f"seat:{req.seat}",metadata={"seat":req.seat},client_id=req.client_id)
     except CasinoError as exc:
         return {"success":False,"message":str(exc),"code":exc.code}
-    bet={"id":saved["id"],"user_id":req.user_id,"seat":req.seat,"round_id":round_id,"amount":float(req.amount),"status":"active","cashout_multiplier":None,"cashout_amount":0.0,"cashout_time":None,"balance":saved["balance"]}
+    bet={"id":saved["id"],"client_id":req.client_id,"user_id":req.user_id,"seat":req.seat,"round_id":round_id,"amount":float(req.amount),"status":"active","cashout_multiplier":None,"cashout_amount":0.0,"cashout_time":None,"balance":saved["balance"]}
     round_bets.append(bet)
     await broadcast("bet")
     return {"success":True,"message":"Bet accepted","bet_id":bet["id"],"balance":saved["balance"]}
@@ -89,7 +89,7 @@ async def cashout(req):
         return {"success":False,"message":"Cashout not available"}
     round_id=state["round_id"]
     round_bets=bets_by_round.get(round_id,[])
-    bet=next((item for item in round_bets if item["user_id"]==req.user_id and item["seat"]==req.seat and item["status"]=="active"),None)
+    bet=next((item for item in round_bets if item.get("client_id","demo")==req.client_id and item["user_id"]==req.user_id and item["seat"]==req.seat and item["status"]=="active"),None)
     if not bet:
         return {"success":False,"message":"No active bet"}
     multiplier=round(float(state["multiplier"]),2)

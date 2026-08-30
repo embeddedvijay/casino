@@ -13,8 +13,8 @@ def raw_db(monkeypatch):
     return database
 
 
-def add_user(database,username="real",balance=1000,is_demo=False):
-    return database.users.insert_one({"client_id":"demo","username":username,"user_id":username,"balance":balance,"status":"active","is_demo":is_demo,"role":"demo" if is_demo else "user"}).inserted_id
+def add_user(database,username="real",balance=1000,is_demo=False,client_id="demo"):
+    return database.users.insert_one({"client_id":client_id,"username":username,"user_id":username,"balance":balance,"status":"active","is_demo":is_demo,"role":"demo" if is_demo else "user"}).inserted_id
 
 
 def test_real_user_bet_debits_wallet(raw_db):
@@ -68,3 +68,17 @@ def test_restart_recovery_refunds_open_real_bet(raw_db):
     assert result=={"cancelled_bets":1,"refunded_bets":1,"aborted_rounds":1}
     assert raw_db.users.find_one({"username":"real"})["balance"]==1000
     assert casino.recover_interrupted_games()=={"cancelled_bets":0,"refunded_bets":0,"aborted_rounds":0}
+
+
+def test_same_username_is_isolated_between_clients(raw_db):
+    raw_db.clients.insert_one({"client_id":"casino-b","status":"active"})
+    add_user(raw_db,"same-mobile",1000,client_id="demo")
+    add_user(raw_db,"same-mobile",700,client_id="casino-b")
+    first=casino.place_bet(game="aviator",round_id="TENANT-1",user_id="same-mobile",client_id="demo",amount=100,position_key="seat:1")
+    second=casino.place_bet(game="aviator",round_id="TENANT-1",user_id="same-mobile",client_id="casino-b",amount=50,position_key="seat:1")
+    assert first["client_id"]=="demo"
+    assert second["client_id"]=="casino-b"
+    assert raw_db.users.find_one({"client_id":"demo","username":"same-mobile"})["balance"]==900
+    assert raw_db.users.find_one({"client_id":"casino-b","username":"same-mobile"})["balance"]==650
+    assert raw_db.casino_bets.count_documents({"client_id":"demo"})==1
+    assert raw_db.casino_bets.count_documents({"client_id":"casino-b"})==1

@@ -66,7 +66,7 @@ def game_config():
     }
 
 
-def play(user_id: str, amount: float, risk: str, rows: int):
+def play(user_id: str, amount: float, risk: str, rows: int, client_id: str = "demo"):
     risk = str(risk or "").lower()
     if rows not in ALLOWED_ROWS:
         raise HTTPException(status_code=400, detail="Rows must be 8, 12 or 16")
@@ -76,7 +76,7 @@ def play(user_id: str, amount: float, risk: str, rows: int):
     round_id="PL-"+uuid.uuid4().hex
     saved=None
     try:
-        saved=place_bet(game="plinko",round_id=round_id,user_id=user_id,amount=amount,position_key="drop",metadata={"risk":risk,"rows":rows})
+        saved=place_bet(game="plinko",round_id=round_id,user_id=user_id,amount=amount,position_key="drop",metadata={"risk":risk,"rows":rows},client_id=client_id)
         path = [RNG.randrange(2) for _ in range(rows)]
         slot = sum(path)
         multipliers = multiplier_table(rows, risk)
@@ -86,7 +86,8 @@ def play(user_id: str, amount: float, risk: str, rows: int):
         now=utcnow()
 
         bet = {
-            "user_id": str(user_id),
+            "client_id": client_id,
+            "user_id": saved["user_id"],
             "game": "plinko",
             "amount": amount,
             "bet": amount,
@@ -120,14 +121,14 @@ def play(user_id: str, amount: float, risk: str, rows: int):
         raise
     except Exception as exc:
         if saved:
-            cancel_user_bets("plinko",round_id,user_id)
+            cancel_user_bets("plinko",round_id,user_id,client_id)
         raise HTTPException(status_code=500, detail="Plinko bet could not be completed") from exc
 
 
-def history(user_id: str, limit: int = 20):
+def history(user_id: str, limit: int = 20, client_id: str = "demo"):
     limit = max(1, min(int(limit), 100))
     records = []
-    for item in db.plinko_bets.find({"user_id": str(user_id)}).sort("created_at", -1).limit(limit):
+    for item in db.plinko_bets.find({"client_id": client_id, "user_id": str(user_id)}).sort("created_at", -1).limit(limit):
         item["id"] = str(item.pop("_id"))
         for key in ("created_at", "settled_at"):
             if item.get(key):

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from core.tenant import bind_request_identity,user_security
 
 from . import manager
 from .schemas import AviatorBetRequest, AviatorCashoutRequest
@@ -13,12 +14,14 @@ def get_state():
 
 
 @router.post("/bet")
-async def place_bet(req: AviatorBetRequest):
+async def place_bet(req: AviatorBetRequest,credentials=Depends(user_security)):
+    bind_request_identity(req,credentials)
     return await manager.place_bet(req)
 
 
 @router.post("/cashout")
-async def cashout(req: AviatorCashoutRequest):
+async def cashout(req: AviatorCashoutRequest,credentials=Depends(user_security)):
+    bind_request_identity(req,credentials)
     return await manager.cashout(req)
 
 

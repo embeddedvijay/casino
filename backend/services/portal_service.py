@@ -27,6 +27,13 @@ BET_COLLECTIONS = (
     ("bets", None),
 )
 
+GAME_ALIASES = {
+    "car-roulet":"lucky-race","car-roulette":"lucky-race","lucky-race":"lucky-race",
+    "luck-race":"lucky-race","aviator":"aviator","dragon-tiger":"dragon-tiger",
+    "matka":"matka","teen-patti":"teen-patti","andar-bahar":"andar-bahar",
+    "plinko":"plinko","chicken-road":"chicken-road",
+}
+
 WITHDRAWAL_MIN = 500.0
 WITHDRAWAL_MAX = 50_000.0
 WITHDRAWAL_DAILY_LIMIT = 5
@@ -68,8 +75,15 @@ def get_user(db, user_id: str) -> dict | None:
 
 
 def update_user(db, user_id: str, changes: dict) -> dict | None:
-    allowed = {"name", "email", "mobile", "avatar", "language"}
+    allowed = {"name", "full_name", "email", "mobile", "avatar", "language", "bank_details", "upi_details"}
     payload = {key: value for key, value in changes.items() if key in allowed and value is not None}
+    for section in ("bank_details","upi_details"):
+        if isinstance(payload.get(section),dict):
+            payload[section]={key:str(value).strip() for key,value in payload[section].items() if value is not None}
+    display_name=str(payload.get("full_name") or payload.get("name") or "").strip()
+    if display_name:
+        payload["name"]=display_name
+        payload["full_name"]=display_name
     if payload:
         payload["updated_at"] = utcnow()
         db.users.update_one(user_query(user_id), {"$set": payload})
@@ -80,8 +94,11 @@ def balance_for(user: dict) -> float:
     return float(user.get("balance", user.get("wallet_balance", 0)) or 0)
 
 
-def transaction_query(user_id: str) -> dict:
-    return {"$or": [{"user_id": user_id}, {"username": user_id}, {"user_name": user_id}]}
+def transaction_query(db, user_id: str) -> dict:
+    raw_user=db.users.find_one(user_query(user_id),{"_id":1,"client_id":1,"user_id":1,"username":1,"user_name":1,"mobile":1})
+    if not raw_user:return {"_id":{"$exists":False}}
+    values=canonical_user_values(raw_user,user_id)
+    return {"client_id":str(raw_user.get("client_id") or "demo"),"$or":[{"user_id":{"$in":values}},{"username":{"$in":values}},{"user_name":{"$in":values}}]}
 
 
 def canonical_user_values(user: dict, requested_user_id: str) -> list[str]:
@@ -119,7 +136,7 @@ def withdrawal_eligibility(db, user_id: str) -> dict:
         raise ValueError("User not found")
     now = utcnow()
     values = canonical_user_values(raw_user, user_id)
-    wallet_owner = {"$or": [{"user_id": {"$in": values}}, {"username": {"$in": values}}, {"user_name": {"$in": values}}]}
+    wallet_owner = {"client_id":str(raw_user.get("client_id") or "demo"),"$or": [{"user_id": {"$in": values}}, {"username": {"$in": values}}, {"user_name": {"$in": values}}]}
 
     last_withdrawal = db.wallet_transactions.find_one(
         {"$and": [wallet_owner, {"type": "withdrawal"}, {"status": {"$in": ["approved", "completed", "success"]}}]},
@@ -199,7 +216,7 @@ def withdrawal_eligibility(db, user_id: str) -> dict:
 
 
 def list_transactions(db, user_id: str, page: int, limit: int, kind: str | None = None) -> dict:
-    query = transaction_query(user_id)
+    query = transaction_query(db, user_id)
     if kind and kind != "all":
         query = {"$and": [query, {"type": kind}]}
     collection = db.wallet_transactions
@@ -212,7 +229,7 @@ def wallet_summary(db, user_id: str) -> dict | None:
     user = get_user(db, user_id)
     if not user:
         return None
-    query = transaction_query(user_id)
+    query = transaction_query(db, user_id)
     pipeline = [
         {"$match": query},
         {"$group": {"_id": "$type", "amount": {"$sum": {"$ifNull": ["$amount", 0]}}}},
@@ -234,7 +251,10 @@ def wallet_summary(db, user_id: str) -> dict | None:
         "currency": user.get("currency", "INR"),
         "total_deposit": totals.get("deposit", 0),
         "total_withdrawal": totals.get("withdrawal", 0),
-        "total_winnings": totals.get("win", totals.get("winning", 0)),
+        "total_winnings": sum(
+            totals.get(kind,0)
+            for kind in ("win","winning","game_win","matka_win")
+        ),
     }
     summary["withdrawal"] = withdrawal_eligibility(db, user_id)
     return summary
@@ -257,28 +277,43 @@ def bet_owner_query(values: list[str]) -> dict:
     return {"$or": choices}
 
 
+def canonical_game(value: Any) -> str:
+    key=re.sub(r"[^a-z0-9]+","-",str(value or "").strip().lower()).strip("-")
+    return GAME_ALIASES.get(key,key)
+
+
 def list_bets(db, user_id: str, page: int, limit: int, game: str | None = None, status: str | None = None) -> dict:
     raw_user = db.users.find_one(user_query(user_id), {
-        "_id": 1, "user_id": 1, "username": 1, "user_name": 1, "mobile": 1,
+        "_id": 1, "client_id":1, "user_id": 1, "username": 1, "user_name": 1, "mobile": 1,
     })
     if not raw_user:
         return {"items": [], "page": page, "limit": limit, "total": 0, "has_more": False}
     values = canonical_user_values(raw_user, user_id)
+    selected_game=canonical_game(game) if game and game!="all" else ""
     rows: list[dict] = []
-    seen: set[tuple[str, str]] = set()
-    for collection_name, default_game in BET_COLLECTIONS:
+    seen: set[str] = set()
+    collections=list(BET_COLLECTIONS)
+    known={name for name,_ in collections}
+    for name in db.list_collection_names():
+        if name.startswith("matka_bets.") and name not in known:
+            collections.append((name,"matka"))
+    for collection_name, default_game in collections:
         if collection_name not in db.list_collection_names():
             continue
-        if game and game != "all" and default_game and default_game != game:
+        collection_game=canonical_game(default_game)
+        if selected_game and collection_game and collection_game != selected_game:
             continue
-        query: dict = bet_owner_query(values)
+        query: dict = {"$and":[{"client_id":str(raw_user.get("client_id") or "demo")},bet_owner_query(values)]}
         if status and status != "all":
             query = {"$and": [query, {"status": {"$regex": f"^{status}$", "$options": "i"}}]}
         for row in db[collection_name].find(query).sort([("created_at", DESCENDING), ("_id", DESCENDING)]).limit(500):
             item = serialize(row)
-            item.setdefault("game", default_game or item.get("game", "unknown"))
+            row_game=canonical_game(item.get("game") or item.get("game_type") or default_game)
+            item["game"]=row_game or "unknown"
             item["collection"] = collection_name
-            identity = (collection_name, str(item.get("_id") or item.get("bet_id") or item.get("round_id") or ""))
+            if selected_game and item["game"]!=selected_game:
+                continue
+            identity = str(item.get("casino_bet_id") or item.get("_id") or item.get("bet_id") or item.get("round_id") or "")
             if identity in seen:
                 continue
             seen.add(identity)
@@ -289,9 +324,11 @@ def list_bets(db, user_id: str, page: int, limit: int, game: str | None = None, 
     return {"items": rows[start:start + limit], "page": page, "limit": limit, "total": total, "has_more": start + limit < total}
 
 
-def list_promotions(db) -> list[dict]:
+def list_promotions(db,user_id: str) -> list[dict]:
     now = utcnow()
+    user=db.users.find_one(user_query(user_id),{"client_id":1}) or {}
     query = {
+        "client_id":str(user.get("client_id") or "demo"),
         "status": {"$in": ["active", "Active", True]},
         "$and": [
             {"$or": [{"starts_at": {"$exists": False}}, {"starts_at": None}, {"starts_at": {"$lte": now}}]},
@@ -302,9 +339,11 @@ def list_promotions(db) -> list[dict]:
 
 
 def create_ticket(db, user_id: str, subject: str, message: str, category: str) -> dict:
+    user=db.users.find_one(user_query(user_id),{"_id":1,"client_id":1}) or {}
     document = {
         "ticket_id": f"TKT-{int(utcnow().timestamp() * 1000)}",
-        "user_id": user_id,
+        "client_id":str(user.get("client_id") or "demo"),
+        "user_id":str(user.get("_id") or user_id),
         "subject": subject.strip(),
         "message": message.strip(),
         "category": category,
@@ -319,7 +358,8 @@ def create_ticket(db, user_id: str, subject: str, message: str, category: str) -
 
 
 def list_tickets(db, user_id: str, page: int, limit: int) -> dict:
-    query = {"user_id": user_id}
+    user=db.users.find_one(user_query(user_id),{"_id":1,"client_id":1}) or {}
+    query = {"client_id":str(user.get("client_id") or "demo"),"user_id":str(user.get("_id") or user_id)}
     total = db.support_tickets.count_documents(query)
     rows = list(db.support_tickets.find(query).sort([("updated_at", DESCENDING), ("_id", DESCENDING)]).skip((page - 1) * limit).limit(limit))
     return {"items": serialize(rows), "page": page, "limit": limit, "total": total, "has_more": page * limit < total}
@@ -583,7 +623,8 @@ def submit_deposit_qr(db, user_id: str, reference: str) -> dict:
 
 
 def list_notifications(db, user_id: str, page: int, limit: int) -> dict:
-    query = {"user_id": user_id}
+    user=db.users.find_one(user_query(user_id),{"_id":1,"client_id":1}) or {}
+    query = {"client_id":str(user.get("client_id") or "demo"),"user_id":str(user.get("_id") or user_id)}
     total = db.notifications.count_documents(query)
     unread = db.notifications.count_documents({**query, "read": {"$ne": True}})
     rows = list(db.notifications.find(query).sort([("created_at", DESCENDING), ("_id", DESCENDING)]).skip((page - 1) * limit).limit(limit))
@@ -591,7 +632,8 @@ def list_notifications(db, user_id: str, page: int, limit: int) -> dict:
 
 
 def mark_notifications_read(db, user_id: str) -> int:
-    result = db.notifications.update_many({"user_id": user_id, "read": {"$ne": True}}, {"$set": {"read": True, "read_at": utcnow()}})
+    user=db.users.find_one(user_query(user_id),{"_id":1,"client_id":1}) or {}
+    result = db.notifications.update_many({"client_id":str(user.get("client_id") or "demo"),"user_id":str(user.get("_id") or user_id), "read": {"$ne": True}}, {"$set": {"read": True, "read_at": utcnow()}})
     return result.modified_count
 
 
@@ -602,5 +644,5 @@ def dashboard(db, user_id: str) -> dict | None:
     wallet = wallet_summary(db, user_id)
     transactions = list_transactions(db, user_id, 1, 5)
     bets = list_bets(db, user_id, 1, 5)
-    open_tickets = db.support_tickets.count_documents({"user_id": user_id, "status": {"$in": ["open", "pending"]}})
+    open_tickets = db.support_tickets.count_documents({"client_id":str(user.get("client_id") or "demo"),"user_id":str(user.get("_id") or user_id), "status": {"$in": ["open", "pending"]}})
     return {"profile": user, "wallet": wallet, "recent_transactions": transactions["items"], "recent_bets": bets["items"], "open_support_tickets": open_tickets}

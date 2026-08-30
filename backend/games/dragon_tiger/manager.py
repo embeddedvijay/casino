@@ -110,11 +110,12 @@ async def place_bet(req):
         # persistence layer's duplicate-bet guard from blocking repeat bets on
         # the same Dragon/Tiger option during the open betting window.
         bet_key=f"{req.bet_type}:{uuid.uuid4()}"
-        saved=persist_bet(game="dragon-tiger",round_id=round_id,user_id=req.user_id,amount=req.amount,position_key=bet_key,metadata={"bet_type":req.bet_type})
+        saved=persist_bet(game="dragon-tiger",round_id=round_id,user_id=req.user_id,amount=req.amount,position_key=bet_key,metadata={"bet_type":req.bet_type},client_id=req.client_id)
     except CasinoError as exc:
         return {"success":False,"message":str(exc),"code":exc.code}
     bet = {
         "id": saved["id"],
+        "client_id": req.client_id,
         "user_id": req.user_id,
         "round_id": round_id,
         "bet_type": req.bet_type,
@@ -144,10 +145,10 @@ async def clear_bets(req):
 
     round_id = state["round_id"]
     old = bets_by_round.get(round_id, [])
-    cancel_user_bets("dragon-tiger",round_id,req.user_id)
+    cancel_user_bets("dragon-tiger",round_id,req.user_id,req.client_id)
 
     bets_by_round[round_id] = [
-        b for b in old if b["user_id"] != req.user_id
+        b for b in old if not (b.get("client_id","demo") == req.client_id and b["user_id"] == req.user_id)
     ]
 
     await broadcast("clear")

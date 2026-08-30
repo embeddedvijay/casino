@@ -13,15 +13,15 @@ def now():
     return datetime.datetime.now(datetime.timezone.utc)
 
 
-def user_query(user_id):
+def user_query(user_id,client_id="demo"):
     choices = [{"user_id": user_id}, {"username": user_id}, {"mobile": user_id}]
     if ObjectId.is_valid(user_id):
         choices.append({"_id": ObjectId(user_id)})
-    return {"$or": choices}
+    return {"client_id":client_id,"$or": choices}
 
 
-def wallet_balance(user_id):
-    user = db.users.find_one(user_query(user_id), {"balance": 1, "wallet_balance": 1})
+def wallet_balance(user_id,client_id="demo"):
+    user = db.users.find_one(user_query(user_id,client_id), {"balance": 1, "wallet_balance": 1})
     return round(float((user or {}).get("balance", (user or {}).get("wallet_balance", 0)) or 0), 2)
 
 
@@ -29,16 +29,16 @@ def start(req):
     round_id = "AB-" + uuid.uuid4().hex[:12].upper()
     joker, deck = create_round()
     db.andar_bahar_rounds.insert_one({
-        "round_id": round_id, "user_id": req.user_id, "joker": joker, "deck": deck,
+        "client_id":req.client_id,"round_id": round_id, "user_id": req.user_id, "joker": joker, "deck": deck,
         "status": "choosing", "created_at": now(), "updated_at": now(),
     })
-    return {"success": True, "round_id": round_id, "joker": joker, "balance": wallet_balance(req.user_id)}
+    return {"success": True, "round_id": round_id, "joker": joker, "balance": wallet_balance(req.user_id,req.client_id)}
 
 
 def play(req):
     amount = round(float(req.amount), 2)
     row = db.andar_bahar_rounds.find_one_and_update(
-        {"round_id": req.round_id, "user_id": req.user_id, "status": "choosing"},
+        {"client_id":req.client_id,"round_id": req.round_id, "user_id": req.user_id, "status": "choosing"},
         {"$set": {"status": "betting", "updated_at": now()}},
     )
     if not row:
@@ -53,11 +53,12 @@ def play(req):
             amount=amount,
             position_key=req.side,
             metadata={"side": req.side},
+            client_id=req.client_id,
         )
     except CasinoError as exc:
         close_round("andar-bahar", round_id, {"cancelled": True, "reason": str(exc)})
         db.andar_bahar_rounds.update_one({"_id": row["_id"], "status": "betting"}, {"$set": {"status": "choosing", "updated_at": now()}})
-        return {"success": False, "message": str(exc), "code": exc.code, "balance": wallet_balance(req.user_id)}
+        return {"success": False, "message": str(exc), "code": exc.code, "balance": wallet_balance(req.user_id,req.client_id)}
     except Exception:
         close_round("andar-bahar", round_id, {"cancelled": True, "reason": "bet_error"})
         db.andar_bahar_rounds.update_one(
@@ -77,6 +78,6 @@ def play(req):
     return {
         "success": True, "round_id": round_id, "joker": joker, "deals": deals,
         "winner": winner, "won": won, "amount": amount, "payout": payout,
-        "balance": wallet_balance(req.user_id),
+        "balance": wallet_balance(req.user_id,req.client_id),
         "message": f"YOU WON ₹{payout:,.2f}" if won else f"{winner.upper()} WINS",
     }

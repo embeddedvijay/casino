@@ -24,10 +24,36 @@ ALLOWED_MARKET_KEYS = {market["key"] for market in DEFAULT_MATKA_MARKETS}
 DAYS_MIN = 0
 DAYS_MAX = 6
 DEFAULT_DAYS = 6
+DEFAULT_MATKA_WIN_RATES = {
+    "ank": 10,
+    "jodi": 95,
+    "sp": 150,
+    "dp": 300,
+    "tp": 600,
+    "half_sangam": 1000,
+    "full_sangam": 10000,
+}
 
 
 def utc_now():
     return datetime.now(timezone.utc)
+
+
+async def get_matka_win_rates(client_id: str) -> dict:
+    saved=db["matka_win_rates"].find_one({"client_id":client_id},{"_id":0}) or {}
+    return {key:int(saved.get(key,value)) for key,value in DEFAULT_MATKA_WIN_RATES.items()}
+
+
+async def save_matka_win_rates(client_id: str,values: dict) -> dict:
+    rates={key:int(values[key]) for key in DEFAULT_MATKA_WIN_RATES}
+    now=utc_now()
+    db["matka_win_rates"].create_index("client_id",unique=True,name="unique_client_matka_win_rates")
+    db["matka_win_rates"].update_one(
+        {"client_id":client_id},
+        {"$set":{**rates,"updated_at":now},"$setOnInsert":{"client_id":client_id,"created_at":now}},
+        upsert=True,
+    )
+    return rates
 
 
 def ensure_default_matka_markets(client_id: str) -> None:

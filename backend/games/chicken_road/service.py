@@ -63,23 +63,23 @@ def config():
     }
 
 
-def start(user_id, amount, difficulty):
+def start(user_id, amount, difficulty, client_id="demo"):
     difficulty = str(difficulty).lower()
     if difficulty not in LEVELS:
         raise HTTPException(400, "Difficulty must be easy, medium, hard or hardcore")
     amount = round(float(amount), 2)
     ensure_demo(user_id)
-    for old in db.chicken_road_bets.find({"user_id":str(user_id),"status":"active"}):
-        cancel_user_bets("chicken-road",old.get("casino_round_id",str(old["_id"])),str(user_id))
-    db.chicken_road_bets.update_many({"user_id":str(user_id),"status":"active"},{"$set":{"status":"cancelled","settled_at":now(),"updated_at":now()}})
+    for old in db.chicken_road_bets.find({"client_id":client_id,"user_id":str(user_id),"status":"active"}):
+        cancel_user_bets("chicken-road",old.get("casino_round_id",str(old["_id"])),str(user_id),client_id)
+    db.chicken_road_bets.update_many({"client_id":client_id,"user_id":str(user_id),"status":"active"},{"$set":{"status":"cancelled","settled_at":now(),"updated_at":now()}})
     casino_round_id="CR-"+uuid.uuid4().hex
     try:
-        saved=place_bet(game="chicken-road",round_id=casino_round_id,user_id=user_id,amount=amount,position_key="road",metadata={"difficulty":difficulty})
+        saved=place_bet(game="chicken-road",round_id=casino_round_id,user_id=user_id,amount=amount,position_key="road",metadata={"difficulty":difficulty},client_id=client_id)
     except CasinoError as exc:
         raise HTTPException(400,str(exc)) from exc
     document = {
         "_id": ObjectId(saved["id"]), "casino_round_id":casino_round_id,
-        "user_id": str(user_id), "game": "chicken-road",
+        "client_id": client_id, "user_id": saved["user_id"], "game": "chicken-road",
         "amount": amount, "bet": amount, "difficulty": difficulty, "step": 0,
         "multiplier": 1.0, "payout": 0.0, "profit": -amount, "status": "active",
         "created_at": now(), "updated_at": now(),
@@ -87,7 +87,7 @@ def start(user_id, amount, difficulty):
     try:
         result = db.chicken_road_bets.insert_one(document)
     except Exception:
-        cancel_user_bets("chicken-road",casino_round_id,str(user_id))
+        cancel_user_bets("chicken-road",casino_round_id,str(user_id),client_id)
         raise
     return {
         "success": True, "round_id": str(result.inserted_id), "status": "active",
@@ -151,9 +151,9 @@ def cash_out(round_id):
     return {"success": True, "status": "won", "step": item["step"], "multiplier": item["multiplier"], "payout": payout, "profit": round(payout - item["amount"], 2), "balance": casino_bet["balance"]}
 
 
-def history(user_id, limit=20):
+def history(user_id, limit=20, client_id="demo"):
     records = []
-    for item in db.chicken_road_bets.find({"user_id": str(user_id), "status": {"$ne": "active"}}).sort("created_at", -1).limit(max(1, min(int(limit), 100))):
+    for item in db.chicken_road_bets.find({"client_id": client_id, "user_id": str(user_id), "status": {"$ne": "active"}}).sort("created_at", -1).limit(max(1, min(int(limit), 100))):
         item["id"] = str(item.pop("_id")); item.pop("user_ref", None)
         for key in ("created_at", "updated_at", "settled_at"):
             if item.get(key): item[key] = item[key].isoformat()
