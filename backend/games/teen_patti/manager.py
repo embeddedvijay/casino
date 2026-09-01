@@ -20,6 +20,30 @@ def user_query(user_id, client_id="demo"):
     return {"client_id": client_id, "$or": choices}
 
 
+def ensure_demo_user(user_id, client_id="demo"):
+    if str(client_id) != "demo" or str(user_id).lower() != "demo":
+        return
+    db.users.update_one(
+        {"client_id": "demo", "user_id": "demo"},
+        {
+            "$set": {
+                "client_id": "demo",
+                "user_id": "demo",
+                "username": "demo",
+                "status": "active",
+                "is_demo": True,
+                "updated_at": now(),
+            },
+            "$setOnInsert": {
+                "balance": 1000.0,
+                "wallet_balance": 1000.0,
+                "created_at": now(),
+            },
+        },
+        upsert=True,
+    )
+
+
 def wallet_balance(user_id, client_id="demo"):
     user = db.users.find_one(user_query(user_id, client_id), {"balance": 1, "wallet_balance": 1})
     return round(float((user or {}).get("balance", (user or {}).get("wallet_balance", 0)) or 0), 2)
@@ -34,6 +58,7 @@ def history(user_id, client_id="demo"):
 
 
 def session(user_id, client_id="demo"):
+    ensure_demo_user(user_id, client_id)
     return {"success": True, "balance": wallet_balance(user_id, client_id), "history": history(user_id, client_id)}
 
 
@@ -42,7 +67,7 @@ def public_round(row, reveal=False):
     result = {
         "success": True,
         "round_id": row["round_id"],
-        "balance": wallet_balance(row["user_id"],row.get("client_id","demo")),
+        "balance": wallet_balance(row["user_id"], row.get("client_id", "demo")),
         "pot": row["pot"],
         "boot": row["boot"],
         "hands": {"user": hands["user"]},
@@ -53,7 +78,7 @@ def public_round(row, reveal=False):
         "winner": row.get("winner_label"),
         "message": row.get("message", ""),
         "players": row["players"],
-        "history": history(row["user_id"],row.get("client_id","demo")),
+        "history": history(row["user_id"], row.get("client_id", "demo")),
     }
     if reveal or row["phase"] == "result":
         result["hands"].update({"auto1": hands["auto1"], "auto2": hands["auto2"]})
@@ -61,7 +86,8 @@ def public_round(row, reveal=False):
 
 
 def deal(req):
-    existing = db.teen_patti_rounds.find_one({"client_id":req.client_id,"user_id": req.user_id, "phase": {"$in": ["playing", "settling"]}})
+    ensure_demo_user(req.user_id, req.client_id)
+    existing = db.teen_patti_rounds.find_one({"client_id": req.client_id, "user_id": req.user_id, "phase": {"$in": ["playing", "settling"]}})
     if existing:
         return public_round(existing)
     boot = round(float(req.boot), 2)
@@ -79,13 +105,14 @@ def deal(req):
         )
     except CasinoError as exc:
         close_round("teen-patti", round_id, {"cancelled": True, "reason": str(exc)})
-        return {"success": False, "message": str(exc), "code": exc.code, "balance": wallet_balance(req.user_id,req.client_id)}
+        return {"success": False, "message": str(exc), "code": exc.code, "balance": wallet_balance(req.user_id, req.client_id)}
     except Exception:
         close_round("teen-patti", round_id, {"cancelled": True, "reason": "bet_error"})
         raise
     deck = shuffled_deck()
     row = {
-        "client_id":req.client_id,"round_id": round_id,
+        "client_id": req.client_id,
+        "round_id": round_id,
         "user_id": req.user_id,
         "boot": boot,
         "pot": round(boot * 3, 2),
@@ -106,7 +133,7 @@ def deal(req):
     try:
         db.teen_patti_rounds.insert_one(row)
     except Exception:
-        cancel_user_bets("teen-patti", round_id, req.user_id,req.client_id)
+        cancel_user_bets("teen-patti", round_id, req.user_id, req.client_id)
         raise
     return public_round(row)
 
@@ -131,16 +158,22 @@ def finish(row):
     db.teen_patti_rounds.update_one(
         {"_id": row["_id"]},
         {"$set": {
-            "phase": "result", "winner_keys": winners, "winner_label": winner_label,
-            "won": payout > 0, "payout": payout, "message": message,
-            "settled_at": now(), "updated_at": now(),
+            "phase": "result",
+            "winner_keys": winners,
+            "winner_label": winner_label,
+            "won": payout > 0,
+            "payout": payout,
+            "message": message,
+            "settled_at": now(),
+            "updated_at": now(),
         }},
     )
     return public_round(db.teen_patti_rounds.find_one({"_id": row["_id"]}), reveal=True)
 
 
 def act(req):
-    row = db.teen_patti_rounds.find_one({"client_id":req.client_id,"round_id": req.round_id, "user_id": req.user_id})
+    ensure_demo_user(req.user_id, req.client_id)
+    row = db.teen_patti_rounds.find_one({"client_id": req.client_id, "round_id": req.round_id, "user_id": req.user_id})
     if not row:
         return {"success": False, "message": "Round not found"}
     if row["phase"] != "playing":
@@ -166,7 +199,7 @@ def act(req):
             client_id=req.client_id,
         )
     except CasinoError as exc:
-        return {"success": False, "message": str(exc), "code": exc.code, "balance": wallet_balance(req.user_id,req.client_id)}
+        return {"success": False, "message": str(exc), "code": exc.code, "balance": wallet_balance(req.user_id, req.client_id)}
     row["bet_ids"].append(saved["id"])
     row["pot"] = round(float(row["pot"]) + stake, 2)
     if req.action == "show":
