@@ -98,6 +98,15 @@ def _matka_user_query(client_id,user_id):
     if ObjectId.is_valid(str(user_id)):options.append({"_id":ObjectId(str(user_id))})
     return {"client_id":str(client_id),"$or":options}
 
+def format_matka_market(market):
+    market=str(market or "").strip()
+    market_upper=market.upper()
+    if market_upper.endswith("_OP"):
+        return market[:-3].replace("_"," ").title(),"Open"
+    if market_upper.endswith("_CL"):
+        return market[:-3].replace("_"," ").title(),"Close"
+    return market.replace("_"," ").title(),""
+
 def _entry_amounts(result_rows,winning_keys):
     totals={key:0.0 for key in winning_keys}
     for row in result_rows or []:
@@ -172,9 +181,11 @@ def settle_matka_events(events,date_key):
                 if updated:credited+=1
                 # Upsert even on a retry after a process interruption. The
                 # user-level settlement token prevents a second wallet credit.
+                market_name,market_side=format_matka_market(bet.get("Market"))
+                market_label=f"{market_name} • {market_side}" if market_side else market_name
                 raw_casino_db.notifications.update_one(
                     {"notification_key":f"matka-win:{settlement_key}"},
-                    {"$setOnInsert":{"notification_key":f"matka-win:{settlement_key}","client_id":client_id,"user_id":str(user["_id"]),"type":"matka_win","title":"Matka Win Credited","text":f'₹{payout:,.2f} added for {bet.get("Market")}',"read":False,"created_at":datetime.datetime.utcnow()}},
+                    {"$setOnInsert":{"notification_key":f"matka-win:{settlement_key}","client_id":client_id,"user_id":str(user["_id"]),"type":"matka_win","title":"Matka Win","text":f'{market_label} • ₹{payout:,.2f} credited',"market_name":market_name,"market_side":market_side,"market":bet.get("Market"),"read":False,"created_at":datetime.datetime.utcnow()}},
                     upsert=True,
                 )
             settlement_update={
@@ -205,7 +216,7 @@ def settle_matka_events(events,date_key):
     return {"settled":settled,"credited":credited}
 
 def sync_matka_result_notifications():
-    """Insert each new result notification once for every active user."""
+    """Settle Matka wins and remove legacy global result notifications."""
     collection=get_result_collection()
     doc=collection.find_one({"Result":True})
     if not doc:
@@ -219,63 +230,8 @@ def sync_matka_result_notifications():
         print(f'✅ Matka wallet wins credited: {settlement["credited"]}')
 
     raw_casino_db=getattr(casino_db,"_raw",casino_db)
-    event_collection=raw_casino_db.matka_notification_events
-    event_keys=[event["event_key"] for event in events]
-    initialized=event_collection.find_one({"_id":"watcher_initialized"})
-    if not initialized:
-        # The first run is only a baseline. It must not broadcast all results
-        # that were already published before this backend version started.
-        for event_key in event_keys:
-            event_collection.update_one(
-                {"_id":event_key},
-                {"$setOnInsert":{"created_at":datetime.datetime.utcnow()}},
-                upsert=True,
-            )
-        event_collection.update_one(
-            {"_id":"watcher_initialized"},
-            {"$set":{"created_at":datetime.datetime.utcnow()}},
-            upsert=True,
-        )
-        return 0
-
-    users=list(raw_casino_db.users.find(
-        {"status":{"$in":["active",None]}},
-        {"_id":1,"client_id":1},
-    ))
-    inserted=0
-    now=datetime.datetime.utcnow()
-    for event in events:
-        if event_collection.find_one({"_id":event["event_key"]},{"_id":1}):
-            continue
-        title=f'{event["market_label"]} {event["session"]} Result'
-        text=f'{event["market_label"]} {event["session"]}: {event["result"]}'
-        for user in users:
-            notification_key=f'{event["event_key"]}:{user["_id"]}'
-            result=raw_casino_db.notifications.update_one(
-                {"notification_key":notification_key},
-                {"$setOnInsert":{
-                    "notification_key":notification_key,
-                    "client_id":user.get("client_id"),
-                    "user_id":str(user["_id"]),
-                    "type":"matka_result",
-                    "title":title,
-                    "text":text,
-                    "market_name":event["market_name"],
-                    "session":event["session"],
-                    "result":event["result"],
-                    "read":False,
-                    "created_at":now,
-                }},
-                upsert=True,
-            )
-            if result.upserted_id is not None:
-                inserted+=1
-        event_collection.update_one(
-            {"_id":event["event_key"]},
-            {"$setOnInsert":{"created_at":now}},
-            upsert=True,
-        )
-    return inserted
+    raw_casino_db.notifications.delete_many({"type":"matka_result"})
+    return settlement["credited"]
 
 def ensure_matka_notification_indexes():
     raw_casino_db=getattr(casino_db,"_raw",casino_db)
@@ -295,7 +251,7 @@ async def matka_result_notification_loop():
         try:
             inserted=await asyncio.to_thread(sync_matka_result_notifications)
             if inserted:
-                print(f"✅ Matka result notifications sent: {inserted}")
+                print(f"✅ Matka wallet wins credited: {inserted}")
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -449,6 +405,30 @@ def confirm_market_message(req:MarketConfirmRequest,credentials=Depends(user_sec
                 "balance":round(float(updated_user.get("balance",0) or 0),2),
                 "created_at":datetime.datetime.utcnow(),
             })
+        except Exception:
+            pass
+
+        market_name,market_side=format_matka_market(time_key)
+        market_label=f"{market_name} • {market_side}" if market_side else market_name
+        try:
+            raw_casino_db.notifications.update_one(
+                {"notification_key":f'matka-play:{user_play_data["Message_ID"]}'},
+                {"$setOnInsert":{
+                    "notification_key":f'matka-play:{user_play_data["Message_ID"]}',
+                    "client_id":req.client_id,
+                    "user_id":str(existing_user["_id"]),
+                    "type":"matka_play",
+                    "title":"Matka Play",
+                    "text":f'{market_label} • ₹{debit_amount:,.2f} played',
+                    "market_name":market_name,
+                    "market_side":market_side,
+                    "market":time_key,
+                    "amount":debit_amount,
+                    "read":False,
+                    "created_at":datetime.datetime.utcnow(),
+                }},
+                upsert=True,
+            )
         except Exception:
             pass
 

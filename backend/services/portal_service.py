@@ -12,6 +12,8 @@ from bson import ObjectId
 from pymongo import DESCENDING, ReturnDocument
 import qrcode
 
+from games.matka.db_ops import MATKA_BETS_DB_NAME, myclient
+
 
 BET_COLLECTIONS = (
     ("casino_bets", None),
@@ -288,7 +290,14 @@ def list_bets(db, user_id: str, page: int, limit: int, game: str | None = None, 
     })
     if not raw_user:
         return {"items": [], "page": page, "limit": limit, "total": 0, "has_more": False}
+    def money(value: Any) -> float:
+        try:
+            return round(float(value or 0), 2)
+        except (TypeError, ValueError):
+            return 0.0
+
     values = canonical_user_values(raw_user, user_id)
+    client_id = str(raw_user.get("client_id") or "demo")
     selected_game=canonical_game(game) if game and game!="all" else ""
     rows: list[dict] = []
     seen: set[str] = set()
@@ -303,7 +312,7 @@ def list_bets(db, user_id: str, page: int, limit: int, game: str | None = None, 
         collection_game=canonical_game(default_game)
         if selected_game and collection_game and collection_game != selected_game:
             continue
-        query: dict = {"$and":[{"client_id":str(raw_user.get("client_id") or "demo")},bet_owner_query(values)]}
+        query: dict = {"$and":[{"client_id":client_id},bet_owner_query(values)]}
         if status and status != "all":
             query = {"$and": [query, {"status": {"$regex": f"^{status}$", "$options": "i"}}]}
         for row in db[collection_name].find(query).sort([("created_at", DESCENDING), ("_id", DESCENDING)]).limit(500):
@@ -318,6 +327,53 @@ def list_bets(db, user_id: str, page: int, limit: int, game: str | None = None, 
                 continue
             seen.add(identity)
             rows.append(item)
+
+    if not selected_game or selected_game == "matka":
+        matka_db = myclient[MATKA_BETS_DB_NAME]
+        for collection_name in matka_db.list_collection_names():
+            if collection_name.startswith("system."):
+                continue
+            matka_query = {"$and": [
+                {"$or": [{"client_id": client_id}, {"Client": client_id}, {"client": client_id}]},
+                {"$or": [
+                    {"user_id": {"$in": values}}, {"username": {"$in": values}},
+                    {"user_name": {"$in": values}}, {"Contact": {"$in": values}},
+                    {"player_id": {"$in": values}},
+                ]},
+            ]}
+            for row in matka_db[collection_name].find(matka_query).limit(500):
+                item = serialize(row)
+                amount = money(item.get("amount", item.get("Total", item.get("total", 0))))
+                payout = money(item.get("payout", item.get("Win_Amt", item.get("win_amount", item.get("Win", 0)))))
+                raw_status = str(item.get("status") or item.get("Status") or "settled").lower()
+                if status and status != "all" and raw_status != str(status).lower():
+                    continue
+                item["game"] = "matka"
+                item["collection"] = f"{MATKA_BETS_DB_NAME}.{collection_name}"
+                item["user_id"] = str(item.get("user_id") or item.get("Contact") or user_id)
+                item["amount"] = amount
+                item["payout"] = payout
+                item["profit"] = round(payout - amount, 2)
+                item["status"] = raw_status
+                item["won"] = payout > 0
+                market_key = str(item.get("market") or item.get("Market") or "").strip()
+                market_upper = market_key.upper()
+                if market_upper.endswith("_OP"):
+                    market_name, market_side = market_key[:-3].replace("_", " ").title(), "Open"
+                elif market_upper.endswith("_CL"):
+                    market_name, market_side = market_key[:-3].replace("_", " ").title(), "Close"
+                else:
+                    market_name = market_key.replace("_", " ").title()
+                    market_side = str(item.get("side") or item.get("Side") or "").title()
+                item["market_name"] = market_name
+                item["market_side"] = market_side
+                item["market"] = f"{market_name} • {market_side}" if market_side else market_name
+                item["created_at"] = item.get("created_at") or item.get("updated_at") or item.get("Date") or collection_name
+                identity = f"matka:{collection_name}:{item.get('_id') or item.get('Play_ID') or item.get('id') or ''}"
+                if identity in seen:
+                    continue
+                seen.add(identity)
+                rows.append(item)
     rows.sort(key=lambda item: str(item.get("created_at", item.get("placed_at", ""))), reverse=True)
     total = len(rows)
     start = (page - 1) * limit
