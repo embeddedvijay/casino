@@ -178,7 +178,11 @@ def place_cricket_market_bet(payload: CricketMarketBet, credentials=Depends(user
         raise HTTPException(status_code=409, detail=f"{opposite.title()} is already placed on this selection. Opposite-side betting is not allowed.")
     liability = round(payload.stake if payload.side == "back" else (payload.odds - 1) * payload.stake, 2)
     try:
-        result = place_bet(game="cricket-market", round_id=payload.match_id, user_id=payload.user_id, client_id=payload.client_id, amount=liability, position_key=f"{payload.match_id}:{payload.market}:{selection_key}:{payload.side}", metadata={"market": payload.market, "selection": payload.selection.strip(), "selection_key": selection_key, "side": payload.side, "odds": round(payload.odds, 3), "stake": round(payload.stake, 2), "liability": liability, "provider_event_id": event_id})
+        # A user may Back the same selection again at a later price/amount.
+        # The UUID keeps this individual bet unique; the opposite-side rule
+        # above still prevents Back + Lay on the same selection.
+        position_key = f"{payload.match_id}:{payload.market}:{selection_key}:{payload.side}:{uuid4().hex}"
+        result = place_bet(game="cricket-market", round_id=payload.match_id, user_id=payload.user_id, client_id=payload.client_id, amount=liability, position_key=position_key, metadata={"market": payload.market, "selection": payload.selection.strip(), "selection_key": selection_key, "side": payload.side, "odds": round(payload.odds, 3), "stake": round(payload.stake, 2), "liability": liability, "provider_event_id": event_id})
     except CasinoError as error:
         status_code = 409 if error.code in {"duplicate_bet", "insufficient_balance"} else 400
         raise HTTPException(status_code=status_code, detail=str(error)) from error
