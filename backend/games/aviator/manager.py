@@ -5,6 +5,7 @@ import uuid
 from typing import Dict, List
 from fastapi import WebSocket
 from .engine import calculate_cashout, calculate_multiplier, generate_crash_point
+from admin.services.admin_result_mode import consume_next_admin_result
 from core.casino import CasinoError, close_round, open_round, place_bet as persist_bet, settle_bet
 
 WAITING_SECONDS = 10
@@ -126,7 +127,8 @@ async def game_loop():
             state["multiplier"]=1.0
             await broadcast("countdown")
             await asyncio.sleep(1)
-        crash_point=generate_crash_point()
+        forced_result = consume_next_admin_result("aviator")
+        crash_point = float(forced_result["value"]) if forced_result else generate_crash_point()
         state["phase"]="flying"
         state["countdown"]=0
         state["multiplier"]=1.0

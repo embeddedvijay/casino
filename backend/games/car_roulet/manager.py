@@ -7,6 +7,7 @@ from fastapi import WebSocket
 from core.casino import CasinoError, cancel_user_bets, close_round, open_round, place_bet as persist_bet, settle_bet
 
 from .engine import calculate_payout, get_cars, pick_winner
+from admin.services.admin_result_mode import consume_next_admin_result
 
 
 # Frontend के 20 equal-distance track positions के exact same order में।
@@ -490,7 +491,11 @@ async def game_loop():
             )
             await asyncio.sleep(1)
 
-        winner = pick_winner()
+        forced_result = consume_next_admin_result("lucky-race")
+        winner = next(
+            car for car in state["cars"]
+            if car["key"] == forced_result["value"]
+        ) if forced_result else pick_winner()
         stop_index = find_stop_index_for_winner(
             winner["key"]
         )

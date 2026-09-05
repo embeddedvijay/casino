@@ -28,6 +28,8 @@ from games.plinko.router import router as plinko_router
 from games.chicken_road.router import router as chicken_road_router
 from games.teen_patti.router import router as teen_patti_router
 from games.andar_bahar.router import router as andar_bahar_router
+from games.fantasy.router import router as fantasy_router
+from games.fantasy.cricket_sync import cricket_sync_loop, ensure_cricket_indexes
 from core.router import router as casino_core_router
 from core.casino import ensure_casino_indexes, recover_interrupted_games
 
@@ -40,11 +42,13 @@ from services.client_config import ensure_default_client, start_game_tasks, stop
 from database import db
 
 from admin.routes.router import router as casino_admin_router
+from admin.routes.admin_result_mode import router as admin_result_mode_router
 from admin.routes.mobile_operations import router as mobile_operations_router
 from admin.services.auth_service import ensure_default_admin
 
 telegram_app = None
 matka_notification_task = None
+cricket_sync_task = None
 
 
 
@@ -68,12 +72,14 @@ app.include_router(plinko_router)
 app.include_router(chicken_road_router)
 app.include_router(teen_patti_router)
 app.include_router(andar_bahar_router)
+app.include_router(fantasy_router)
 app.include_router(casino_core_router)
 app.include_router(users_router)
 app.include_router(auth_users_router)
 app.include_router(casino_setup_router)
 app.include_router(portal_router)
 app.include_router(casino_admin_router)
+app.include_router(admin_result_mode_router)
 app.include_router(mobile_operations_router)
 
 
@@ -131,9 +137,10 @@ async def websocket_matka(websocket: WebSocket):
 
 @app.on_event("startup")
 async def startup_event():
-    global matka_notification_task
+    global matka_notification_task, cricket_sync_task
     ensure_casino_indexes()
     ensure_matka_notification_indexes()
+    ensure_cricket_indexes()
     ensure_default_admin(db)
     recovery=recover_interrupted_games()
     await ensure_default_client(db)
@@ -145,12 +152,20 @@ async def startup_event():
         matka_game_loop,
     )
     matka_notification_task=asyncio.create_task(matka_result_notification_loop())
+    cricket_sync_task=asyncio.create_task(cricket_sync_loop())
     print(f"✅ Server Ready | recovery={recovery}")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    global matka_notification_task
+    global matka_notification_task, cricket_sync_task
+    if cricket_sync_task is not None:
+        cricket_sync_task.cancel()
+        try:
+            await cricket_sync_task
+        except asyncio.CancelledError:
+            pass
+        cricket_sync_task=None
     if matka_notification_task is not None:
         matka_notification_task.cancel()
         try:

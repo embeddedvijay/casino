@@ -38,6 +38,28 @@ def draw_card():
     }
 
 
+def draw_cards_for_winner(winner: str):
+    """Create a valid card pair for an admin-selected Dragon/Tiger/Tie result."""
+    def card(rank, suit):
+        return {
+            "rank": rank["label"],
+            "value": rank["value"],
+            "suit": suit["label"],
+            "symbol": suit["symbol"],
+            "color": suit["color"],
+        }
+
+    if winner == "TIE":
+        rank = random.choice(RANKS)
+        dragon_suit = random.choice(SUITS)
+        tiger_suit = next(suit for suit in SUITS if suit["label"] != dragon_suit["label"])
+        return card(rank, dragon_suit), card(rank, tiger_suit)
+    first, second = sorted(random.sample(RANKS, 2), key=lambda rank: rank["value"])
+    low_card = card(first, random.choice(SUITS))
+    high_card = card(second, random.choice(SUITS))
+    return (high_card, low_card) if winner == "DRAGON" else (low_card, high_card)
+
+
 def get_size(value: int):
     return "SMALL" if value <= 6 else "BIG"
 

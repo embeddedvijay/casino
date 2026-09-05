@@ -8,10 +8,12 @@ from fastapi import WebSocket
 from .engine import (
     calculate_result,
     draw_card,
+    draw_cards_for_winner,
     get_payout_multiplier,
     is_winning_bet,
 )
 from core.casino import CasinoError, cancel_user_bets, close_round, open_round, place_bet as persist_bet, settle_bet
+from admin.services.admin_result_mode import consume_next_admin_result
 
 
 WAITING_SECONDS = 15
@@ -206,13 +208,16 @@ async def game_loop():
         await broadcast("dealing")
         await asyncio.sleep(1)
 
-        dragon_card = draw_card()
+        forced_result = consume_next_admin_result("dragon-tiger")
+        if forced_result:
+            dragon_card, tiger_card = draw_cards_for_winner(forced_result["value"])
+        else:
+            dragon_card, tiger_card = draw_card(), draw_card()
         state["dragon_card"] = dragon_card
 
         await broadcast("dragon_reveal")
         await asyncio.sleep(1)
 
-        tiger_card = draw_card()
         state["tiger_card"] = tiger_card
 
         await broadcast("tiger_reveal")
