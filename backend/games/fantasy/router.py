@@ -77,13 +77,11 @@ def normalize_event(event):
 
 
 def visible_market_query(today: str) -> dict:
-    # Provider odds can briefly return empty while the live score feed still
-    # has the event. Never hide a previously synced live market in that gap.
+    # The lobby is a betting-market list: never show a match without a saved
+    # provider odds payload, even if its live score is available.
     return {"$or": [
-        {"event_live": True},
-        {"event.event_status": {"$in": ["In Progress", "Live", "Started", "Innings Break"]}},
-        {"event_date": today, "odds": {"$exists": True, "$ne": {}}},
-        {"event_date": today, "has_odds": True},
+        {"odds": {"$exists": True, "$ne": {}}},
+        {"has_odds": True},
     ]}
 
 
@@ -98,7 +96,7 @@ def market_matches():
 @router.get("/market/matches/{match_id}")
 def market_match_detail(match_id: str):
     event_id = match_id.removeprefix("api-")
-    row = raw_db().cricket_market_events.find_one({"event_id": event_id, "$or": [{"odds": {"$exists": True, "$ne": {}}}, {"has_odds": True}, {"event_live": True}, {"event.event_status": {"$in": ["In Progress", "Live", "Started", "Innings Break"]}}]}, {"_id": 0})
+    row = raw_db().cricket_market_events.find_one({"event_id": event_id, "$or": [{"odds": {"$exists": True, "$ne": {}}}, {"has_odds": True}]}, {"_id": 0})
     if not row:
         raise HTTPException(status_code=404, detail="Cricket market is not available in the shared feed.")
     event = row["event"]
