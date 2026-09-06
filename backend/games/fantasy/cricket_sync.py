@@ -63,7 +63,16 @@ def sync_cricket_feed() -> dict:
     events = provider_call("get_events", date_start=today_text, date_stop=today_text) or []
     live = provider_call("get_livescore") or []
     merged = {str(item.get("event_key")): item for item in events if item.get("event_key")}
-    merged.update({str(item.get("event_key")): item for item in live if item.get("event_key")})
+    # get_livescore is useful to mark a fixture live, but for some matches it
+    # returns blank score/commentary fields. Do not let that sparse response
+    # erase the detailed get_events payload used for scorecard and last balls.
+    for live_event in live:
+        event_id = str(live_event.get("event_key") or "")
+        if not event_id:
+            continue
+        existing = merged.get(event_id, {})
+        live_values = {key: value for key, value in live_event.items() if value not in (None, "", {}, [])}
+        merged[event_id] = {**existing, **live_values}
     # A multi-day fixture can disappear from the live feed just after it
     # finishes.  Active customer bets must still receive one final lookup.
     active_event_ids = [str(item) for item in database.casino_bets.distinct(
