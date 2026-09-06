@@ -106,24 +106,33 @@ def sync_cricket_feed() -> dict:
     # Keep today's last verified market instead of clearing every client list.
     cached_rows = database.cricket_market_events.find(
         {"event_date": today_text, "odds": {"$exists": True, "$ne": {}}},
-        {"_id": 0, "event_id": 1, "odds": 1},
+        {"_id": 0, "event_id": 1, "odds": 1, "odds_updated_at": 1},
     )
-    cached_odds = {str(row["event_id"]): row["odds"] for row in cached_rows if row.get("odds")}
+    cached_odds = {str(row["event_id"]): row for row in cached_rows if row.get("odds")}
     stored = 0
     # Save every provider event. Live score visibility must never depend on an
     # odds response; odds only control whether a market can accept a bet.
     for event_id, event in merged.items():
-        odds = individual_odds.get(event_id) or (date_odds.get(event_id, {}) if isinstance(date_odds, dict) else {}) or cached_odds.get(event_id, {})
+        provider_odds = individual_odds.get(event_id) or (date_odds.get(event_id, {}) if isinstance(date_odds, dict) else {})
+        previous = cached_odds.get(event_id, {})
+        odds = provider_odds or previous.get("odds", {})
+        odds_updated_at = now if provider_odds else previous.get("odds_updated_at")
         database.cricket_market_events.update_one(
             {"event_id": event_id},
-            {"$set": {"event_id": event_id, "event": event, "odds": odds, "has_odds": bool(odds), "event_date": str(event.get("event_date_start") or today_text), "event_live": event_is_live(event), "synced_at": now}},
+            {"$set": {"event_id": event_id, "event": event, "odds": odds, "has_odds": bool(odds), "odds_fresh": bool(provider_odds), "odds_updated_at": odds_updated_at, "event_date": str(event.get("event_date_start") or today_text), "event_live": event_is_live(event), "synced_at": now}},
             upsert=True,
         )
         if odds:
             stored += 1
     # Test/first-class matches can remain live for multiple days. Retain a
     # current live event even when its original start date is older than today.
-    database.cricket_market_events.delete_many({"event_date": {"$lt": str(today - timedelta(days=1))}, "event_live": {"$ne": True}})
+    # Never remove a stored event while a customer still has an active bet on
+    # it.  It may briefly have no odds, but it is required for final result
+    # polling and for the customer's open-bet screen.
+    database.cricket_market_events.delete_many({
+        "event_date": {"$lt": str(today - timedelta(days=1))}, "event_live": {"$ne": True},
+        "event_id": {"$nin": active_event_ids},
+    })
     settlement = settle_completed_cricket_events()
     database.cricket_sync_state.update_one(
         {"_id": SYNC_STATE_ID},
@@ -134,7 +143,7 @@ def sync_cricket_feed() -> dict:
 
 
 async def cricket_sync_loop(interval_seconds: int | None = None):
-    interval = interval_seconds or int(os.getenv("CRICKET_SYNC_SECONDS", "45"))
+    interval = interval_seconds or int(os.getenv("CRICKET_SYNC_SECONDS", "30"))
     while True:
         try:
             result = await asyncio.to_thread(sync_cricket_feed)

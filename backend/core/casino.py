@@ -319,6 +319,10 @@ def bet_history(user_id: str, game: str | None = None, limit: int = 50, client_i
     for row in _plain_db().casino_bets.find(query).sort("created_at", -1).limit(max(1, min(int(limit), 200))):
         row["id"] = str(row.pop("_id")); row.pop("user_ref", None)
         for key in ("created_at", "updated_at", "settled_at", "cancelled_at"):
-            if row.get(key): row[key] = row[key].isoformat()
+            if row.get(key):
+                value = row[key]
+                if isinstance(value, datetime) and value.tzinfo is None:
+                    value = value.replace(tzinfo=timezone.utc)
+                row[key] = value.isoformat()
         records.append(row)
     return records

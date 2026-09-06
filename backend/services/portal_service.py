@@ -51,6 +51,11 @@ def serialize(value: Any) -> Any:
     if isinstance(value, ObjectId):
         return str(value)
     if isinstance(value, datetime):
+        # Older game records were written with datetime.utcnow() (naive UTC).
+        # Mark them as UTC before serializing so Android/JS converts them to
+        # the customer's local timezone instead of displaying UTC as local.
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
         return value.isoformat()
     if isinstance(value, list):
         return [serialize(item) for item in value]
