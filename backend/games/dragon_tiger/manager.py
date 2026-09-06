@@ -8,9 +8,12 @@ from fastapi import WebSocket
 from .engine import (
     calculate_result,
     draw_card,
+    draw_cards_for_winner,
     get_payout_multiplier,
     is_winning_bet,
 )
+from core.casino import CasinoError, cancel_user_bets, close_round, open_round, place_bet as persist_bet, settle_bet
+from admin.services.admin_result_mode import consume_next_admin_result
 
 
 WAITING_SECONDS = 15
@@ -104,8 +107,17 @@ async def place_bet(req):
     round_id = state["round_id"]
     round_bets = bets_by_round.setdefault(round_id, [])
 
+    try:
+        # Every tap is a separate wager. A unique position key prevents the
+        # persistence layer's duplicate-bet guard from blocking repeat bets on
+        # the same Dragon/Tiger option during the open betting window.
+        bet_key=f"{req.bet_type}:{uuid.uuid4()}"
+        saved=persist_bet(game="dragon-tiger",round_id=round_id,user_id=req.user_id,amount=req.amount,position_key=bet_key,metadata={"bet_type":req.bet_type},client_id=req.client_id)
+    except CasinoError as exc:
+        return {"success":False,"message":str(exc),"code":exc.code}
     bet = {
-        "id": f"dt-bet-{uuid.uuid4()}",
+        "id": saved["id"],
+        "client_id": req.client_id,
         "user_id": req.user_id,
         "round_id": round_id,
         "bet_type": req.bet_type,
@@ -121,6 +133,8 @@ async def place_bet(req):
     return {
         "success": True,
         "message": "Bet placed",
+        "bet_id": bet["id"],
+        "balance": saved["balance"],
     }
 
 
@@ -133,9 +147,10 @@ async def clear_bets(req):
 
     round_id = state["round_id"]
     old = bets_by_round.get(round_id, [])
+    cancel_user_bets("dragon-tiger",round_id,req.user_id,req.client_id)
 
     bets_by_round[round_id] = [
-        b for b in old if b["user_id"] != req.user_id
+        b for b in old if not (b.get("client_id","demo") == req.client_id and b["user_id"] == req.user_id)
     ]
 
     await broadcast("clear")
@@ -157,6 +172,7 @@ def settle_bets(result):
         else:
             bet["status"] = "lost"
             bet["payout"] = 0.0
+        settle_bet(bet["id"],bet["payout"],result)
 
 
 async def game_loop():
@@ -172,6 +188,7 @@ async def game_loop():
         state["result"] = None
 
         bets_by_round[round_id] = []
+        open_round("dragon-tiger",round_id,{"phase":"betting"})
 
         await broadcast("new_round")
 
@@ -191,13 +208,16 @@ async def game_loop():
         await broadcast("dealing")
         await asyncio.sleep(1)
 
-        dragon_card = draw_card()
+        forced_result = consume_next_admin_result("dragon-tiger")
+        if forced_result:
+            dragon_card, tiger_card = draw_cards_for_winner(forced_result["value"])
+        else:
+            dragon_card, tiger_card = draw_card(), draw_card()
         state["dragon_card"] = dragon_card
 
         await broadcast("dragon_reveal")
         await asyncio.sleep(1)
 
-        tiger_card = draw_card()
         state["tiger_card"] = tiger_card
 
         await broadcast("tiger_reveal")
@@ -208,6 +228,7 @@ async def game_loop():
         state["result"] = result
 
         settle_bets(result)
+        close_round("dragon-tiger",round_id,result)
 
         state["history"].append({
             "round_id": round_id,

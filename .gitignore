@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Vite
+frontend/node_modules/
+frontend/node_modules/.vite/
+
+# Python cache
+backend/**/__pycache__/
+frontend/**/__pycache__/
+
+# Environment
+.env
+.env.*
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Build
+dist/
+build/
+
+# Python virtual env
+venv/
+.venv/
+env/

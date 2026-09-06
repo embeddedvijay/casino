@@ -1,28 +1,42 @@
 import asyncio
 from datetime import datetime
+from admin.services.auth_service import new_password_record
 
 game_tasks=[]
 
 async def ensure_default_client(db):
+    existing = db["clients"].find_one({"client_id": "demo"})
+
+    update_data = {
+        "$set": {
+            "client_id": "demo",
+            "client_name": "Demo Casino",
+            "company_name": "Gold 365",
+            "domain": "demo",
+            "status": "active",
+            "updated_at": datetime.utcnow()
+        },
+        "$setOnInsert": {
+            "admin_username": "demo",
+            "setup_completed": False,
+            "must_change_password": True,
+            "created_at": datetime.utcnow()
+        }
+    }
+
+    if not existing:
+        password_hash, password_salt = new_password_record("Demo@123")
+        update_data["$setOnInsert"]["password_hash"] = password_hash
+        update_data["$setOnInsert"]["password_salt"] = password_salt
+
     db["clients"].update_one(
-        {"client_id":"demo"},
-        {"$set":{
-            "client_id":"demo",
-            "client_name":"Demo Casino",
-            "company_name":"Gold 365",
-            "domain":"demo",
-            "status":"active",
-            "updated_at":datetime.utcnow()
-        },"$setOnInsert":{
-            "setup_completed":False,
-            "created_at":datetime.utcnow()
-        }},
+        {"client_id": "demo"},
+        update_data,
         upsert=True
     )
 
 async def get_client_config(db,client_id="demo"):
     client=db["clients"].find_one({"client_id":client_id,"status":"active"},{"_id":0})
-    print(client)
     if not client or not client.get("setup_completed"):
         return None
 
@@ -40,6 +54,11 @@ async def get_client_config(db,client_id="demo"):
     }
 
 async def start_game_tasks(db,aviator_game_loop,dragon_tiger_game_loop,lucky_race_game_loop,matka_game_loop):
+    global game_tasks
+    game_tasks=[task for task in game_tasks if not task.done()]
+    if game_tasks:
+        print("Game loops already running.")
+        return
     config=await get_client_config(db,"demo")
     if not config:
         print("Casino setup not completed. Game loops not started.")
@@ -51,3 +70,12 @@ async def start_game_tasks(db,aviator_game_loop,dragon_tiger_game_loop,lucky_rac
     game_tasks.append(asyncio.create_task(matka_game_loop()))
 
     print("Casino setup completed. Game loops started.")
+
+
+async def stop_game_tasks():
+    global game_tasks
+    for task in game_tasks:
+        task.cancel()
+    if game_tasks:
+        await asyncio.gather(*game_tasks,return_exceptions=True)
+    game_tasks=[]

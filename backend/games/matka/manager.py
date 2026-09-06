@@ -4,6 +4,7 @@ import uuid
 from typing import Dict, List
 
 from fastapi import WebSocket
+from core.casino import CasinoError, cancel_user_bets, close_round, open_round, place_bet as persist_bet, settle_bet
 
 from .engine import calculate_payout, get_numbers, pick_winner
 
@@ -123,8 +124,13 @@ async def place_bet(req):
     round_id = state["round_id"]
     round_bets = bets_by_round.setdefault(round_id, [])
 
+    try:
+        saved=persist_bet(game="matka",round_id=round_id,user_id=req.user_id,amount=req.amount,position_key=str(req.bet_type),metadata={"bet_type":req.bet_type},client_id=req.client_id)
+    except CasinoError as exc:
+        return {"success":False,"message":str(exc),"code":exc.code}
     bet = {
-        "id": "matka-bet-" + str(uuid.uuid4()),
+        "id": saved["id"],
+        "client_id": req.client_id,
         "user_id": req.user_id,
         "round_id": round_id,
         "bet_type": req.bet_type,
@@ -137,7 +143,7 @@ async def place_bet(req):
 
     await broadcast("bet")
 
-    return {"success": True, "message": "Bet placed"}
+    return {"success": True, "message": "Bet placed", "bet_id":bet["id"], "balance":saved["balance"]}
 
 
 async def clear_bets(req):
@@ -146,9 +152,10 @@ async def clear_bets(req):
 
     round_id = state["round_id"]
     old_bets = bets_by_round.get(round_id, [])
+    cancel_user_bets("matka",round_id,req.user_id,req.client_id)
 
     bets_by_round[round_id] = [
-        bet for bet in old_bets if bet["user_id"] != req.user_id
+        bet for bet in old_bets if not (bet.get("client_id","demo") == req.client_id and bet["user_id"] == req.user_id)
     ]
 
     await broadcast("clear")
@@ -168,6 +175,7 @@ def settle_bets(winner):
         else:
             bet["status"] = "lost"
             bet["payout"] = 0.0
+        settle_bet(bet["id"],bet["payout"],winner)
 
 
 async def game_loop():
@@ -179,6 +187,7 @@ async def game_loop():
         state["countdown"] = WAITING_SECONDS
         state["winner"] = None
         bets_by_round[round_id] = []
+        open_round("matka",round_id,{"phase":"betting"})
 
         await broadcast("new_round")
 
@@ -195,6 +204,7 @@ async def game_loop():
         state["winner"] = winner
 
         settle_bets(winner)
+        close_round("matka",round_id,winner)
 
         state["history"].append({
             "round_id": round_id,

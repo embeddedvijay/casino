@@ -26,15 +26,18 @@ function Plane({ phase, multiplier }) {
   const isFlying = phase === "flying";
   const crashed = phase === "crashed";
 
-  const safeMultiplier = Number(multiplier || 1);
-
-  let planeLeft = 8;
-  let planeBottom = 8;
-
-  if (isFlying) {
-    planeLeft = Math.min(8 + safeMultiplier * 9.5, 74);
-    planeBottom = Math.min(8 + safeMultiplier * 4.2, 60);
-  }
+  const safeMultiplier=Math.max(1,Number(multiplier||1));
+  const progress=isFlying?Math.min(1,1-Math.exp(-(safeMultiplier-1)*0.58)):0;
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const p0={x:35,y:360},p1={x:300,y:360},p2={x:650,y:220},p3={x:780,y:105};
+  const q0={x:lerp(p0.x,p1.x,progress),y:lerp(p0.y,p1.y,progress)};
+  const q1={x:lerp(p1.x,p2.x,progress),y:lerp(p1.y,p2.y,progress)};
+  const q2={x:lerp(p2.x,p3.x,progress),y:lerp(p2.y,p3.y,progress)};
+  const r0={x:lerp(q0.x,q1.x,progress),y:lerp(q0.y,q1.y,progress)};
+  const r1={x:lerp(q1.x,q2.x,progress),y:lerp(q1.y,q2.y,progress)};
+  const end={x:lerp(r0.x,r1.x,progress),y:lerp(r0.y,r1.y,progress)};
+  let planeLeft=isFlying?end.x/10:8;
+  let planeBottom=isFlying?(420-end.y)/4.2:8;
 
   if (crashed) {
     // Flew away / crash ke time plane box ke bahar chala jayega
@@ -42,20 +45,8 @@ function Plane({ phase, multiplier }) {
     planeBottom = 72;
   }
 
-  const planeX = (planeLeft / 100) * 1000;
-  const planeY = 420 - (planeBottom / 100) * 420;
-
-  const lineStartX = 35;
-  const lineStartY = 360;
-
-  const lineEndX = Math.max(90, planeX + 35);
-  const lineEndY = Math.min(365, planeY + 45);
-
-  const controlOneX = lineStartX + (lineEndX - lineStartX) * 0.38;
-  const controlOneY = lineStartY;
-
-  const controlTwoX = lineStartX + (lineEndX - lineStartX) * 0.72;
-  const controlTwoY = lineEndY + 25;
+  const curve=`M ${p0.x} ${p0.y} C ${q0.x} ${q0.y}, ${r0.x} ${r0.y}, ${end.x} ${end.y}`;
+  const area=`${curve} L ${end.x} 420 L ${p0.x} 420 Z`;
 
 
   return (
@@ -66,10 +57,9 @@ function Plane({ phase, multiplier }) {
           viewBox="0 0 1000 420"
           preserveAspectRatio="none"
         >
-          <path
-            className="flight-line"
-            d={`M ${lineStartX} ${lineStartY} C ${controlOneX} ${controlOneY}, ${controlTwoX} ${controlTwoY}, ${lineEndX} ${lineEndY}`}
-          />
+          <defs><linearGradient id="flightFillDesktop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#e6003d" stopOpacity=".3"/><stop offset="1" stopColor="#e6003d" stopOpacity="0"/></linearGradient></defs>
+          <path d={area} fill="url(#flightFillDesktop)"/>
+          <path className="flight-line" d={curve} fill="none" stroke="#e6003d" strokeWidth="6" strokeLinecap="round" vectorEffect="non-scaling-stroke"/>
         </svg>
       )}
 
@@ -405,14 +395,11 @@ function App() {
           </div>
 
           <div className="bet-list">
-            {data.all_bets.map((b) => (
+            {data.all_bets.map((b)=>(
               <div className="row" key={b.id}>
-                <span className="u">
-                  <i>{b.avatar}</i>
-                  {b.user}
-                </span>
+                <span className="u"><i>{b.avatar}</i>{b.user}</span>
                 <span>{formatMoney(b.bet)}</span>
-                <span></span>
+                <span>{b.cashout_multiplier ? `${Number(b.cashout_multiplier).toFixed(2)}x` : "-"}</span>
                 <b>{formatMoney(b.cashout)}</b>
               </div>
             ))}

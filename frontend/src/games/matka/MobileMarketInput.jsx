@@ -4,6 +4,54 @@ import"./MobilematkaDashboardInput.css";
 const HOST=window.location.hostname;
 const API=`http://${HOST}:8005`;
 
+const getValue=(market,keys)=>{
+  if(!market||typeof market!=="object")return"";
+  for(const key of keys){
+    if(market[key]!==undefined&&market[key]!==null&&String(market[key]).trim()!=="")return String(market[key]).trim();
+  }
+  return"";
+};
+
+const hasResult=(value)=>value!==""&&value!=="*"&&value!=="**"&&value!=="-"&&value!=="--";
+
+const playLabel=(key,marketName)=>`${String(marketName||"").replaceAll("_"," ")} ${String(key||"").endsWith("_CL")?"CLOSE":"OPEN"}`;
+
+const getMarketResult=(data,marketName)=>{
+  const results=data?.Result&&typeof data.Result==="object"?data.Result:data||{};
+  const keys=[marketName,`${marketName}_OP`,marketName.replace("_DAY",""),marketName.replace("_NIGHT","")];
+  for(const key of keys){
+    if(results[key])return results[key];
+  }
+  return null;
+};
+
+const resolvePlayTimeKey=async(marketName)=>{
+  let configured=false;
+  try{
+    const configRes=await fetch(`${API}/api/games/matka/markets`);
+    if(!configRes.ok)return marketName;
+    const configData=await configRes.json();
+    const markets=Array.isArray(configData)?configData:Array.isArray(configData?.markets)?configData.markets:[];
+    const config=markets.find((item)=>String(item.key||"").toUpperCase()===marketName);
+    if(!config?.open_time||!/^(\d{1,2}):(\d{2})$/.test(config.open_time))return marketName;
+    configured=true;
+
+    const[,hour,minute]=config.open_time.match(/^(\d{1,2}):(\d{2})$/);
+    const now=new Date();
+    const currentMinutes=now.getHours()*60+now.getMinutes();
+    const openMinutes=Number(hour)*60+Number(minute);
+    if(currentMinutes<openMinutes)return`${marketName}_OP`;
+
+    const resultRes=await fetch(`${API}/api/games/matka/results/latest`,{cache:"no-store"});
+    if(!resultRes.ok)return null;
+    const market=getMarketResult(await resultRes.json(),marketName);
+    const open=getValue(market,["OPEN","open"]);
+    return hasResult(open)?`${marketName}_CL`:null;
+  }catch(e){
+    return configured?null:marketName;
+  }
+};
+
 const nowTime=()=>new Date().toLocaleTimeString([],{
   hour:"2-digit",
   minute:"2-digit"
@@ -15,9 +63,11 @@ export default function MatkaInput({marketName:marketFromApp=""}){
   const[message,setMessage]=useState("");
   const[sentMessage,setSentMessage]=useState("");
   const[serverResponse,setServerResponse]=useState("");
+  const[timeKey,setTimeKey]=useState("");
   const[loading,setLoading]=useState(false);
   const[confirming,setConfirming]=useState(false);
   const[confirmed,setConfirmed]=useState(false);
+  const[confirmedMessage,setConfirmedMessage]=useState("");
   const[msgTime,setMsgTime]=useState("");
   const[responseTime,setResponseTime]=useState("");
   const[confirmTime,setConfirmTime]=useState("");
@@ -65,11 +115,22 @@ export default function MatkaInput({marketName:marketFromApp=""}){
 
     const cleanMessage=message.trim();
 
+    const nextTimeKey=await resolvePlayTimeKey(marketName);
+    if(!nextTimeKey){
+      setSentMessage(cleanMessage);
+      setServerResponse("Wait for open result");
+      setMsgTime(nowTime());
+      setResponseTime(nowTime());
+      setConfirmed(false);
+      return;
+    }
+
     setLoading(true);
     setServerResponse("");
     setConfirmed(false);
     setSentMessage(cleanMessage);
     setMsgTime(nowTime());
+    setTimeKey(nextTimeKey);
     clearInput();
 
     try{
@@ -80,7 +141,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
           client_id:"demo",
           user_id:localStorage.getItem("user_id")||"guest",
           market_name:marketName,
-          time_key:marketName,
+          time_key:nextTimeKey,
           message:cleanMessage
         })
       });
@@ -96,9 +157,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
             }).join("\n")
           : "";
 
-        setServerResponse(
-          `${data.time_key||marketName}\n\n${resultText}\n\nTOTAL = ${data.total}\n\nConfirm karna hai?`
-        );
+        setServerResponse(`${playLabel(data.time_key||nextTimeKey,marketName)}\n\n${resultText}\n\nTOTAL = ${data.total}\n\nConfirm karna hai?`);
       }else{
         setServerResponse(data.reply||data.message||"Invalid game format");
       }
@@ -113,6 +172,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
   };
 
   const confirmMessage=async()=>{
+    if(serverResponse==="Wait for open result")return;
     if(!serverResponse){
       alert("Pehle send karo");
       return;
@@ -129,6 +189,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
           user_id:localStorage.getItem("user_id")||"guest",
           market_name:marketName,
           market:marketName,
+          time_key:timeKey||marketName,
           message:sentMessage,
           server_response:serverResponse
         })
@@ -136,8 +197,14 @@ export default function MatkaInput({marketName:marketFromApp=""}){
 
       const data=await res.json();
 
-      setConfirmed(true);
-      setConfirmTime(nowTime());
+      if(data.success!==false){
+        const confirmedKey=data.time_key||timeKey||marketName;
+        setConfirmedMessage(`✅ GAME CONFIRMED\n\n${playLabel(confirmedKey,marketName)}\n\nConfirmed Message:\n${sentMessage}\n\nTOTAL = ${data.total??"-"}`);
+        setConfirmed(true);
+        setConfirmTime(nowTime());
+      }else{
+        alert(data.message||data.reply||"Confirm failed");
+      }
     }catch(e){
       alert("Confirm error");
     }
@@ -201,14 +268,14 @@ export default function MatkaInput({marketName:marketFromApp=""}){
           <div className="mci-msg-row bot">
             <div className="mci-bot-icon">🤖</div>
             <div className="mci-bubble bot response">
-              <h4>{marketName} RESPONSE</h4>
+              <h4>{playLabel(timeKey,marketName)} RESPONSE</h4>
               <pre>{serverResponse}</pre>
               <small>{responseTime}</small>
             </div>
           </div>
         )}
 
-        {serverResponse&&!confirmed&&(
+        {serverResponse!=="Wait for open result"&&serverResponse&&!confirmed&&(
           <button className="mci-confirm-message" onClick={confirmMessage} disabled={confirming}>
             <span>🛡</span>
             {confirming?"CONFIRMING...":"CONFIRM MESSAGE"}
@@ -227,7 +294,7 @@ export default function MatkaInput({marketName:marketFromApp=""}){
             <div className="mci-msg-row bot">
               <div className="mci-bot-icon">🤖</div>
               <div className="mci-bubble bot">
-                <p>✅ Game Placed successfully.</p>
+                <pre>{confirmedMessage}</pre>
                 <small>{confirmTime}</small>
               </div>
             </div>

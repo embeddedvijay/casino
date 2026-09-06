@@ -98,7 +98,16 @@ const isRealResult=(value)=>{
 };
 
 const getTodayName=()=>new Date().toLocaleDateString("en-US",{weekday:"long"});
-const isMarketOff=(key)=>market_schedule[getTodayName()]?.[key]===false;
+const TEMP_DISABLED_MARKETS=[
+  "KALYAN_NIGHT"
+];
+
+const isMarketOff=(key)=>{
+  if(TEMP_DISABLED_MARKETS.includes(key)){
+    return true;
+  }
+  return market_schedule[getTodayName()]?.[key]===false;
+};
 
 function MoneyRain({side}){
   return(

@@ -1,0 +1,2 @@
+import React from "react";
+export default function MobileFilter({showGame=false}){return <div className="m-panel"><div className="m-form"><label>From Date</label><input type="date" defaultValue="2026-07-01"/><label>To Date</label><input type="date" defaultValue="2026-07-05"/>{showGame&&<><label>Game</label><select><option>All Games</option><option>Teen Patti</option><option>Andar Bahar</option><option>Dragon Tiger</option></select></>}<button>Filter</button></div></div>}
