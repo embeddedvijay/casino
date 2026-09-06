@@ -89,7 +89,7 @@ def ensure_casino_indexes() -> None:
 def recover_interrupted_games() -> dict:
     """Refund unfinished real bets after a process crash, once, before loops start."""
     raw=_plain_db(); refunded=0; cancelled=0; now=utcnow()
-    for bet in raw.casino_bets.find({"status":{"$in":["pending","active"]}}):
+    for bet in raw.casino_bets.find({"status":{"$in":["pending","active"]},"game":{"$ne":"cricket-market"}}):
         changed=raw.casino_bets.update_one(
             {"_id":bet["_id"],"status":{"$in":["pending","active"]}},
             {"$set":{"status":"cancelled","cancel_reason":"server_restart","cancelled_at":now,"updated_at":now}},

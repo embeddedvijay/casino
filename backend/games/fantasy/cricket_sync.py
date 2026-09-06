@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from database import db
+from games.fantasy.cricket_settlement import settle_completed_cricket_events
 
 
 API_CRICKET_URL = "https://apiv2.api-cricket.com/cricket/"
@@ -63,6 +64,26 @@ def sync_cricket_feed() -> dict:
     live = provider_call("get_livescore") or []
     merged = {str(item.get("event_key")): item for item in events if item.get("event_key")}
     merged.update({str(item.get("event_key")): item for item in live if item.get("event_key")})
+    # A multi-day fixture can disappear from the live feed just after it
+    # finishes.  Active customer bets must still receive one final lookup.
+    active_event_ids = [str(item) for item in database.casino_bets.distinct(
+        "metadata.provider_event_id", {"game": "cricket-market", "status": "active"}
+    ) if item]
+    missing_active_ids = [event_id for event_id in active_event_ids if event_id not in merged]
+    if missing_active_ids:
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = {executor.submit(provider_call, "get_events", event_key=event_id): event_id for event_id in missing_active_ids}
+            for future in as_completed(futures):
+                event_id = futures[future]
+                try:
+                    response = future.result() or []
+                    candidates = response.values() if isinstance(response, dict) else response
+                    for item in candidates:
+                        if isinstance(item, dict) and str(item.get("event_key")) == event_id:
+                            merged[event_id] = item
+                            break
+                except Exception:
+                    pass
     date_odds = provider_call("get_odds", date_start=today_text, date_stop=today_text) or {}
     available_ids = odds_event_ids(date_odds)
     live_ids = {str(item.get("event_key")) for item in live if item.get("event_key")}
@@ -103,12 +124,13 @@ def sync_cricket_feed() -> dict:
     # Test/first-class matches can remain live for multiple days. Retain a
     # current live event even when its original start date is older than today.
     database.cricket_market_events.delete_many({"event_date": {"$lt": str(today - timedelta(days=1))}, "event_live": {"$ne": True}})
+    settlement = settle_completed_cricket_events()
     database.cricket_sync_state.update_one(
         {"_id": SYNC_STATE_ID},
-        {"$set": {"source": "api-cricket", "last_sync_at": now, "events_seen": len(merged), "odds_available": stored, "status": "ok"}},
+        {"$set": {"source": "api-cricket", "last_sync_at": now, "events_seen": len(merged), "odds_available": stored, "settlement": settlement, "status": "ok"}},
         upsert=True,
     )
-    return {"events_seen": len(merged), "odds_available": stored, "synced_at": now}
+    return {"events_seen": len(merged), "odds_available": stored, "settlement": settlement, "synced_at": now}
 
 
 async def cricket_sync_loop(interval_seconds: int | None = None):
@@ -116,7 +138,7 @@ async def cricket_sync_loop(interval_seconds: int | None = None):
     while True:
         try:
             result = await asyncio.to_thread(sync_cricket_feed)
-            print(f"🏏 Cricket feed synced | events={result['events_seen']} odds={result['odds_available']}")
+            print(f"🏏 Cricket feed synced | events={result['events_seen']} odds={result['odds_available']} settled={result['settlement']['settled']} voided={result['settlement']['voided']}")
         except Exception as error:
             print(f"Cricket sync loop failed: {type(error).__name__}: {error}")
         await asyncio.sleep(max(15, interval))
