@@ -12,6 +12,7 @@ from core.tenant import bind_request_identity, query_identity, user_security
 from core.casino import CasinoError, place_bet, resolve_user, wallet_balance
 from database import db
 from games.fantasy.cricket_sync import raw_db
+from games.fantasy.cricket_normalizer import normalize_cricket_event
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=True)
 
@@ -37,7 +38,9 @@ def format_service_score(value):
     # API-Cricket sometimes returns values such as "19.5/50 ov, T:229".
     # Those are service/over fields, not a reliable team run/wicket score.
     # Only publish a conventional score such as 250/7 or 451/8d.
-    valid_score = re.match(r"^(\d{1,3})\s*/\s*(\d{1,2}d?)$", value, re.I)
+    # Covers provider variants: "114/8", "114/8 (20.0)", and "114-8".
+    # Do not treat an over/target form such as "19.5/50 ov" as a score.
+    valid_score = re.search(r"(?<![\d.])(\d{1,3})\s*[/\-]\s*(10|[0-9]d?)(?!\d)", value, re.I)
     if valid_score:
         return f"{valid_score.group(1)}/{valid_score.group(2)}"
     return ""
@@ -52,7 +55,36 @@ def overs_from_service(value):
     match = re.search(r"(?:^|\s)(\d{1,3}(?:\.\d)?)\s*(?:ov|overs)\b", value, re.I)
     return f"{match.group(1)} ov" if match else ""
 
+
+def score_overs_from_mapping(extra, team_name):
+    """Read score/overs from common API-Cricket nested score shapes."""
+    if not isinstance(extra, dict):
+        return "", ""
+    team_name = str(team_name or "").lower()
+    fallback = []
+    for label, value in extra.items():
+        if not isinstance(value, dict):
+            continue
+        identity = f"{label} {value.get('team', '')} {value.get('team_name', '')} {value.get('innings', '')}".lower()
+        score = ""
+        over = ""
+        for field in ("total", "score", "result", "runs", "team_score", "current_score", "event_score"):
+            score = score or format_service_score(value.get(field))
+        for field in ("overs", "over", "ov", "current_overs"):
+            raw = str(value.get(field) or "").strip()
+            if re.fullmatch(r"\d{1,3}(?:\.\d)?", raw):
+                over = f"{raw} ov"
+            over = over or overs_from_service(value.get(field))
+        if score or over:
+            if team_name and team_name in identity:
+                return score, over
+            fallback.append((score, over))
+    return fallback[0] if len(fallback) == 1 else ("", "")
+
 def score_from_extra(extra, team_name):
+    mapped_score, _ = score_overs_from_mapping(extra, team_name)
+    if mapped_score:
+        return mapped_score
     if not isinstance(extra, dict):
         return ""
     team_name = str(team_name or "").lower()
@@ -69,6 +101,9 @@ def score_from_extra(extra, team_name):
 
 
 def overs_from_extra(extra, team_name):
+    _, mapped_overs = score_overs_from_mapping(extra, team_name)
+    if mapped_overs:
+        return mapped_overs
     if not isinstance(extra, dict):
         return ""
     team_name = str(team_name or "").lower()
@@ -170,8 +205,8 @@ def market_matches(user_id: str = Query(""), client_id: str = Query("demo")):
     database = raw_db()
     today = str(datetime.utcnow().date())
     active_ids = active_market_event_ids(database, user_id, client_id)
-    rows = list(database.cricket_market_events.find(visible_market_query(today, active_ids), {"_id": 0, "event": 1}).sort("event_live", -1))
-    return {"source": "database-cache", "matches": [normalize_event(row["event"]) for row in rows]}
+    rows = list(database.cricket_market_events.find(visible_market_query(today, active_ids), {"_id": 0, "event": 1, "state": 1}).sort("event_live", -1))
+    return {"source": "database-cache", "matches": [row.get("state") or normalize_cricket_event(row["event"]) for row in rows]}
 
 
 @router.get("/market/matches/{match_id}")
@@ -183,10 +218,11 @@ def market_match_detail(match_id: str, user_id: str = Query(""), client_id: str 
     if not row:
         raise HTTPException(status_code=404, detail="Cricket market is not available in the shared feed.")
     event = row["event"]
+    state = row.get("state") or normalize_cricket_event(event)
     odds_updated_at = row.get("odds_updated_at")
     if isinstance(odds_updated_at, datetime) and odds_updated_at.tzinfo is None:
         odds_updated_at = odds_updated_at.replace(tzinfo=timezone.utc)
-    return {"source": "database-cache", "match": normalize_event(event), "scorecard": event.get("scorecard", {}), "extra": event.get("extra", {}), "comments": event.get("comments", {}), "lineups": event.get("lineups", {}), "odds": row.get("odds", {}), "odds_meta": {"fresh": bool(row.get("odds_fresh")), "updated_at": odds_updated_at.isoformat() if isinstance(odds_updated_at, datetime) else None}}
+    return {"source": "database-cache", "match": state, "last_balls": state.get("last_balls", []), "scorecard": event.get("scorecard", {}), "extra": event.get("extra", {}), "comments": event.get("comments", {}), "lineups": event.get("lineups", {}), "odds": row.get("odds", {}), "odds_meta": {"fresh": bool(row.get("odds_fresh")), "updated_at": odds_updated_at.isoformat() if isinstance(odds_updated_at, datetime) else None}}
 
 
 class CricketMarketBet(BaseModel):
@@ -344,8 +380,8 @@ def practice_wallet(client_id: str, user_id: str):
 @router.get("/matches")
 def read_matches(sport: str | None = None, status: str | None = None):
     today = str(datetime.utcnow().date())
-    rows = list(raw_db().cricket_market_events.find(visible_market_query(today), {"_id": 0, "event": 1}).sort("event_live", -1))
-    result = [normalize_event(row["event"]) for row in rows]
+    rows = list(raw_db().cricket_market_events.find(visible_market_query(today), {"_id": 0, "event": 1, "state": 1}).sort("event_live", -1))
+    result = [row.get("state") or normalize_cricket_event(row["event"]) for row in rows]
     if sport and sport.lower() != "all":
         result = [item for item in result if item["sport"].lower() == sport.lower()]
     if status:

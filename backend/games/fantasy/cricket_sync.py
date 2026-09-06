@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from database import db
+from games.fantasy.cricket_normalizer import normalize_cricket_event
 from games.fantasy.cricket_settlement import settle_completed_cricket_events
 
 
@@ -53,6 +54,8 @@ def ensure_cricket_indexes():
     database.cricket_market_events.create_index("event_id", unique=True)
     database.cricket_market_events.create_index([("event_date", 1), ("has_odds", 1), ("event_live", 1)])
     database.cricket_market_events.create_index("synced_at")
+    database.cricket_provider_events_raw.create_index("event_id", unique=True)
+    database.cricket_provider_odds_raw.create_index("event_id", unique=True)
 
 
 def sync_cricket_feed() -> dict:
@@ -79,9 +82,14 @@ def sync_cricket_feed() -> dict:
         "metadata.provider_event_id", {"game": "cricket-market", "status": "active"}
     ) if item]
     missing_active_ids = [event_id for event_id in active_event_ids if event_id not in merged]
-    if missing_active_ids:
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            futures = {executor.submit(provider_call, "get_events", event_key=event_id): event_id for event_id in missing_active_ids}
+    # Date/livescore feeds are sometimes sparse. Refresh every currently live
+    # event by its own event_key so score, over, commentary and scorecard are
+    # always read from the detailed endpoint, not from an old list response.
+    live_ids = {event_id for event_id, event in merged.items() if event_is_live(event)}
+    detail_ids = sorted(live_ids | set(missing_active_ids))
+    if detail_ids:
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = {executor.submit(provider_call, "get_events", event_key=event_id): event_id for event_id in detail_ids}
             for future in as_completed(futures):
                 event_id = futures[future]
                 try:
@@ -89,24 +97,25 @@ def sync_cricket_feed() -> dict:
                     candidates = response.values() if isinstance(response, dict) else response
                     for item in candidates:
                         if isinstance(item, dict) and str(item.get("event_key")) == event_id:
-                            merged[event_id] = item
+                            detailed_values = {key: value for key, value in item.items() if value not in (None, "", {}, [])}
+                            merged[event_id] = {**merged.get(event_id, {}), **detailed_values}
                             break
                 except Exception:
                     pass
     date_odds = provider_call("get_odds", date_start=today_text, date_stop=today_text) or {}
-    available_ids = odds_event_ids(date_odds)
-    live_ids = {str(item.get("event_key")) for item in live if item.get("event_key")}
-    missing_live_ids = [event_id for event_id in live_ids if event_id not in available_ids]
+    # Date odds are only a fallback for upcoming markets. Fetch every live
+    # event_key on every cycle; this is the provider's continuously updating
+    # match-odds endpoint and prevents stale cached prices from being used.
+    live_odds_ids = sorted(event_id for event_id in live_ids if event_is_live(merged.get(event_id, {})))
     individual_odds = {}
-    if missing_live_ids:
-        with ThreadPoolExecutor(max_workers=6) as executor:
-            futures = {executor.submit(provider_call, "get_odds", event_key=event_id): event_id for event_id in missing_live_ids}
+    if live_odds_ids:
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = {executor.submit(provider_call, "get_odds", event_key=event_id): event_id for event_id in live_odds_ids}
             for future in as_completed(futures):
                 event_id = futures[future]
                 try:
                     odds = future.result() or {}
                     if odds:
-                        available_ids.add(event_id)
                         individual_odds[event_id] = odds.get(event_id, odds)
                 except Exception:
                     pass
@@ -126,9 +135,18 @@ def sync_cricket_feed() -> dict:
         previous = cached_odds.get(event_id, {})
         odds = provider_odds or previous.get("odds", {})
         odds_updated_at = now if provider_odds else previous.get("odds_updated_at")
+        # Keep provider payloads for audit/debug and write only one stable
+        # normalized state shape for every match consumed by the app.
+        database.cricket_provider_events_raw.update_one(
+            {"event_id": event_id}, {"$set": {"event_id": event_id, "payload": event, "fetched_at": now, "source": "api-cricket:get_events"}}, upsert=True,
+        )
+        if provider_odds:
+            database.cricket_provider_odds_raw.update_one(
+                {"event_id": event_id}, {"$set": {"event_id": event_id, "payload": provider_odds, "fetched_at": now, "source": "api-cricket:get_odds"}}, upsert=True,
+            )
         database.cricket_market_events.update_one(
             {"event_id": event_id},
-            {"$set": {"event_id": event_id, "event": event, "odds": odds, "has_odds": bool(odds), "odds_fresh": bool(provider_odds), "odds_updated_at": odds_updated_at, "event_date": str(event.get("event_date_start") or today_text), "event_live": event_is_live(event), "synced_at": now}},
+            {"$set": {"event_id": event_id, "event": event, "state": normalize_cricket_event(event), "odds": odds, "has_odds": bool(odds), "odds_fresh": bool(provider_odds), "odds_updated_at": odds_updated_at, "event_date": str(event.get("event_date_start") or today_text), "event_live": event_is_live(event), "synced_at": now}},
             upsert=True,
         )
         if odds:
@@ -152,11 +170,11 @@ def sync_cricket_feed() -> dict:
 
 
 async def cricket_sync_loop(interval_seconds: int | None = None):
-    interval = interval_seconds or int(os.getenv("CRICKET_SYNC_SECONDS", "30"))
+    interval = interval_seconds or int(os.getenv("CRICKET_SYNC_SECONDS", "10"))
     while True:
         try:
             result = await asyncio.to_thread(sync_cricket_feed)
             print(f"🏏 Cricket feed synced | events={result['events_seen']} odds={result['odds_available']} settled={result['settlement']['settled']} voided={result['settlement']['voided']}")
         except Exception as error:
             print(f"Cricket sync loop failed: {type(error).__name__}: {error}")
-        await asyncio.sleep(max(15, interval))
+        await asyncio.sleep(max(5, interval))
