@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from games.aviator.router import router as aviator_router
 from games.aviator.router import aviator_socket
@@ -134,6 +135,15 @@ async def websocket_lucky_race(websocket: WebSocket):
 async def websocket_matka(websocket: WebSocket):
     await matka_socket(websocket)
 
+@app.get("/download/apk")
+async def download_apk():
+    apk_path = "/home/vijay/casino/backend/downloads/gold365-latest.apk" 
+    
+    return FileResponse(
+        path=apk_path, 
+        media_type="application/vnd.android.package-archive", 
+        filename="gold365-latest.apk"
+    )
 
 @app.on_event("startup")
 async def startup_event():

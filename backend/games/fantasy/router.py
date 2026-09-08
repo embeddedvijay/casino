@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, Field, model_validator
 from dotenv import load_dotenv
 
@@ -12,7 +12,7 @@ from core.tenant import bind_request_identity, query_identity, user_security
 from core.casino import CasinoError, place_bet, resolve_user, wallet_balance
 from database import db
 from games.fantasy.cricket_sync import raw_db
-from games.fantasy.cricket_normalizer import normalize_cricket_event
+from games.fantasy.cricket_normalizer import VERSION, normalize_cricket_event, freshness
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=True)
 
@@ -38,53 +38,12 @@ def format_service_score(value):
     # API-Cricket sometimes returns values such as "19.5/50 ov, T:229".
     # Those are service/over fields, not a reliable team run/wicket score.
     # Only publish a conventional score such as 250/7 or 451/8d.
-    # Covers provider variants: "114/8", "114/8 (20.0)", and "114-8".
-    # Do not treat an over/target form such as "19.5/50 ov" as a score.
-    valid_score = re.search(r"(?<![\d.])(\d{1,3})\s*[/\-]\s*(10|[0-9]d?)(?!\d)", value, re.I)
+    valid_score = re.match(r"^(\d{1,3})\s*/\s*(\d{1,2}d?)$", value, re.I)
     if valid_score:
         return f"{valid_score.group(1)}/{valid_score.group(2)}"
     return ""
 
-
-def overs_from_service(value):
-    """Read the over count without ever mixing it into the score."""
-    value = " ".join(str(value or "").replace(",", " ").split())
-    match = re.search(r"\(\s*(\d{1,3}(?:\.\d)?)\s*(?:ov|overs)?\s*\)", value, re.I)
-    if match:
-        return f"{match.group(1)} ov"
-    match = re.search(r"(?:^|\s)(\d{1,3}(?:\.\d)?)\s*(?:ov|overs)\b", value, re.I)
-    return f"{match.group(1)} ov" if match else ""
-
-
-def score_overs_from_mapping(extra, team_name):
-    """Read score/overs from common API-Cricket nested score shapes."""
-    if not isinstance(extra, dict):
-        return "", ""
-    team_name = str(team_name or "").lower()
-    fallback = []
-    for label, value in extra.items():
-        if not isinstance(value, dict):
-            continue
-        identity = f"{label} {value.get('team', '')} {value.get('team_name', '')} {value.get('innings', '')}".lower()
-        score = ""
-        over = ""
-        for field in ("total", "score", "result", "runs", "team_score", "current_score", "event_score"):
-            score = score or format_service_score(value.get(field))
-        for field in ("overs", "over", "ov", "current_overs"):
-            raw = str(value.get(field) or "").strip()
-            if re.fullmatch(r"\d{1,3}(?:\.\d)?", raw):
-                over = f"{raw} ov"
-            over = over or overs_from_service(value.get(field))
-        if score or over:
-            if team_name and team_name in identity:
-                return score, over
-            fallback.append((score, over))
-    return fallback[0] if len(fallback) == 1 else ("", "")
-
 def score_from_extra(extra, team_name):
-    mapped_score, _ = score_overs_from_mapping(extra, team_name)
-    if mapped_score:
-        return mapped_score
     if not isinstance(extra, dict):
         return ""
     team_name = str(team_name or "").lower()
@@ -100,50 +59,6 @@ def score_from_extra(extra, team_name):
     return ""
 
 
-def overs_from_extra(extra, team_name):
-    _, mapped_overs = score_overs_from_mapping(extra, team_name)
-    if mapped_overs:
-        return mapped_overs
-    if not isinstance(extra, dict):
-        return ""
-    team_name = str(team_name or "").lower()
-    for label, value in extra.items():
-        if not isinstance(value, dict):
-            continue
-        identity = f"{label} {value.get('team', '')} {value.get('innings', '')}".lower()
-        if team_name and team_name not in identity:
-            continue
-        for field in ("overs", "over", "ov"):
-            if value.get(field) not in (None, ""):
-                raw = str(value[field]).strip()
-                if re.fullmatch(r"\d{1,3}(?:\.\d)?", raw):
-                    return f"{raw} ov"
-    return ""
-
-
-def overs_from_comments(comments):
-    """Use the latest ball in provider commentary when service score omits overs."""
-    candidates = []
-
-    def collect(value):
-        if isinstance(value, dict):
-            for key, item in value.items():
-                if str(key).lower() in {"over", "overs", "event_over", "event_overs", "ball", "event_ball"}:
-                    match = re.search(r"\b(\d{1,3})\.(\d)\b", str(item))
-                    if match:
-                        candidates.append((int(match.group(1)), int(match.group(2))))
-                collect(item)
-        elif isinstance(value, list):
-            for item in value:
-                collect(item)
-
-    collect(comments)
-    if not candidates:
-        return ""
-    over, ball = max(candidates)
-    return f"{over}.{ball}"
-
-
 def clean_status_info(value):
     """Do not expose unfinished provider template tokens in the mobile UI."""
     text = " ".join(str(value or "").split())
@@ -152,77 +67,49 @@ def clean_status_info(value):
     return text
 
 def normalize_event(event):
-    provider_status = str(event.get("event_status") or "").strip().lower()
-    is_completed = provider_status in {"finished", "abandoned", "cancelled"}
-    is_live = not is_completed and (str(event.get("event_live")) == "1" or provider_status in {"in progress", "live", "started", "innings break", "stumps"})
-    status = "completed" if is_completed else ("live" if is_live else "upcoming")
-    home_service = event.get("event_service_home") or event.get("event_home_final_result")
-    away_service = event.get("event_service_away") or event.get("event_away_final_result")
-    home_score = format_service_score(home_service) or score_from_extra(event.get("extra"), event.get("event_home_team"))
-    away_score = format_service_score(away_service) or score_from_extra(event.get("extra"), event.get("event_away_team"))
-    home_overs = overs_from_service(home_service) or overs_from_extra(event.get("extra"), event.get("event_home_team"))
-    away_overs = overs_from_service(away_service) or overs_from_extra(event.get("extra"), event.get("event_away_team"))
-    # During a live innings, API-Cricket may publish 230/3 in service score
-    # while the newer 50.3 exists only in commentary. Attach that over to the
-    # only currently-scoring side.
-    commentary_over = overs_from_comments(event.get("comments", {}))
-    if commentary_over and not home_overs and home_score and not away_score:
-        home_overs = commentary_over
-    if commentary_over and not away_overs and away_score and not home_score:
-        away_overs = commentary_over
-    active_score = away_score or home_score
-    return {"id": f"api-{event.get('event_key')}", "provider_match_id": str(event.get("event_key")), "sport": "Cricket", "league": event.get("league_name") or "Cricket", "left": event.get("event_home_team") or "Team A", "right": event.get("event_away_team") or "Team B", "left_code": (event.get("event_home_team") or "A")[:3].upper(), "right_code": (event.get("event_away_team") or "B")[:3].upper(), "left_logo": event.get("event_home_team_logo") or "", "right_logo": event.get("event_away_team_logo") or "", "start_time": f"{event.get('event_date_start','')} {event.get('event_time','')}", "status": status, "home_score": home_score, "away_score": away_score, "home_overs": home_overs, "away_overs": away_overs, "live_score": active_score, "status_info": clean_status_info(event.get("event_status_info", ""))}
+    return normalize_cricket_event(event)
 
 
-def active_market_event_ids(database, user_id: str = "", client_id: str = "demo") -> list[str]:
-    """A customer's already-open market must remain visible until settlement."""
-    if not user_id:
-        return []
-    try:
-        user = resolve_user(user_id, client_id)
-    except CasinoError:
-        return []
-    return [str(value) for value in database.casino_bets.distinct(
-        "metadata.provider_event_id",
-        {"client_id": str(user.get("client_id") or client_id), "user_ref": user["_id"], "game": "cricket-market", "status": "active"},
-    ) if value]
+def visible_market_query(today: str) -> dict:
+    # No odds gate: missing odds must not hide a running score.
+    return {}
 
 
-def visible_market_query(today: str, active_event_ids: list[str] | None = None) -> dict:
-    # The lobby is a betting-market list: never show a match without a saved
-    # provider odds payload, even if its live score is available.
-    clauses = [
-        {"odds": {"$exists": True, "$ne": {}}},
-        {"has_odds": True},
-    ]
-    if active_event_ids:
-        clauses.append({"event_id": {"$in": active_event_ids}})
-    return {"$or": clauses}
+def public_match(row):
+    state = normalize_cricket_event(row["event"])
+    state["feed_meta"] = freshness(row)
+    state["has_odds"] = bool(row.get("odds"))
+    return state
+
+
+@router.get("/market/sync-status")
+def market_sync_status():
+    state = raw_db().cricket_sync_state.find_one({"_id":"api_cricket"},{"_id":0}) or {}
+    return {"version":VERSION,"sync":state}
 
 
 @router.get("/market/matches")
-def market_matches(user_id: str = Query(""), client_id: str = Query("demo")):
-    database = raw_db()
-    today = str(datetime.utcnow().date())
-    active_ids = active_market_event_ids(database, user_id, client_id)
-    rows = list(database.cricket_market_events.find(visible_market_query(today, active_ids), {"_id": 0, "event": 1, "state": 1}).sort("event_live", -1))
-    return {"source": "database-cache", "matches": [row.get("state") or normalize_cricket_event(row["event"]) for row in rows]}
+def market_matches(response: Response):
+    response.headers["Cache-Control"] = "no-store"
+    rows = raw_db().cricket_market_events.find({},{"_id":0})
+    matches = [public_match(row) for row in rows if row.get("event")]
+    matches = [item for item in matches if item["status"] in {"live","upcoming"}]
+    matches.sort(key=lambda x: (0 if x["status"]=="live" else 1,x["start_time"],x["id"]))
+    return {"source":"database-cache","version":VERSION,"matches":matches}
 
 
 @router.get("/market/matches/{match_id}")
-def market_match_detail(match_id: str, user_id: str = Query(""), client_id: str = Query("demo")):
-    event_id = match_id.removeprefix("api-")
-    database = raw_db()
-    active_ids = active_market_event_ids(database, user_id, client_id)
-    row = database.cricket_market_events.find_one({"event_id": event_id, **visible_market_query(str(datetime.utcnow().date()), active_ids)}, {"_id": 0})
+def market_match_detail(match_id: str, response: Response):
+    response.headers["Cache-Control"] = "no-store"
+    row = raw_db().cricket_market_events.find_one({"event_id":match_id.removeprefix("api-")},{"_id":0})
     if not row:
-        raise HTTPException(status_code=404, detail="Cricket market is not available in the shared feed.")
+        raise HTTPException(status_code=404,detail="Match not yet received from provider.")
     event = row["event"]
-    state = row.get("state") or normalize_cricket_event(event)
-    odds_updated_at = row.get("odds_updated_at")
-    if isinstance(odds_updated_at, datetime) and odds_updated_at.tzinfo is None:
-        odds_updated_at = odds_updated_at.replace(tzinfo=timezone.utc)
-    return {"source": "database-cache", "match": state, "last_balls": state.get("last_balls", []), "scorecard": event.get("scorecard", {}), "extra": event.get("extra", {}), "comments": event.get("comments", {}), "lineups": event.get("lineups", {}), "odds": row.get("odds", {}), "odds_meta": {"fresh": bool(row.get("odds_fresh")), "updated_at": odds_updated_at.isoformat() if isinstance(odds_updated_at, datetime) else None}}
+    state = public_match(row)
+    return {"source":"database-cache","version":VERSION,"match":state,
+        "last_balls":state["last_balls"],"scorecard":event.get("scorecard",{}),
+        "extra":event.get("extra",{}),"comments":event.get("comments",{}),
+        "lineups":event.get("lineups",{}),"odds":row.get("odds",{}),"odds_meta":freshness(row)}
 
 
 class CricketMarketBet(BaseModel):
@@ -233,6 +120,7 @@ class CricketMarketBet(BaseModel):
     selection: str = Field(min_length=1, max_length=120)
     side: Literal["back", "lay"] = "back"
     odds: float = Field(gt=1.0, le=1000.0)
+    bookmaker: str | None = None
     stake: float = Field(gt=0, le=100000.0)
 
 
@@ -278,26 +166,35 @@ def place_cricket_market_bet(payload: CricketMarketBet, credentials=Depends(user
     if not row:
         raise HTTPException(status_code=409, detail="This market is not available for betting.")
     event = row["event"]
-    if str(event.get("event_live")) != "1":
+    if normalize_cricket_event(event)["status"] != "live":
         raise HTTPException(status_code=409, detail="Only live markets can accept bets right now.")
+    if not freshness(row)["fresh"]:
+        raise HTTPException(status_code=409, detail="Feed/odds are stale or unavailable. Wait for a fresh quote.")
     settings = _cricket_settings(payload.client_id)
     if not settings.get("enabled", True):
         raise HTTPException(status_code=403, detail="Cricket market is temporarily disabled.")
-    # A cached number is useful for displaying context, but is never a valid
-    # trading price.  Accept a bet only when the latest provider poll itself
-    # returned odds for this event.
-    if not row.get("odds_fresh"):
-        raise HTTPException(status_code=409, detail="Odds are temporarily paused. Refresh the market and try again.")
     if not float(settings["min_stake"]) <= payload.stake <= float(settings["max_stake"]):
         raise HTTPException(status_code=400, detail=f"Stake must be between {settings['min_stake']:g} and {settings['max_stake']:g}.")
     valid_selections = {str(event.get("event_home_team") or "").lower(), str(event.get("event_away_team") or "").lower(), "home", "away", "draw"}
     if payload.selection.strip().lower() not in valid_selections:
         raise HTTPException(status_code=400, detail="Invalid selection for this match.")
-    prices = _market_prices(row.get("odds", {}))
+    # Validate ONLY the requested market/selection/bookmaker, never any numeric
+    # value elsewhere in the odds payload.
+    choices = row.get("odds",{}).get(payload.market,{})
+    selection = payload.selection.strip().lower()
+    if selection == str(event.get("event_home_team") or "").lower():
+        selection = "home"
+    elif selection == str(event.get("event_away_team") or "").lower():
+        selection = "away"
+    books = next((v for k,v in choices.items() if k.lower()==selection),{})
+    if payload.bookmaker:
+        prices = _market_prices(books.get(payload.bookmaker))
+    else:
+        prices = _market_prices(books)
     if not any(abs(price - float(payload.odds)) < 0.001 for price in prices):
-        raise HTTPException(status_code=409, detail="The odds changed. Refresh the market and select the latest price.")
-    if payload.side == "lay" and not settings.get("lay_enabled", False):
-        raise HTTPException(status_code=409, detail="Lay prices are not available from the current provider.")
+        raise HTTPException(status_code=409, detail="Market/selection odds changed. Select the latest quote.")
+    if payload.side != "back":
+        raise HTTPException(status_code=409, detail="This provider feed has bookmaker back prices, not lay quotes.")
     selection_key = payload.selection.strip().lower()
     opposite = "lay" if payload.side == "back" else "back"
     existing = database.casino_bets.find_one({"client_id": payload.client_id, "user_id": {"$exists": True}, "game": "cricket-market", "round_id": payload.match_id, "status": "active", "metadata.market": payload.market, "metadata.selection_key": selection_key, "metadata.side": opposite, "user_ref": resolve_user(payload.user_id, payload.client_id)["_id"]})
@@ -380,8 +277,9 @@ def practice_wallet(client_id: str, user_id: str):
 @router.get("/matches")
 def read_matches(sport: str | None = None, status: str | None = None):
     today = str(datetime.utcnow().date())
-    rows = list(raw_db().cricket_market_events.find(visible_market_query(today), {"_id": 0, "event": 1, "state": 1}).sort("event_live", -1))
-    result = [row.get("state") or normalize_cricket_event(row["event"]) for row in rows]
+    rows = list(raw_db().cricket_market_events.find(visible_market_query(today), {"_id": 0, "event": 1}).sort("event_live", -1))
+    result = [normalize_event(row["event"]) for row in rows]
+    result = [item for item in result if item["status"] in {"live","upcoming"}]
     if sport and sport.lower() != "all":
         result = [item for item in result if item["sport"].lower() == sport.lower()]
     if status:
@@ -492,3 +390,4 @@ def read_leaderboard(match_id: str):
     match_or_404(match_id)
     rows = list(db.fantasy_entries.find({"match_id": match_id}, {"_id": 0, "user_id": 1, "team_id": 1, "points": 1}).sort("points", -1).limit(100))
     return {"practice_only": True, "match_id": match_id, "leaderboard": rows}
+
