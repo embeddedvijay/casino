@@ -63,7 +63,6 @@ class DemoAwareCollection:
     def __getattr__(self,name): return getattr(self._raw,name)
 
     def _demo(self,query):
-        if _contains_demo(query): return True
         try:
             doc=self._raw.find_one(_without_money_filter(query),{"is_demo":1,**{k:1 for k in IDENTITY_FIELDS}})
             return bool(doc and (doc.get("is_demo") or any(str(doc.get(k,"")).lower() in DEMO_NAMES for k in IDENTITY_FIELDS)))
